@@ -3,30 +3,33 @@ import { MongoClient } from 'mongodb';
 import * as admin from 'firebase-admin';
 
 const DB_NAME = 'desorientado';
-const COLLECTION = 'progress';
+const COLLECTION = 'profiles';
 
-export interface ProgressDoc {
+export interface ProfileDoc {
   userId: string;
-  completedLessons: string[];
-  quizResults: Record<string, { score: number; total: number }>;
-  favorites: string[];
+  nome: string;
+  tipo: 'EM' | 'Superior';
+  curso: string;
+  serieOuSemestre: string;
+  observacoes: string;
+  updatedAt: string;
 }
 
-const DEFAULT_PROGRESS: ProgressDoc = {
-  userId: '',
-  completedLessons: [],
-  quizResults: {},
-  favorites: [],
+const DEFAULT_PROFILE: Omit<ProfileDoc, 'userId'> = {
+  nome: '',
+  tipo: 'Superior',
+  curso: '',
+  serieOuSemestre: '',
+  observacoes: '',
+  updatedAt: '',
 };
 
 function getMongoClient() {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error('MONGODB_URI is not set');
-  const globalWithMongo = global as typeof globalThis & { _mongoClient?: MongoClient };
-  if (!globalWithMongo._mongoClient) {
-    globalWithMongo._mongoClient = new MongoClient(uri);
-  }
-  return globalWithMongo._mongoClient;
+  const g = global as typeof globalThis & { _mongoClient?: MongoClient };
+  if (!g._mongoClient) g._mongoClient = new MongoClient(uri);
+  return g._mongoClient;
 }
 
 function getFirebaseAdmin() {
@@ -57,27 +60,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const userId = await getUserIdFromToken(req);
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   if (req.method === 'GET') {
     try {
       const client = getMongoClient();
-      const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
+      const col = client.db(DB_NAME).collection<ProfileDoc>(COLLECTION);
       const doc = await col.findOne({ userId });
-      const progress: ProgressDoc = doc
+      const profile: ProfileDoc = doc
         ? {
             userId: doc.userId,
-            completedLessons: Array.isArray(doc.completedLessons) ? doc.completedLessons : [],
-            quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},
-            favorites: Array.isArray(doc.favorites) ? doc.favorites : [],
+            nome: typeof doc.nome === 'string' ? doc.nome : '',
+            tipo: doc.tipo === 'EM' || doc.tipo === 'Superior' ? doc.tipo : 'Superior',
+            curso: typeof doc.curso === 'string' ? doc.curso : '',
+            serieOuSemestre: typeof doc.serieOuSemestre === 'string' ? doc.serieOuSemestre : '',
+            observacoes: typeof doc.observacoes === 'string' ? doc.observacoes : '',
+            updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : '',
           }
-        : { ...DEFAULT_PROGRESS, userId };
-      return res.status(200).json(progress);
+        : { ...DEFAULT_PROFILE, userId };
+      return res.status(200).json(profile);
     } catch (e) {
       console.error(e);
-      return res.status(500).json({ error: 'Failed to load progress' });
+      return res.status(500).json({ error: 'Failed to load profile' });
     }
   }
 
@@ -85,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let body = req.body;
     if (typeof body === 'string') {
       try {
-        body = JSON.parse(body) as ProgressDoc;
+        body = JSON.parse(body);
       } catch {
         return res.status(400).json({ error: 'Invalid JSON body' });
       }
@@ -93,24 +97,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!body || typeof body !== 'object') {
       return res.status(400).json({ error: 'Invalid body' });
     }
-    const progress: ProgressDoc = {
+    const profile: ProfileDoc = {
       userId,
-      completedLessons: Array.isArray(body.completedLessons) ? body.completedLessons : [],
-      quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
-      favorites: Array.isArray(body.favorites) ? body.favorites : [],
+      nome: typeof body.nome === 'string' ? body.nome.slice(0, 200) : '',
+      tipo: body.tipo === 'EM' || body.tipo === 'Superior' ? body.tipo : 'Superior',
+      curso: typeof body.curso === 'string' ? body.curso.slice(0, 200) : '',
+      serieOuSemestre: typeof body.serieOuSemestre === 'string' ? body.serieOuSemestre.slice(0, 100) : '',
+      observacoes: typeof body.observacoes === 'string' ? body.observacoes.slice(0, 2000) : '',
+      updatedAt: new Date().toISOString(),
     };
     try {
       const client = getMongoClient();
-      const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
-      await col.updateOne(
-        { userId },
-        { $set: progress },
-        { upsert: true }
-      );
-      return res.status(200).json(progress);
+      const col = client.db(DB_NAME).collection<ProfileDoc>(COLLECTION);
+      await col.updateOne({ userId }, { $set: profile }, { upsert: true });
+      return res.status(200).json(profile);
     } catch (e) {
       console.error(e);
-      return res.status(500).json({ error: 'Failed to save progress' });
+      return res.status(500).json({ error: 'Failed to save profile' });
     }
   }
 

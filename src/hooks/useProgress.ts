@@ -65,7 +65,6 @@ export function useProgress() {
   useEffect(() => {
     if (!progressLoaded) return;
     if (user) {
-      if (isSavingRef.current) return;
       isSavingRef.current = true;
       user
         .getIdToken()

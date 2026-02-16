@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <div className="px-2 py-1.5 text-sm font-medium truncate">
                       {user.displayName || user.email}
                     </div>
+                    <DropdownMenuItem asChild>
+                      <Link to="/perfil" className="flex items-center cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Perfil
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => signOut()} className="text-muted-foreground cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sair
@@ -110,27 +116,47 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {!loading && (
               <div className="pt-2 border-t border-border mt-2">
                 {user ? (
-                  <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? ''} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                        {user.displayName?.slice(0, 2).toUpperCase() ?? '?'}
-                      </AvatarFallback>
-                    </Avatar>
+                  <>
+                    <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {user.displayName?.slice(0, 2).toUpperCase() ?? '?'}
+                        </AvatarFallback>
+                      </Avatar>
                     <span className="text-sm truncate">{user.displayName || user.email}</span>
                   </div>
-                ) : null}
-                <button
-                  onClick={() => {
-                    if (user) signOut();
-                    else signInWithGoogle();
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
-                >
-                  {user ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
-                  {user ? 'Sair' : 'Entrar com Google'}
-                </button>
+                  <Link
+                    to="/perfil"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  >
+                    <User className="h-5 w-5" />
+                    Perfil
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Sair
+                  </button>
+                </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      signInWithGoogle();
+                      setMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    Entrar com Google
+                  </button>
+                )}
               </div>
             )}
           </div>
