@@ -38,14 +38,14 @@ export function useProgress() {
       setProgressLoaded(false);
       const local = loadLocalProgress();
       user
-        .getIdToken()
+        .getIdToken(true)
         .then((token) => getProgressFromApi(token))
         .then((p) => {
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
           const hasLocal = local.completedLessons.length > 0 || Object.keys(local.quizResults).length > 0 || local.favorites.length > 0;
           if (!hasRemote && hasLocal) {
             setProgress(local);
-            user.getIdToken().then((t) => saveProgressToApi(t, local).catch(() => {}));
+            user.getIdToken(true).then((t) => saveProgressToApi(t, local).catch(() => {}));
           } else {
             setProgress(p);
           }
@@ -67,7 +67,7 @@ export function useProgress() {
     if (user) {
       isSavingRef.current = true;
       user
-        .getIdToken()
+        .getIdToken(true)
         .then((token) => saveProgressToApi(token, progress))
         .catch(() => {})
         .finally(() => {

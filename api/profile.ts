@@ -34,8 +34,9 @@ function getMongoClient() {
 
 function getFirebaseAdmin() {
   if (admin.apps.length > 0) return admin.app();
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccount) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set');
+  serviceAccount = serviceAccount.replace(/\\n/g, '\n');
   const parsed = JSON.parse(serviceAccount) as admin.ServiceAccount;
   return admin.initializeApp({ credential: admin.credential.cert(parsed) });
 }
@@ -48,7 +49,8 @@ async function getUserIdFromToken(req: VercelRequest): Promise<string | null> {
     const app = getFirebaseAdmin();
     const decoded = await app.auth().verifyIdToken(token);
     return decoded.uid;
-  } catch {
+  } catch (e) {
+    console.error('Profile API auth failed:', e instanceof Error ? e.message : e);
     return null;
   }
 }

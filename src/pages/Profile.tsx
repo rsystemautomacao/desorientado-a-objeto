@@ -32,7 +32,7 @@ export default function Profile() {
     if (!user) return;
     setLoading(true);
     user
-      .getIdToken()
+      .getIdToken(true)
       .then((token) => getProfileFromApi(token))
       .then((p) => {
         setProfile(p);
@@ -46,7 +46,7 @@ export default function Profile() {
     if (!user) return;
     setSaving(true);
     user
-      .getIdToken()
+      .getIdToken(true)
       .then((token) => saveProfileToApi(token, profile))
       .then(() => {
         toast.success('Perfil salvo com sucesso.');
