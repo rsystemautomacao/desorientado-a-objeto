@@ -1,0 +1,98 @@
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import { modules } from '@/data/modules';
+import { useProgress } from '@/hooks/useProgress';
+import { Search, CheckCircle2, Clock, Star, StarOff } from 'lucide-react';
+
+export default function Trail() {
+  const [filter, setFilter] = useState<string>('todos');
+  const [search, setSearch] = useState('');
+  const { isCompleted, isFavorite, toggleFavorite } = useProgress();
+
+  const filteredModules = useMemo(() => {
+    return modules
+      .filter((m) => filter === 'todos' || m.level === filter)
+      .map((m) => ({
+        ...m,
+        lessons: m.lessons.filter((l) =>
+          l.title.toLowerCase().includes(search.toLowerCase())
+        ),
+      }))
+      .filter((m) => m.lessons.length > 0);
+  }, [filter, search]);
+
+  const filters = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'basico', label: '🟢 Básico' },
+    { value: 'intermediario', label: '🟡 Intermediário' },
+    { value: 'avancado', label: '🔴 Avançado (POO)' },
+  ];
+
+  return (
+    <Layout>
+      <div className="container py-10 animate-fade-in">
+        <h1 className="text-3xl font-bold mb-2">Trilha de Aprendizado</h1>
+        <p className="text-muted-foreground mb-8">Siga a ordem ou vá direto ao que precisa</p>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar aula (ex: herança, arrays, switch...)"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {filters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Modules */}
+        <div className="space-y-10">
+          {filteredModules.map((m) => (
+            <div key={m.id}>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>{m.icon}</span> Módulo {m.id} — {m.title}
+              </h2>
+              <div className="space-y-2">
+                {m.lessons.map((l, i) => {
+                  const done = isCompleted(l.id);
+                  const fav = isFavorite(l.id);
+                  return (
+                    <div key={l.id} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card card-hover group">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${done ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                        {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+                      </div>
+                      <Link to={`/aula/${l.id}`} className="flex-1 min-w-0">
+                        <p className={`font-medium text-sm truncate ${done ? 'text-primary' : ''}`}>{l.title}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Clock className="h-3 w-3" /> {l.duration}
+                        </p>
+                      </Link>
+                      <button onClick={() => toggleFavorite(l.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                        {fav ? <Star className="h-4 w-4 text-accent fill-accent" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Layout>
+  );
+}

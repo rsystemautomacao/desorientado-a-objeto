@@ -1,0 +1,68 @@
+import { QuizQuestion } from './types';
+
+export const quizQuestions: QuizQuestion[] = [
+  // M1 - Intro
+  { id: 'q1', lessonId: 'm1-intro', question: 'O que é a JVM?', options: ['Um editor de código Java', 'A máquina virtual que executa bytecode Java', 'O compilador Java', 'Uma biblioteca do Java'], correct: 1, explanation: 'JVM (Java Virtual Machine) é a máquina virtual que interpreta e executa o bytecode (.class) gerado pelo compilador javac.' },
+  { id: 'q2', lessonId: 'm1-intro', question: 'Qual é o ponto de entrada de um programa Java?', options: ['A primeira linha do arquivo', 'O método start()', 'O método main(String[] args)', 'O construtor da classe'], correct: 2, explanation: 'O método public static void main(String[] args) é o ponto de entrada de todo programa Java.' },
+  { id: 'q3', lessonId: 'm1-intro', question: 'Qual comando compila um arquivo Java?', options: ['java MeuPrograma.java', 'javac MeuPrograma.java', 'compile MeuPrograma.java', 'run MeuPrograma.java'], correct: 1, explanation: 'O comando javac (Java Compiler) compila o código-fonte .java em bytecode .class.' },
+  { id: 'q4', lessonId: 'm1-intro', question: 'System.out.println() faz o quê?', options: ['Lê entrada do usuário', 'Imprime e pula linha', 'Imprime sem pular linha', 'Cria uma variável'], correct: 1, explanation: 'println() imprime o texto e pula uma linha. print() imprime sem pular linha.' },
+  { id: 'q5', lessonId: 'm1-intro', question: 'Qual a diferença entre JDK e JRE?', options: ['São a mesma coisa', 'JDK é para desenvolver, JRE é para executar', 'JRE é para desenvolver, JDK é para executar', 'JDK é mais antigo que JRE'], correct: 1, explanation: 'JDK (Development Kit) contém ferramentas de desenvolvimento + JRE. JRE (Runtime Environment) contém apenas o necessário para executar.' },
+  { id: 'q6', lessonId: 'm1-intro', question: 'Qual a saída deste código?\nSystem.out.print("A");\nSystem.out.println("B");\nSystem.out.print("C");', code: 'System.out.print("A");\nSystem.out.println("B");\nSystem.out.print("C");', options: ['A B C', 'AB\\nC', 'ABC', 'A\\nB\\nC'], correct: 1, explanation: 'print("A") imprime A sem pular. println("B") imprime B e pula linha. print("C") imprime C. Resultado: AB(nova linha)C.' },
+
+  // M1 - Variables
+  { id: 'q10', lessonId: 'm1-variables', question: 'Qual tipo primitivo é mais usado para números inteiros?', options: ['byte', 'short', 'int', 'long'], correct: 2, explanation: 'int é o tipo padrão para inteiros em Java, com alcance de aproximadamente -2 bilhões a 2 bilhões.' },
+  { id: 'q11', lessonId: 'm1-variables', question: 'Como comparar o conteúdo de duas Strings?', options: ['str1 == str2', 'str1.equals(str2)', 'str1.compare(str2)', 'str1 === str2'], correct: 1, explanation: '== compara referências (endereço na memória). .equals() compara o conteúdo real da String.' },
+  { id: 'q12', lessonId: 'm1-variables', question: 'O que acontece em: int x = (int) 9.7;', options: ['x = 10 (arredonda)', 'x = 9 (trunca)', 'Erro de compilação', 'x = 9.7'], correct: 1, explanation: 'Casting de double para int TRUNCA (corta a parte decimal), não arredonda. 9.7 vira 9.' },
+  { id: 'q13', lessonId: 'm1-variables', question: 'Qual declaração está CORRETA?', options: ['float x = 3.14;', 'float x = 3.14f;', 'float x = 3.14d;', 'Float x = 3.14;'], correct: 1, explanation: 'Literais decimais são double por padrão. Para float, adicione f: 3.14f.' },
+  { id: 'q14', lessonId: 'm1-variables', question: 'String é um tipo primitivo?', options: ['Sim', 'Não, é um tipo de referência (objeto)', 'Depende do contexto', 'Sim, mas só a partir do Java 11'], correct: 1, explanation: 'String é uma classe (tipo de referência), não um tipo primitivo. Os 8 primitivos são: byte, short, int, long, float, double, char, boolean.' },
+  { id: 'q15', lessonId: 'm1-variables', question: 'Qual é o valor padrão de uma variável boolean?', options: ['true', 'false', 'null', '0'], correct: 1, explanation: 'Variáveis boolean de instância (atributos) têm valor padrão false. Variáveis locais precisam ser inicializadas.' },
+
+  // M1 - Arrays
+  { id: 'q20', lessonId: 'm1-arrays', question: 'Qual o índice do primeiro elemento de um array?', options: ['1', '0', '-1', 'Depende do tamanho'], correct: 1, explanation: 'Arrays em Java (e na maioria das linguagens) começam no índice 0.' },
+  { id: 'q21', lessonId: 'm1-arrays', question: 'O que acontece ao acessar array[array.length]?', options: ['Retorna o último elemento', 'Retorna null', 'ArrayIndexOutOfBoundsException', 'Retorna 0'], correct: 2, explanation: 'O último índice válido é array.length - 1. Acessar array.length causa ArrayIndexOutOfBoundsException.' },
+  { id: 'q22', lessonId: 'm1-arrays', question: 'Qual a diferença entre .length e .length()?', options: ['São iguais', '.length para arrays, .length() para Strings', '.length() para arrays, .length para Strings', 'Nenhuma, ambos funcionam para tudo'], correct: 1, explanation: 'Arrays usam .length (propriedade, sem parênteses). Strings usam .length() (método, com parênteses).' },
+  { id: 'q23', lessonId: 'm1-arrays', question: 'int[] nums = {5, 10, 15}; Qual o valor de nums[1]?', options: ['5', '10', '15', 'Erro'], correct: 1, explanation: 'Índice 0 = 5, índice 1 = 10, índice 2 = 15.' },
+  { id: 'q24', lessonId: 'm1-arrays', question: 'Qual loop é preferível quando NÃO precisamos do índice?', options: ['for clássico', 'while', 'for-each (for : )', 'do-while'], correct: 2, explanation: 'O for-each (for (int x : array)) é mais limpo e menos propenso a erros quando não precisamos do índice.' },
+
+  // M1 - Loops
+  { id: 'q30', lessonId: 'm1-loops', question: 'Qual loop garante pelo menos uma execução?', options: ['for', 'while', 'do-while', 'for-each'], correct: 2, explanation: 'O do-while executa o bloco primeiro e depois verifica a condição. Garante pelo menos uma execução.' },
+  { id: 'q31', lessonId: 'm1-loops', question: 'O que o break faz dentro de um loop?', options: ['Pula para a próxima iteração', 'Encerra o loop imediatamente', 'Pausa a execução por 1 segundo', 'Reinicia o loop'], correct: 1, explanation: 'break encerra o loop imediatamente. continue pula para a próxima iteração.' },
+  { id: 'q32', lessonId: 'm1-loops', question: 'Qual a saída?\nfor (int i = 0; i < 3; i++) {\n  System.out.print(i + " ");\n}', code: 'for (int i = 0; i < 3; i++) {\n  System.out.print(i + " ");\n}', options: ['1 2 3', '0 1 2', '0 1 2 3', '1 2'], correct: 1, explanation: 'i começa em 0 e vai até 2 (i < 3). Imprime: 0 1 2.' },
+
+  // M1 - if/else
+  { id: 'q40', lessonId: 'm1-ifelse', question: 'Qual operador ternário está correto?', options: ['x > 5 : "sim" ? "não"', 'x > 5 ? "sim" : "não"', 'x > 5 ?? "sim" :: "não"', '(x > 5) -> "sim" | "não"'], correct: 1, explanation: 'A sintaxe do ternário é: condição ? valorTrue : valorFalse.' },
+  { id: 'q41', lessonId: 'm1-ifelse', question: 'if (x = 5) — o que está errado?', options: ['Nada, está correto', 'Usa = (atribuição) ao invés de == (comparação)', 'Faltam chaves', 'x não foi declarado'], correct: 1, explanation: '= é atribuição (define valor). == é comparação (verifica igualdade). No if, use ==.' },
+
+  // M1 - Switch
+  { id: 'q45', lessonId: 'm1-switch', question: 'O que acontece se esquecer o break num case?', options: ['Erro de compilação', 'Fall-through: executa os cases seguintes', 'O switch para', 'Volta ao primeiro case'], correct: 1, explanation: 'Sem break, a execução "cai" para o próximo case (fall-through). Geralmente é um bug.' },
+
+  // M1 - Operators
+  { id: 'q50', lessonId: 'm1-operators', question: 'Qual o resultado de 10 / 3 em Java (inteiros)?', options: ['3.33', '3', '4', '3.0'], correct: 1, explanation: 'Divisão entre inteiros resulta em inteiro. 10 / 3 = 3 (truncado). Para decimal: 10.0 / 3 = 3.33...' },
+  { id: 'q51', lessonId: 'm1-operators', question: 'O que o operador % retorna?', options: ['A divisão', 'O quociente', 'O resto da divisão', 'A porcentagem'], correct: 2, explanation: '% (módulo) retorna o RESTO da divisão inteira. Ex: 10 % 3 = 1.' },
+
+  // M3 - POO
+  { id: 'q60', lessonId: 'm3-whatispoo', question: 'Quais são os 4 pilares da POO?', options: ['Variáveis, Funções, Arrays, Loops', 'Classe, Objeto, Método, Atributo', 'Encapsulamento, Herança, Polimorfismo, Abstração', 'public, private, protected, static'], correct: 2, explanation: 'Os 4 pilares da POO são: Encapsulamento, Herança, Polimorfismo e Abstração.' },
+  { id: 'q61', lessonId: 'm3-whatispoo', question: 'Qual o principal benefício da POO?', options: ['Código mais rápido', 'Código mais curto', 'Código organizado, seguro e manutenível', 'Funciona apenas em Java'], correct: 2, explanation: 'POO organiza o código em objetos com responsabilidades claras, protege dados e facilita manutenção.' },
+
+  // M3 - Classes
+  { id: 'q65', lessonId: 'm3-classes', question: 'Qual a relação entre Classe e Objeto?', options: ['São a mesma coisa', 'Classe é o molde, Objeto é a instância', 'Objeto é o molde, Classe é a instância', 'Não há relação'], correct: 1, explanation: 'A Classe é o molde/template. O Objeto é a instância criada a partir da classe com new.' },
+
+  // M3 - Encapsulation
+  { id: 'q70', lessonId: 'm3-encapsulation', question: 'Por que usar private nos atributos?', options: ['Para o código compilar mais rápido', 'Para proteger dados de alterações inválidas', 'Porque é obrigatório em Java', 'Para economizar memória'], correct: 1, explanation: 'private impede acesso direto. Com getters/setters, você controla e valida toda alteração nos dados.' },
+  { id: 'q71', lessonId: 'm3-encapsulation', question: 'Todo atributo private precisa de getter E setter?', options: ['Sim, sempre', 'Não, depende da necessidade', 'Sim, é obrigatório', 'Não, nunca use setters'], correct: 1, explanation: 'Crie getters/setters apenas quando necessário. Nem todo atributo precisa ser exposto ou alterável externamente.' },
+  { id: 'q72', lessonId: 'm3-encapsulation', question: 'O que é melhor: setter genérico ou método de negócio?', options: ['Setter genérico', 'Método de negócio (ex: depositar)', 'São equivalentes', 'Nenhum dos dois'], correct: 1, explanation: 'Métodos de negócio (depositar, sacar) encapsulam melhor que setters genéricos, pois incluem validação e lógica.' },
+
+  // M3 - Inheritance
+  { id: 'q80', lessonId: 'm3-inheritance', question: 'Qual palavra-chave indica herança?', options: ['implements', 'extends', 'inherits', 'super'], correct: 1, explanation: 'extends indica que uma classe herda de outra. implements é para interfaces.' },
+  { id: 'q81', lessonId: 'm3-inheritance', question: 'Quando NÃO usar herança?', options: ['Quando a relação é "é um"', 'Quando a relação é "tem um"', 'Quando quer reaproveitar código sempre', 'Nunca, sempre use'], correct: 1, explanation: 'Se a relação é "tem um" (Carro TEM Motor), use composição. Herança é para "é um" (Cachorro É Animal).' },
+
+  // M3 - Polymorphism
+  { id: 'q85', lessonId: 'm3-polymorphism', question: 'O que é polimorfismo?', options: ['Muitas classes', 'Um método com comportamentos diferentes dependendo do objeto', 'Herança múltipla', 'Criar muitos objetos'], correct: 1, explanation: 'Polimorfismo = "muitas formas". O mesmo método se comporta diferentemente em cada subclasse.' },
+  { id: 'q86', lessonId: 'm3-polymorphism', question: 'Para que serve @Override?', options: ['Criar um método novo', 'Indicar sobrescrita de método do pai', 'Tornar o método static', 'Ocultar o método do pai'], correct: 1, explanation: '@Override indica que o método está sobrescrevendo um método da superclasse. Ajuda a evitar erros de digitação.' },
+
+  // M3 - Interfaces
+  { id: 'q90', lessonId: 'm3-interfaces', question: 'Uma classe pode implementar múltiplas interfaces?', options: ['Não', 'Sim', 'Apenas 2', 'Apenas com abstract'], correct: 1, explanation: 'Java permite implementar MÚLTIPLAS interfaces, mas só pode estender UMA classe.' },
+
+  // M3 - Exceptions
+  { id: 'q95', lessonId: 'm3-exceptions', question: 'O bloco finally sempre executa?', options: ['Não, só quando há erro', 'Sim, com ou sem exceção', 'Apenas se não houver catch', 'Apenas com exceções checked'], correct: 1, explanation: 'finally sempre executa, independentemente de ter ocorrido exceção ou não. Útil para cleanup.' },
+];
