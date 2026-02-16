@@ -35,19 +35,30 @@ function getFirebaseAdmin() {
   if (!serviceAccount) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set');
   serviceAccount = serviceAccount.replace(/\\n/g, '\n');
   const parsed = JSON.parse(serviceAccount) as admin.ServiceAccount;
-  return admin.initializeApp({ credential: admin.credential.cert(parsed) });
+  return admin.initializeApp({
+    credential: admin.credential.cert(parsed),
+    projectId: parsed.project_id,
+  });
 }
 
 async function getUserIdFromToken(req: VercelRequest): Promise<string | null> {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return null;
+  if (!authHeader?.startsWith('Bearer ')) {
+    console.error('Progress API: missing or invalid Authorization header');
+    return null;
+  }
   const token = authHeader.slice(7);
+  if (!token || token.length < 50) {
+    console.error('Progress API: token too short or empty');
+    return null;
+  }
   try {
     const app = getFirebaseAdmin();
     const decoded = await app.auth().verifyIdToken(token);
     return decoded.uid;
   } catch (e) {
-    console.error('Progress API auth failed:', e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('Progress API verifyIdToken failed:', msg);
     return null;
   }
 }

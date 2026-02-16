@@ -20,6 +20,7 @@ export async function getProgressFromApi(token: string): Promise<Progress> {
   const res = await fetch(`${base}/api/progress`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) throw new Error('UNAUTHORIZED');
   if (!res.ok) return { ...DEFAULT };
   const data = await res.json();
   return {

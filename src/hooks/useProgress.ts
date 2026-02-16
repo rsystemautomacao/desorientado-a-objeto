@@ -27,15 +27,18 @@ function saveLocalProgress(p: Progress) {
 }
 
 export function useProgress() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [progress, setProgress] = useState<Progress>(DEFAULT_PROGRESS);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const isSavingRef = useRef(false);
+  const apiOkRef = useRef(true);
 
-  // Carregar: se logado → API (MongoDB), senão → localStorage
+  // Só chama a API quando o Auth já terminou de carregar (evita token inválido ao abrir a página)
   useEffect(() => {
+    if (authLoading) return;
     if (user) {
       setProgressLoaded(false);
+      apiOkRef.current = true;
       const local = loadLocalProgress();
       user
         .getIdToken(true)
@@ -45,13 +48,16 @@ export function useProgress() {
           const hasLocal = local.completedLessons.length > 0 || Object.keys(local.quizResults).length > 0 || local.favorites.length > 0;
           if (!hasRemote && hasLocal) {
             setProgress(local);
-            user.getIdToken(true).then((t) => saveProgressToApi(t, local).catch(() => {}));
+            if (apiOkRef.current) {
+              user.getIdToken(true).then((t) => saveProgressToApi(t, local).catch(() => { apiOkRef.current = false; }));
+            }
           } else {
             setProgress(p);
           }
           setProgressLoaded(true);
         })
         .catch(() => {
+          apiOkRef.current = false;
           setProgress(local);
           setProgressLoaded(true);
         });
@@ -59,24 +65,25 @@ export function useProgress() {
       setProgress(loadLocalProgress());
       setProgressLoaded(true);
     }
-  }, [user?.uid]);
+  }, [user?.uid, authLoading]);
 
-  // Persistir: logado → API, não logado → localStorage
+  // Persistir: logado → API só se a API estiver OK (evita vários 401 ao abrir a página)
   useEffect(() => {
-    if (!progressLoaded) return;
+    if (!progressLoaded || authLoading) return;
     if (user) {
+      if (!apiOkRef.current) return;
       isSavingRef.current = true;
       user
         .getIdToken(true)
         .then((token) => saveProgressToApi(token, progress))
-        .catch(() => {})
+        .catch(() => { apiOkRef.current = false; })
         .finally(() => {
           isSavingRef.current = false;
         });
     } else {
       saveLocalProgress(progress);
     }
-  }, [user?.uid, progress, progressLoaded]);
+  }, [user?.uid, progress, progressLoaded, authLoading]);
 
   const completeLesson = useCallback((id: string) => {
     setProgress((p) => ({

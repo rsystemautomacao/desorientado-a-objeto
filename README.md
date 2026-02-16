@@ -86,7 +86,31 @@ O curso exige login com Google para acessar a **Trilha**, **Aulas** e **Dashboar
 - **No Vercel** (Settings → Environment Variables): adicione todas:
   - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`
   - `MONGODB_URI` (connection string do Atlas)
-  - `FIREBASE_SERVICE_ACCOUNT_JSON` (o JSON da chave de conta de serviço do Firebase, em uma linha)
+  - `FIREBASE_SERVICE_ACCOUNT_JSON` (o JSON da chave em **uma única linha**; veja abaixo como gerar)
+
+### Se as APIs retornam 401 (Unauthorized)
+
+O 401 nas rotas `/api/progress` e `/api/profile` significa que o **token do Firebase não foi aceito** no servidor. Confira:
+
+1. **Mesmo projeto Firebase**  
+   A chave em `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel **tem que ser** do **mesmo** projeto em que o app web faz login (o que está em `VITE_FIREBASE_PROJECT_ID`).  
+   No JSON da chave, o campo `project_id` deve ser igual ao `VITE_FIREBASE_PROJECT_ID` (ex.: `desorientado-a-objetos`).
+
+2. **Onde gerar a chave**  
+   Firebase Console → projeto do app → **Configurações do projeto** (engrenagem) → **Contas de serviço** → **Gerar nova chave privada**. Use esse JSON no Vercel.
+
+3. **Formato no Vercel**  
+   O valor deve ser o JSON **em uma única linha**. No terminal (substitua o caminho pelo do seu arquivo `.json`):
+   ```bash
+   node -e "console.log(JSON.stringify(require('C:/Users/richa/Downloads/desorientado-a-objetos-firebase-adminsdk-fbsvc-93363393bd.json')))"
+   ```
+   Copie **toda** a saída e cole no campo Value de `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel. Não adicione aspas em volta.
+
+4. **Ambiente**  
+   No Vercel, a variável `FIREBASE_SERVICE_ACCOUNT_JSON` precisa existir no ambiente que você está usando (Production / Preview).
+
+5. **Logs no Vercel**  
+   Em **Vercel → projeto → Logs** (ou Deployments → função), veja se aparece `Progress API verifyIdToken failed:` ou `Profile API verifyIdToken failed:` e a mensagem de erro (ex.: "Decoding error", "Expected project X") para saber o que o Firebase está rejeitando.
 
 ## How can I deploy this project?
 
