@@ -1,31 +1,83 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  getProgressFromApi,
+  saveProgressToApi,
+  type Progress,
+} from '@/lib/progressStore';
 
-interface Progress {
-  completedLessons: string[];
-  quizResults: Record<string, { score: number; total: number }>;
-  favorites: string[];
-}
+const STORAGE_KEY = 'desorientado-progress';
 
-const STORAGE_KEY = 'java-master-progress';
+const DEFAULT_PROGRESS: Progress = {
+  completedLessons: [],
+  quizResults: {},
+  favorites: [],
+};
 
-function loadProgress(): Progress {
+function loadLocalProgress(): Progress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { completedLessons: [], quizResults: {}, favorites: [] };
+  return { ...DEFAULT_PROGRESS };
 }
 
-function saveProgress(p: Progress) {
+function saveLocalProgress(p: Progress) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
 }
 
 export function useProgress() {
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const { user } = useAuth();
+  const [progress, setProgress] = useState<Progress>(DEFAULT_PROGRESS);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const isSavingRef = useRef(false);
 
+  // Carregar: se logado → API (MongoDB), senão → localStorage
   useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+    if (user) {
+      setProgressLoaded(false);
+      const local = loadLocalProgress();
+      user
+        .getIdToken()
+        .then((token) => getProgressFromApi(token))
+        .then((p) => {
+          const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
+          const hasLocal = local.completedLessons.length > 0 || Object.keys(local.quizResults).length > 0 || local.favorites.length > 0;
+          if (!hasRemote && hasLocal) {
+            setProgress(local);
+            user.getIdToken().then((t) => saveProgressToApi(t, local).catch(() => {}));
+          } else {
+            setProgress(p);
+          }
+          setProgressLoaded(true);
+        })
+        .catch(() => {
+          setProgress(local);
+          setProgressLoaded(true);
+        });
+    } else {
+      setProgress(loadLocalProgress());
+      setProgressLoaded(true);
+    }
+  }, [user?.uid]);
+
+  // Persistir: logado → API, não logado → localStorage
+  useEffect(() => {
+    if (!progressLoaded) return;
+    if (user) {
+      if (isSavingRef.current) return;
+      isSavingRef.current = true;
+      user
+        .getIdToken()
+        .then((token) => saveProgressToApi(token, progress))
+        .catch(() => {})
+        .finally(() => {
+          isSavingRef.current = false;
+        });
+    } else {
+      saveLocalProgress(progress);
+    }
+  }, [user?.uid, progress, progressLoaded]);
 
   const completeLesson = useCallback((id: string) => {
     setProgress((p) => ({

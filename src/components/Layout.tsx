@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navItems = [
   { to: '/', label: 'Home', icon: BookOpen },
@@ -12,6 +21,7 @@ const navItems = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -19,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="container flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl">
             <GraduationCap className="h-7 w-7 text-primary" />
-            <span className="text-gradient-primary">Java Master</span>
+            <span className="text-gradient-primary">DESorientado a Objetos</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -38,6 +48,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
+
+          <div className="hidden md:flex items-center gap-2">
+            {!loading && (
+              user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {user.displayName?.slice(0, 2).toUpperCase() ?? user.email?.slice(0, 2).toUpperCase() ?? '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5 text-sm font-medium truncate">
+                      {user.displayName || user.email}
+                    </div>
+                    <DropdownMenuItem onClick={() => signOut()} className="text-muted-foreground cursor-pointer">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => signInWithGoogle()} className="gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Entrar com Google
+                </Button>
+              )
+            )}
+          </div>
 
           <button
             className="md:hidden p-2 rounded-lg hover:bg-secondary"
@@ -64,6 +107,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            {!loading && (
+              <div className="pt-2 border-t border-border mt-2">
+                {user ? (
+                  <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? ''} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        {user.displayName?.slice(0, 2).toUpperCase() ?? '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm truncate">{user.displayName || user.email}</span>
+                  </div>
+                ) : null}
+                <button
+                  onClick={() => {
+                    if (user) signOut();
+                    else signInWithGoogle();
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+                >
+                  {user ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+                  {user ? 'Sair' : 'Entrar com Google'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -71,7 +140,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
-        <div className="container">Java Master © 2024 — Aprenda Java do zero ao avançado</div>
+        <div className="container">DESorientado a Objetos © 2024 — Aprenda Java do zero ao avançado</div>
       </footer>
     </div>
   );

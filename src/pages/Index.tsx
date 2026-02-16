@@ -1,17 +1,34 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules } from '@/data/modules';
 import { useProgress } from '@/hooks/useProgress';
+import { useAuth } from '@/contexts/AuthContext';
 import { ArrowRight, BookOpen, BriefcaseBusiness, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Index() {
+  const [searchParams] = useSearchParams();
+  const needsLogin = searchParams.get('login') === '1';
   const { progress } = useProgress();
+  const { user, signInWithGoogle } = useAuth();
   const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
   const completed = progress.completedLessons.length;
 
   return (
     <Layout>
       <div className="animate-fade-in">
+        {needsLogin && !user && (
+          <div className="container pt-6">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-foreground">
+                <strong>Faça login com Google</strong> para acessar a trilha, salvar seu progresso e continuar de onde parou em qualquer dispositivo.
+              </p>
+              <Button onClick={() => signInWithGoogle()} className="gap-2 shrink-0">
+                Entrar com Google
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Hero */}
         <section className="container py-16 md:py-24 text-center">
           <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">

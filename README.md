@@ -60,6 +60,34 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Login com Google e progresso por aluno
+
+O curso exige login com Google para acessar a **Trilha**, **Aulas** e **Dashboard**. O progresso (aulas concluídas, quizzes, favoritos) é salvo no **MongoDB Atlas** (plano free), vinculado à conta do aluno, via API serverless no Vercel.
+
+### 1. Firebase (login com Google)
+
+1. Crie um projeto em [Firebase Console](https://console.firebase.google.com).
+2. Ative **Authentication** → Sign-in method → **Google** (ative e salve).
+3. Em **Configurações do projeto** → **Seus apps** → Adicionar app → **Web**. Copie o `firebaseConfig`.
+4. Para a API validar o token: **Configurações** → **Contas de serviço** → **Gerar nova chave privada**. Guarde o JSON (será usado como `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel).
+
+### 2. MongoDB Atlas (banco de progresso)
+
+1. Crie uma conta em [MongoDB Atlas](https://cloud.mongodb.com) e um **cluster Free** (M0).
+2. **Database Access** → Add New Database User (usuário e senha).
+3. **Network Access** → Add IP Address → **Allow Access from Anywhere** (`0.0.0.0/0`) para o Vercel conseguir conectar.
+4. **Database** → Connect → **Drivers** → copie a connection string. Use no formato:
+   `mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/desorientado?retryWrites=true&w=majority`
+   (o banco `desorientado` e a collection `progress` são criados automaticamente pela API.)
+
+### 3. Variáveis de ambiente
+
+- **No seu `.env`** (copie de `.env.example`): preencha as `VITE_FIREBASE_*` (front) e, se for rodar a API localmente, `MONGODB_URI` e `FIREBASE_SERVICE_ACCOUNT_JSON`.
+- **No Vercel** (Settings → Environment Variables): adicione todas:
+  - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`
+  - `MONGODB_URI` (connection string do Atlas)
+  - `FIREBASE_SERVICE_ACCOUNT_JSON` (o JSON da chave de conta de serviço do Firebase, em uma linha)
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
