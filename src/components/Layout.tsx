@@ -1,0 +1,78 @@
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map } from 'lucide-react';
+
+const navItems = [
+  { to: '/', label: 'Home', icon: BookOpen },
+  { to: '/trilha', label: 'Trilha', icon: Map },
+  { to: '/entrevistas', label: 'Entrevistas', icon: BriefcaseBusiness },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+];
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+            <GraduationCap className="h-7 w-7 text-primary" />
+            <span className="text-gradient-primary">Java Master</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === item.to
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-secondary"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+
+        {menuOpen && (
+          <div className="md:hidden border-t border-border bg-background p-4 space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === item.to
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <main className="flex-1">{children}</main>
+
+      <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
+        <div className="container">Java Master © 2024 — Aprenda Java do zero ao avançado</div>
+      </footer>
+    </div>
+  );
+}

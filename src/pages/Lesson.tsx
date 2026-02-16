@@ -1,0 +1,176 @@
+import { useParams, Link } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import CodeBlock from '@/components/CodeBlock';
+import InfoBox from '@/components/InfoBox';
+import QuizComponent from '@/components/QuizComponent';
+import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
+import { lessonContents } from '@/data/lessonContents';
+import { quizQuestions } from '@/data/quizData';
+import { useProgress } from '@/hooks/useProgress';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target } from 'lucide-react';
+
+export default function Lesson() {
+  const { id } = useParams<{ id: string }>();
+  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+
+  if (!id) return null;
+
+  const allLessons = getAllLessons();
+  const lessonMeta = allLessons.find((l) => l.id === id);
+  const content = lessonContents[id];
+  const { prev, next } = getAdjacentLessons(id);
+  const lessonQuiz = quizQuestions.filter((q) => q.lessonId === id);
+  const done = isCompleted(id);
+  const fav = isFavorite(id);
+  const mod = modules.find((m) => m.id === lessonMeta?.moduleId);
+
+  if (!lessonMeta) {
+    return (
+      <Layout>
+        <div className="container py-20 text-center">
+          <h1 className="text-2xl font-bold mb-4">Aula não encontrada</h1>
+          <Link to="/trilha" className="text-primary hover:underline">Voltar à trilha</Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="container max-w-4xl py-10 animate-fade-in">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link to="/trilha" className="hover:text-foreground">Trilha</Link>
+          <span>/</span>
+          <span>Módulo {lessonMeta.moduleId} — {mod?.title}</span>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-muted-foreground">{lessonMeta.duration}</span>
+              <button
+                onClick={() => done ? uncompleteLesson(id) : completeLesson(id)}
+                className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full transition-colors ${done ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {done ? 'Concluída' : 'Marcar como concluída'}
+              </button>
+              <button onClick={() => toggleFavorite(id)} className="p-1">
+                {fav ? <Star className="h-5 w-5 text-accent fill-accent" /> : <StarOff className="h-5 w-5 text-muted-foreground hover:text-accent" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Objectives */}
+        {content?.objectives && (
+          <div className="mb-8 p-5 rounded-xl border border-border bg-card">
+            <h2 className="font-bold flex items-center gap-2 mb-3"><Target className="h-5 w-5 text-primary" /> Objetivos da Aula</h2>
+            <ul className="space-y-1.5">
+              {content.objectives.map((o, i) => (
+                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span> {o}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Content Sections */}
+        {content?.sections.map((s, i) => (
+          <section key={i} className="mb-10">
+            <h2 className="text-xl font-bold mb-3">{s.title}</h2>
+            <div className="text-foreground/85 leading-relaxed whitespace-pre-line text-sm">{s.body}</div>
+            {s.code && <CodeBlock code={s.code} title="Java" />}
+            {s.codeExplanation && (
+              <div className="mt-2 p-4 rounded-lg bg-secondary text-sm text-foreground/80">
+                <span className="font-semibold text-primary">Explicação: </span>{s.codeExplanation}
+              </div>
+            )}
+            {s.tip && <InfoBox type="tip">{s.tip}</InfoBox>}
+            {s.warning && <InfoBox type="warning">{s.warning}</InfoBox>}
+          </section>
+        ))}
+
+        {/* With/Without POO Comparison */}
+        {content?.withoutPoo && content?.withPoo && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold mb-4">🔄 Com POO vs Sem POO</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-destructive mb-2">❌ Sem POO (Procedural)</h3>
+                <CodeBlock code={content.withoutPoo} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-primary mb-2">✅ Com POO</h3>
+                <CodeBlock code={content.withPoo} />
+              </div>
+            </div>
+            {content.comparisonExplanation && (
+              <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                {content.comparisonExplanation}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Common Errors */}
+        {content?.commonErrors && content.commonErrors.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold mb-4">⚠️ Erros Comuns e Como Evitar</h2>
+            <div className="space-y-3">
+              {content.commonErrors.map((e, i) => (
+                <div key={i} className="p-4 rounded-lg border border-accent/20 bg-accent/5">
+                  <p className="font-semibold text-sm text-accent">{e.title}</p>
+                  <p className="text-sm text-foreground/80 mt-1">{e.description}</p>
+                  {e.code && <CodeBlock code={e.code} />}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Summary */}
+        {content?.summary && (
+          <section className="mb-10 p-5 rounded-xl border border-primary/20 bg-primary/5">
+            <h2 className="font-bold mb-3">📝 O que Você Precisa Lembrar</h2>
+            <ul className="space-y-1.5">
+              {content.summary.map((s, i) => (
+                <li key={i} className="text-sm flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" /> {s}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Quiz */}
+        {lessonQuiz.length > 0 && (
+          <section className="mb-10 p-6 rounded-xl border border-border bg-card">
+            <QuizComponent
+              questions={lessonQuiz}
+              onComplete={(score, total) => saveQuizResult(id, score, total)}
+            />
+          </section>
+        )}
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-6 border-t border-border">
+          {prev ? (
+            <Link to={`/aula/${prev.id}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" /> {prev.title}
+            </Link>
+          ) : <div />}
+          {next ? (
+            <Link to={`/aula/${next.id}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+              {next.title} <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : <div />}
+        </div>
+      </div>
+    </Layout>
+  );
+}
