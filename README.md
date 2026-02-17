@@ -86,7 +86,7 @@ O curso exige login com Google para acessar a **Trilha**, **Aulas** e **Dashboar
 - **No Vercel** (Settings → Environment Variables): adicione todas:
   - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`
   - `MONGODB_URI` (connection string do Atlas)
-  - `FIREBASE_SERVICE_ACCOUNT_JSON` (o JSON da chave em **uma única linha**; veja abaixo como gerar)
+  - `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON em uma linha) **ou** `FIREBASE_SERVICE_ACCOUNT_B64` (Base64; recomendado se o Vercel alterar o JSON)
 
 ### Se as APIs retornam 401 (Unauthorized)
 
@@ -99,13 +99,14 @@ O 401 nas rotas `/api/progress` e `/api/profile` significa que o **token do Fire
 2. **Onde gerar a chave**  
    Firebase Console → projeto do app → **Configurações do projeto** (engrenagem) → **Contas de serviço** → **Gerar nova chave privada**. Use esse JSON no Vercel.
 
-3. **Formato no Vercel (muito importante)**  
-   Se você colar o JSON **com quebras de linha** no campo Value do Vercel, a variável pode ser **truncada** na primeira linha. O app continua mostrando você logado (Firebase no navegador), mas a API não consegue validar o token e retorna 401.  
-   O valor **tem que ser** o JSON **em uma única linha**. No terminal, a partir da pasta do projeto (substitua pelo caminho do seu arquivo `.json`):
-   ```bash
-   node scripts/vercel-env-service-account.js "C:\caminho\para\sua-chave.json"
-   ```
-   Copie **toda** a saída (uma linha longa) e cole no campo Value de `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel. Não adicione aspas em volta. Depois, faça **Redeploy** do projeto.
+3. **Formato no Vercel**  
+   O Vercel às vezes altera ou trunca o JSON (aspas, barras). Se `/api/auth-status` retornar `json_invalid`, use **Base64** em vez de JSON:
+   - **Opção A (recomendada – Base64):** No terminal, na pasta do projeto:
+     ```bash
+     node scripts/vercel-env-service-account-b64.js "C:\Users\richa\Downloads\sua-chave.json"
+     ```
+     Copie **toda** a saída e cole no valor da variável **`FIREBASE_SERVICE_ACCOUNT_B64`** no Vercel (crie a variável se não existir; pode remover ou deixar `FIREBASE_SERVICE_ACCOUNT_JSON` em branco). Depois, **Redeploy**.
+   - **Opção B (JSON em uma linha):** `node scripts/vercel-env-service-account.js "C:\caminho\para\sua-chave.json"` → copie a saída em `FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 4. **Ambiente**  
    No Vercel, a variável `FIREBASE_SERVICE_ACCOUNT_JSON` precisa existir no ambiente que você está usando (Production / Preview).

@@ -32,24 +32,35 @@ function getMongoClient() {
   return g._mongoClient;
 }
 
-function getFirebaseAdmin() {
-  if (admin.apps.length > 0) return admin.app();
-  let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!serviceAccount) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set');
-  if (serviceAccount.includes('\n') && !serviceAccount.trimStart().startsWith('{')) {
-    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: valor parece ter quebras de linha. No Vercel use o JSON em UMA so linha.');
+function parseServiceAccountEnv(): admin.ServiceAccount {
+  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (b64 && typeof b64 === 'string' && b64.length > 100) {
+    try {
+      const json = Buffer.from(b64, 'base64').toString('utf8');
+      const normalized = json.replace(/\\n/g, '\n');
+      return JSON.parse(normalized) as admin.ServiceAccount;
+    } catch (e) {
+      console.error('FIREBASE_SERVICE_ACCOUNT_B64: decode/parse falhou.');
+      throw e;
+    }
   }
-  serviceAccount = serviceAccount.replace(/\\n/g, '\n');
-  let parsed: admin.ServiceAccount;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!raw || typeof raw !== 'string') throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON ou FIREBASE_SERVICE_ACCOUNT_B64 is not set');
+  const normalized = raw.replace(/\\n/g, '\n');
   try {
-    parsed = JSON.parse(serviceAccount) as admin.ServiceAccount;
+    return JSON.parse(normalized) as admin.ServiceAccount;
   } catch (e) {
-    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: JSON invalido. Cole o JSON minificado em uma unica linha.');
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON invalido. Use FIREBASE_SERVICE_ACCOUNT_B64 (script vercel-env-service-account-b64.js).');
     throw e;
   }
+}
+
+function getFirebaseAdmin() {
+  if (admin.apps.length > 0) return admin.app();
+  const parsed = parseServiceAccountEnv();
   const withSnake = parsed as admin.ServiceAccount & { private_key?: string; client_email?: string };
   if (!withSnake.private_key || !withSnake.client_email) {
-    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: falta private_key ou client_email. O valor foi truncado? Use uma unica linha.');
+    console.error('Chave incompleta. Use FIREBASE_SERVICE_ACCOUNT_B64.');
   }
   const projectId = parsed.projectId ?? (parsed as { project_id?: string }).project_id;
   return admin.initializeApp({
