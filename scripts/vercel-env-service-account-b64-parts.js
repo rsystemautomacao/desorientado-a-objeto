@@ -11,11 +11,13 @@ if (!path) {
 }
 const json = fs.readFileSync(path, 'utf8');
 const b64 = Buffer.from(json, 'utf8').toString('base64');
-const PART_LEN = 1200;
+const PART_LEN = 900;
 const part1 = b64.slice(0, PART_LEN);
 const part2 = b64.slice(PART_LEN, PART_LEN * 2);
-const part3 = b64.slice(PART_LEN * 2);
-process.stderr.write('Abaixo: linha 1 = PART1, linha 2 = PART2, linha 3 = PART3. Crie as 3 variaveis no Vercel (FIREBASE_SERVICE_ACCOUNT_B64_PART1, PART2, PART3).\n\n');
+const part3 = b64.slice(PART_LEN * 2, PART_LEN * 3);
+const part4 = b64.slice(PART_LEN * 3);
+process.stderr.write('Abaixo: 4 linhas = PART1, PART2, PART3, PART4. Crie as 4 variaveis no Vercel (FIREBASE_SERVICE_ACCOUNT_B64_PART1 ... PART4).\n\n');
 console.log(part1);
 console.log(part2);
 console.log(part3);
+console.log(part4);

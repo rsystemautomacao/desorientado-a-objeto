@@ -9,6 +9,11 @@ function getB64String(): string | null {
   const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
   const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
   const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
+  const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
+  const parts = [p1, p2, p3, p4].filter((p): p is string => typeof p === 'string' && p.length > 0);
+  if (parts.length >= 3 && parts.reduce((s, p) => s + p.length, 0) > 3500) {
+    return parts.join('').replace(/\s/g, '');
+  }
   if (p1 && p2 && p3 && typeof p1 === 'string' && typeof p2 === 'string' && typeof p3 === 'string' && p1.length > 100 && p2.length > 10 && p3.length > 10) {
     return (p1 + p2 + p3).replace(/\s/g, '');
   }
@@ -21,7 +26,7 @@ function getB64String(): string | null {
   return null;
 }
 
-function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number; env?: { part1Len: number; part2Len: number; part3Len?: number; singleLen: number } } {
+function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number; env?: { part1Len: number; part2Len: number; part3Len?: number; part4Len?: number; singleLen: number } } {
   const b64Raw = getB64String();
   if (b64Raw && b64Raw.length > 100) {
     const b64 = b64Raw;
@@ -35,17 +40,19 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
       const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
       const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
       const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
+      const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
       const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
       const env = {
         part1Len: typeof p1 === 'string' ? p1.length : 0,
         part2Len: typeof p2 === 'string' ? p2.length : 0,
         part3Len: typeof p3 === 'string' ? p3.length : 0,
+        part4Len: typeof p4 === 'string' ? p4.length : 0,
         singleLen: typeof one === 'string' ? one.length : 0,
       };
       const hint =
         b64Raw.length < 3500
-          ? `Base64 truncado (${b64Raw.length} chars). Use 3 partes: rode o script e crie PART1, PART2 e PART3 no Vercel (~1200 chars cada). env: part1=${env.part1Len} part2=${env.part2Len} part3=${env.part3Len}.`
-          : 'Base64 invalido. Use scripts/vercel-env-service-account-b64-parts.js (3 partes) e defina PART1, PART2, PART3 no Vercel, depois Redeploy.';
+          ? `Base64 truncado (${b64Raw.length} chars). Use 4 partes: rode o script e crie PART1 a PART4 no Vercel (~900 chars cada). env: part1=${env.part1Len} part2=${env.part2Len} part3=${env.part3Len} part4=${env.part4Len}.`
+          : 'Base64 invalido. Rode scripts/vercel-env-service-account-b64-parts.js (4 partes) e defina PART1..PART4 no Vercel, depois Redeploy.';
       return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length, env };
     }
   }
@@ -54,9 +61,10 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
     const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
     const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
     const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
+    const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
     const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-    const env = { part1Len: typeof p1 === 'string' ? p1.length : 0, part2Len: typeof p2 === 'string' ? p2.length : 0, part3Len: typeof p3 === 'string' ? p3.length : 0, singleLen: typeof one === 'string' ? one.length : 0 };
-    return { ok: false, reason: 'env_missing', hint: 'Nenhum B64 valido. Defina PART1, PART2 e PART3 (script gera 3 linhas) ou FIREBASE_SERVICE_ACCOUNT_JSON. env: ' + JSON.stringify(env), env };
+    const env = { part1Len: typeof p1 === 'string' ? p1.length : 0, part2Len: typeof p2 === 'string' ? p2.length : 0, part3Len: typeof p3 === 'string' ? p3.length : 0, part4Len: typeof p4 === 'string' ? p4.length : 0, singleLen: typeof one === 'string' ? one.length : 0 };
+    return { ok: false, reason: 'env_missing', hint: 'Nenhum B64 valido. Defina PART1..PART4 (script gera 4 linhas) ou FIREBASE_SERVICE_ACCOUNT_JSON. env: ' + JSON.stringify(env), env };
   }
   const hasNewlines = raw.includes('\n') && !raw.trimStart().startsWith('{');
   if (hasNewlines) {
@@ -77,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const result = getParsedServiceAccount();
   if (!('parsed' in result)) {
-    const body: { ok: false; reason: string; hint: string; b64Length?: number; env?: { part1Len: number; part2Len: number; part3Len?: number; singleLen: number } } = { ok: false, reason: result.reason, hint: result.hint };
+    const body: { ok: false; reason: string; hint: string; b64Length?: number; env?: Record<string, number> } = { ok: false, reason: result.reason, hint: result.hint };
     if (result.b64Length !== undefined) body.b64Length = result.b64Length;
     if (result.env) body.env = result.env;
     return res.status(200).json(body);
