@@ -101,12 +101,9 @@ O 401 nas rotas `/api/progress` e `/api/profile` significa que o **token do Fire
 
 3. **Formato no Vercel**  
    O Vercel às vezes altera ou trunca o JSON (aspas, barras). Se `/api/auth-status` retornar `json_invalid`, use **Base64** em vez de JSON:
-   - **Opção A (recomendada – Base64):** No terminal, na pasta do projeto:
-     ```bash
-     node scripts/vercel-env-service-account-b64.js "C:\Users\richa\Downloads\sua-chave.json"
-     ```
-     Copie **toda** a saída e cole no valor da variável **`FIREBASE_SERVICE_ACCOUNT_B64`** no Vercel (crie a variável se não existir; pode remover ou deixar `FIREBASE_SERVICE_ACCOUNT_JSON` em branco). Depois, **Redeploy**.
-   - **Opção B (JSON em uma linha):** `node scripts/vercel-env-service-account.js "C:\caminho\para\sua-chave.json"` → copie a saída em `FIREBASE_SERVICE_ACCOUNT_JSON`.
+   - **Opção A – Base64 em duas variáveis (use se o Vercel truncar ~3164 chars):** Rode `node scripts/vercel-env-service-account-b64-parts.js "C:\Users\richa\Downloads\sua-chave.json"`. Serão impressas duas linhas: cole a **linha 1** em **`FIREBASE_SERVICE_ACCOUNT_B64_PART1`** e a **linha 2** em **`FIREBASE_SERVICE_ACCOUNT_B64_PART2`** no Vercel. Depois, **Redeploy**.
+   - **Opção B – Base64 em uma variável:** `node scripts/vercel-env-service-account-b64.js "C:\caminho\sua-chave.json"` → copie toda a saída em **`FIREBASE_SERVICE_ACCOUNT_B64`** (só funciona se o Vercel não truncar).
+   - **Opção C – JSON em uma linha:** `node scripts/vercel-env-service-account.js "C:\caminho\sua-chave.json"` → copie em `FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 4. **Ambiente**  
    No Vercel, a variável `FIREBASE_SERVICE_ACCOUNT_JSON` precisa existir no ambiente que você está usando (Production / Preview).

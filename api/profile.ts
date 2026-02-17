@@ -32,12 +32,21 @@ function getMongoClient() {
   return g._mongoClient;
 }
 
+function getB64String(): string | null {
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (one && typeof one === 'string' && one.length > 3500) return one.replace(/\s/g, '');
+  const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
+  const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
+  if (p1 && p2 && typeof p1 === 'string' && typeof p2 === 'string') return (p1 + p2).replace(/\s/g, '');
+  if (one && typeof one === 'string' && one.length > 100) return one.replace(/\s/g, '');
+  return null;
+}
+
 function parseServiceAccountEnv(): admin.ServiceAccount {
-  const b64Raw = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (b64Raw && typeof b64Raw === 'string' && b64Raw.length > 100) {
-    const b64 = b64Raw.replace(/\s/g, '');
+  const b64Raw = getB64String();
+  if (b64Raw && b64Raw.length > 100) {
     try {
-      let json = Buffer.from(b64, 'base64').toString('utf8');
+      let json = Buffer.from(b64Raw, 'base64').toString('utf8');
       if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
       const normalized = json.replace(/\\n/g, '\n');
       return JSON.parse(normalized) as admin.ServiceAccount;
