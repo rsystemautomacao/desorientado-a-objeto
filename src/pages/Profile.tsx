@@ -45,6 +45,9 @@ export default function Profile() {
     e.preventDefault();
     if (!user) return;
     setSaving(true);
+    const base = typeof import.meta.env.VITE_API_BASE_URL === 'string' && import.meta.env.VITE_API_BASE_URL.length > 0
+      ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
+      : '';
     user
       .getIdToken(true)
       .then((token) => saveProfileToApi(token, profile))
@@ -52,10 +55,22 @@ export default function Profile() {
         toast.success('Perfil salvo com sucesso.');
         setSaving(false);
       })
-      .catch((err: Error & { status?: number }) => {
+      .catch(async (err: Error & { status?: number; code?: string }) => {
         setSaving(false);
         if (err?.status === 401) {
-          toast.error('O servidor não validou seu login. No Vercel, confira se FIREBASE_SERVICE_ACCOUNT_JSON está em uma única linha.');
+          try {
+            const statusRes = await fetch(`${base}/api/auth-status`);
+            const statusData = await statusRes.json();
+            if (statusData?.ok === false && statusData?.hint) {
+              toast.error(`Servidor: ${statusData.hint}`);
+            } else if (statusData?.ok === true) {
+              toast.error('Token não aceito. Faça logout e entre novamente com Google.');
+            } else {
+              toast.error('O servidor não validou seu login. Confira FIREBASE_SERVICE_ACCOUNT_JSON no Vercel (uma única linha) e faça Redeploy.');
+            }
+          } catch {
+            toast.error('O servidor não validou seu login. Confira FIREBASE_SERVICE_ACCOUNT_JSON no Vercel (uma única linha) e faça Redeploy.');
+          }
         } else {
           toast.error('Erro ao salvar. Tente novamente.');
         }

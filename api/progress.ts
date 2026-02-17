@@ -54,25 +54,25 @@ function getFirebaseAdmin() {
   });
 }
 
-async function getUserIdFromToken(req: VercelRequest): Promise<string | null> {
+async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string } | { userId: null; code: string }> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     console.error('Progress API: missing or invalid Authorization header');
-    return null;
+    return { userId: null, code: 'NO_HEADER' };
   }
   const token = authHeader.slice(7);
   if (!token || token.length < 50) {
     console.error('Progress API: token too short or empty');
-    return null;
+    return { userId: null, code: 'NO_HEADER' };
   }
   try {
     const app = getFirebaseAdmin();
     const decoded = await app.auth().verifyIdToken(token);
-    return decoded.uid;
+    return { userId: decoded.uid };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('Progress API verifyIdToken failed:', msg);
-    return null;
+    return { userId: null, code: 'TOKEN_VERIFY_FAILED' };
   }
 }
 
@@ -82,10 +82,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const userId = await getUserIdFromToken(req);
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  const result = await getUserIdFromToken(req);
+  if (!result.userId) {
+    return res.status(401).json({ error: 'Unauthorized', code: result.code ?? 'TOKEN_INVALID' });
   }
+  const userId = result.userId;
 
   if (req.method === 'GET') {
     try {

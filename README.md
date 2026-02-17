@@ -110,7 +110,12 @@ O 401 nas rotas `/api/progress` e `/api/profile` significa que o **token do Fire
 4. **Ambiente**  
    No Vercel, a variável `FIREBASE_SERVICE_ACCOUNT_JSON` precisa existir no ambiente que você está usando (Production / Preview).
 
-5. **Logs no Vercel**  
+5. **Diagnóstico no navegador**  
+   Abra no navegador: `https://seu-dominio.vercel.app/api/auth-status`  
+   - Se retornar `{ "ok": false, "reason": "...", "hint": "..." }`, o servidor não está com a chave correta; siga o `hint`.  
+   - Se retornar `{ "ok": true, "projectId": "desorientado-a-objetos" }`, a chave está OK no servidor; se ainda der 401 ao salvar, faça logout e login novamente com Google.
+
+6. **Logs no Vercel**  
    Em **Vercel → projeto → Logs** (ou Deployments → função), veja se aparece:
    - `FIREBASE_SERVICE_ACCOUNT_JSON: JSON invalido...` ou `...falta private_key ou client_email` → o valor foi truncado; use uma única linha e redeploy.
    - `Progress API verifyIdToken failed:` ou `Profile API verifyIdToken failed:` → mensagem do Firebase (ex.: "Decoding error", "Expected project X").
