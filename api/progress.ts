@@ -34,8 +34,11 @@ function getB64String(): string | null {
   const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
   const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
   const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
-  const parts = [p1, p2, p3, p4].filter((p): p is string => typeof p === 'string' && p.length > 0);
+  const p5 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART5;
+  const p6 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART6;
+  const parts = [p1, p2, p3, p4, p5, p6].filter((p): p is string => typeof p === 'string' && p.length > 0);
   const total = parts.reduce((s, p) => s + p.length, 0);
+  if (parts.length >= 5 && total >= 3500) return parts.join('').replace(/\s/g, '');
   if (parts.length >= 4) return parts.join('').replace(/\s/g, '');
   if (parts.length >= 3 && total > 3500) return parts.join('').replace(/\s/g, '');
   if (p1 && p2 && p3 && typeof p1 === 'string' && typeof p2 === 'string' && typeof p3 === 'string' && p1.length > 100 && p2.length > 10 && p3.length > 10) {
