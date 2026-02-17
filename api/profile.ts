@@ -33,8 +33,9 @@ function getMongoClient() {
 }
 
 function parseServiceAccountEnv(): admin.ServiceAccount {
-  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (b64 && typeof b64 === 'string' && b64.length > 100) {
+  const b64Raw = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (b64Raw && typeof b64Raw === 'string' && b64Raw.length > 100) {
+    const b64 = b64Raw.replace(/\s/g, '');
     try {
       const json = Buffer.from(b64, 'base64').toString('utf8');
       const normalized = json.replace(/\\n/g, '\n');

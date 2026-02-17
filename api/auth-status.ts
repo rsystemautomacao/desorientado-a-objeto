@@ -6,15 +6,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * Use para conferir no navegador se o Vercel está lendo a variável corretamente.
  */
 function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string } {
-  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (b64 && typeof b64 === 'string' && b64.length > 100) {
+  const b64Raw = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (b64Raw && typeof b64Raw === 'string' && b64Raw.length > 100) {
+    const b64 = b64Raw.replace(/\s/g, '');
     try {
       const json = Buffer.from(b64, 'base64').toString('utf8');
       const normalized = json.replace(/\\n/g, '\n');
       const parsed = JSON.parse(normalized) as Record<string, unknown>;
       return { parsed, source: 'b64' };
     } catch {
-      return { ok: false, reason: 'b64_invalid', hint: 'FIREBASE_SERVICE_ACCOUNT_B64 inválido. Gere de novo com: node scripts/vercel-env-service-account-b64.js "C:\\caminho\\sua-chave.json"' };
+      return { ok: false, reason: 'b64_invalid', hint: 'Base64 truncado ou inválido. Rode o script na pasta do projeto e cole TODA a saída no Vercel (uma linha, sem quebras). Depois Redeploy.' };
     }
   }
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;

@@ -1,6 +1,5 @@
 /**
  * Gera o valor em BASE64 para colar no Vercel em FIREBASE_SERVICE_ACCOUNT_B64.
- * Evita problemas de aspas/barras que o Vercel às vezes altera no JSON.
  * Uso: node scripts/vercel-env-service-account-b64.js "C:\Users\richa\Downloads\sua-chave.json"
  */
 import fs from 'fs';
@@ -11,4 +10,5 @@ if (!path) {
 }
 const json = fs.readFileSync(path, 'utf8');
 const b64 = Buffer.from(json, 'utf8').toString('base64');
+process.stderr.write('Copie TODA a linha abaixo (do primeiro ao ultimo caractere) e cole no valor de FIREBASE_SERVICE_ACCOUNT_B64 no Vercel:\n');
 console.log(b64);
