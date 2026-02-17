@@ -52,9 +52,13 @@ export default function Profile() {
         toast.success('Perfil salvo com sucesso.');
         setSaving(false);
       })
-      .catch(() => {
-        toast.error('Erro ao salvar. Tente novamente.');
+      .catch((err: Error & { status?: number }) => {
         setSaving(false);
+        if (err?.status === 401) {
+          toast.error('Sessão inválida. Faça logout, entre novamente com Google e tente salvar de novo.');
+        } else {
+          toast.error('Erro ao salvar. Tente novamente.');
+        }
       });
   };
 

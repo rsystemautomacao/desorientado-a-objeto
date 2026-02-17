@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const navItems = [
   { to: '/', label: 'Home', icon: BookOpen },
@@ -18,10 +28,24 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
+const LOGOUT_DELAY_MS = 2000;
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [logoutExiting, setLogoutExiting] = useState(false);
   const location = useLocation();
   const { user, loading, signInWithGoogle, signOut } = useAuth();
+
+  const handleConfirmLogout = useCallback(() => {
+    setLogoutConfirmOpen(false);
+    setMenuOpen(false);
+    setLogoutExiting(true);
+    setTimeout(() => {
+      signOut();
+      setLogoutExiting(false);
+    }, LOGOUT_DELAY_MS);
+  }, [signOut]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -73,7 +97,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         Perfil
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => signOut()} className="text-muted-foreground cursor-pointer">
+                    <DropdownMenuItem onClick={() => setLogoutConfirmOpen(true)} className="text-muted-foreground cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sair
                     </DropdownMenuItem>
@@ -136,8 +160,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                   <button
                     onClick={() => {
-                      signOut();
                       setMenuOpen(false);
+                      setLogoutConfirmOpen(true);
                     }}
                     className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
                   >
@@ -162,6 +186,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </header>
+
+      {/* Confirmação de logout */}
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair da conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você precisará entrar novamente com Google para acessar a trilha e seu progresso.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sair
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Overlay "Saindo..." por 2 segundos */}
+      {logoutExiting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-lg font-medium">Saindo...</p>
+        </div>
+      )}
 
       <main className="flex-1">{children}</main>
 
