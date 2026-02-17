@@ -5,17 +5,22 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * Diagnóstico (sem autenticação): indica se FIREBASE_SERVICE_ACCOUNT_JSON está configurado e válido.
  * Use para conferir no navegador se o Vercel está lendo a variável corretamente.
  */
-function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string } {
+function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number } {
   const b64Raw = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
   if (b64Raw && typeof b64Raw === 'string' && b64Raw.length > 100) {
     const b64 = b64Raw.replace(/\s/g, '');
     try {
-      const json = Buffer.from(b64, 'base64').toString('utf8');
+      let json = Buffer.from(b64, 'base64').toString('utf8');
+      if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
       const normalized = json.replace(/\\n/g, '\n');
       const parsed = JSON.parse(normalized) as Record<string, unknown>;
       return { parsed, source: 'b64' };
     } catch {
-      return { ok: false, reason: 'b64_invalid', hint: 'Base64 truncado ou inválido. Rode o script na pasta do projeto e cole TODA a saída no Vercel (uma linha, sem quebras). Depois Redeploy.' };
+      const hint =
+        b64Raw.length < 3500
+          ? `Base64 provavelmente truncado: o Vercel recebeu ${b64Raw.length} caracteres; o valor completo tem ~3600. Confira o limite de tamanho da variavel no Vercel ou use um secret.`
+          : 'Base64 invalido (caractere estranho ou valor alterado). Rode o script de novo, salve a saída em um .txt e cole do arquivo no Vercel.';
+      return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length };
     }
   }
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -41,7 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const result = getParsedServiceAccount();
   if (!('parsed' in result)) {
-    return res.status(200).json({ ok: false, reason: result.reason, hint: result.hint });
+    const body: { ok: false; reason: string; hint: string; b64Length?: number } = { ok: false, reason: result.reason, hint: result.hint };
+    if (result.b64Length !== undefined) body.b64Length = result.b64Length;
+    return res.status(200).json(body);
   }
   const parsed = result.parsed as { project_id?: string; projectId?: string; client_email?: string; private_key?: string };
   const projectId = parsed.project_id ?? parsed.projectId;

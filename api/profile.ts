@@ -37,7 +37,8 @@ function parseServiceAccountEnv(): admin.ServiceAccount {
   if (b64Raw && typeof b64Raw === 'string' && b64Raw.length > 100) {
     const b64 = b64Raw.replace(/\s/g, '');
     try {
-      const json = Buffer.from(b64, 'base64').toString('utf8');
+      let json = Buffer.from(b64, 'base64').toString('utf8');
+      if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
       const normalized = json.replace(/\\n/g, '\n');
       return JSON.parse(normalized) as admin.ServiceAccount;
     } catch (e) {
