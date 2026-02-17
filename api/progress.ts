@@ -44,7 +44,8 @@ function getFirebaseAdmin() {
     console.error('FIREBASE_SERVICE_ACCOUNT_JSON: JSON invalido. Cole o JSON minificado em uma unica linha.');
     throw e;
   }
-  if (!parsed.private_key || !parsed.client_email) {
+  const withSnake = parsed as admin.ServiceAccount & { private_key?: string; client_email?: string };
+  if (!withSnake.private_key || !withSnake.client_email) {
     console.error('FIREBASE_SERVICE_ACCOUNT_JSON: falta private_key ou client_email. O valor foi truncado? Use uma unica linha.');
   }
   const projectId = parsed.projectId ?? (parsed as { project_id?: string }).project_id;
@@ -84,7 +85,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const result = await getUserIdFromToken(req);
   if (!result.userId) {
-    return res.status(401).json({ error: 'Unauthorized', code: result.code ?? 'TOKEN_INVALID' });
+    const code = 'code' in result ? result.code : 'TOKEN_INVALID';
+    return res.status(401).json({ error: 'Unauthorized', code });
   }
   const userId = result.userId;
 
