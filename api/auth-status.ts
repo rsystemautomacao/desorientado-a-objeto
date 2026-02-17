@@ -10,13 +10,10 @@ function getB64String(): string | null {
   const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
   const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
   const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
-  const p5 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART5;
-  const p6 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART6;
-  const parts = [p1, p2, p3, p4, p5, p6].filter((p): p is string => typeof p === 'string' && p.length > 0);
+  const parts = [p1, p2, p3, p4].filter((p): p is string => typeof p === 'string' && p.length > 0);
   const total = parts.reduce((s, p) => s + p.length, 0);
-  if (parts.length >= 5 && total >= 3500) return parts.join('').replace(/\s/g, '');
   if (parts.length >= 4) return parts.join('').replace(/\s/g, '');
-  if (parts.length >= 3 && total > 3500) return parts.join('').replace(/\s/g, '');
+  if (parts.length >= 3 && total > 2500) return parts.join('').replace(/\s/g, '');
   if (p1 && p2 && p3 && typeof p1 === 'string' && typeof p2 === 'string' && typeof p3 === 'string' && p1.length > 100 && p2.length > 10 && p3.length > 10) {
     return (p1 + p2 + p3).replace(/\s/g, '');
   }
@@ -44,22 +41,15 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
       const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
       const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
       const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
-      const p5 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART5;
-      const p6 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART6;
       const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
       const env = {
         part1Len: typeof p1 === 'string' ? p1.length : 0,
         part2Len: typeof p2 === 'string' ? p2.length : 0,
         part3Len: typeof p3 === 'string' ? p3.length : 0,
         part4Len: typeof p4 === 'string' ? p4.length : 0,
-        part5Len: typeof p5 === 'string' ? p5.length : 0,
-        part6Len: typeof p6 === 'string' ? p6.length : 0,
         singleLen: typeof one === 'string' ? one.length : 0,
       };
-      const hint =
-        b64Raw.length < 3500
-          ? `Base64 truncado (${b64Raw.length} chars). Use 6 partes: rode o script e crie PART1 a PART6 no Vercel (~600 chars cada). env: ${JSON.stringify(env)}.`
-          : 'Base64 invalido. Rode scripts/vercel-env-service-account-b64-parts.js (6 partes) e defina PART1..PART6 no Vercel, depois Redeploy.';
+      const hint = `Base64 com ${b64Raw.length} chars nao gerou JSON valido. A chave tem ~3167 chars. Confira se as 4 partes no Vercel estao completas e na ordem (PART1 a PART4). env: ${JSON.stringify(env)}`;
       return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length, env };
     }
   }
@@ -69,11 +59,9 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
     const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
     const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
     const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
-    const p5 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART5;
-    const p6 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART6;
     const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-    const env = { part1Len: typeof p1 === 'string' ? p1.length : 0, part2Len: typeof p2 === 'string' ? p2.length : 0, part3Len: typeof p3 === 'string' ? p3.length : 0, part4Len: typeof p4 === 'string' ? p4.length : 0, part5Len: typeof p5 === 'string' ? p5.length : 0, part6Len: typeof p6 === 'string' ? p6.length : 0, singleLen: typeof one === 'string' ? one.length : 0 };
-    return { ok: false, reason: 'env_missing', hint: 'Nenhum B64 valido. Defina PART1..PART6 (script gera 6 linhas) ou FIREBASE_SERVICE_ACCOUNT_JSON. env: ' + JSON.stringify(env), env };
+    const env = { part1Len: typeof p1 === 'string' ? p1.length : 0, part2Len: typeof p2 === 'string' ? p2.length : 0, part3Len: typeof p3 === 'string' ? p3.length : 0, part4Len: typeof p4 === 'string' ? p4.length : 0, singleLen: typeof one === 'string' ? one.length : 0 };
+    return { ok: false, reason: 'env_missing', hint: 'Nenhum B64 valido. Defina PART1..PART4 ou FIREBASE_SERVICE_ACCOUNT_JSON. env: ' + JSON.stringify(env), env };
   }
   const hasNewlines = raw.includes('\n') && !raw.trimStart().startsWith('{');
   if (hasNewlines) {
