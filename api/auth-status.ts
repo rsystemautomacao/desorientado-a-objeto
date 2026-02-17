@@ -11,9 +11,9 @@ function getB64String(): string | null {
   const p3 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART3;
   const p4 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART4;
   const parts = [p1, p2, p3, p4].filter((p): p is string => typeof p === 'string' && p.length > 0);
-  if (parts.length >= 3 && parts.reduce((s, p) => s + p.length, 0) > 3500) {
-    return parts.join('').replace(/\s/g, '');
-  }
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  if (parts.length >= 4) return parts.join('').replace(/\s/g, '');
+  if (parts.length >= 3 && total > 3500) return parts.join('').replace(/\s/g, '');
   if (p1 && p2 && p3 && typeof p1 === 'string' && typeof p2 === 'string' && typeof p3 === 'string' && p1.length > 100 && p2.length > 10 && p3.length > 10) {
     return (p1 + p2 + p3).replace(/\s/g, '');
   }
