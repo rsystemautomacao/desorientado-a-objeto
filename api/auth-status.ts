@@ -17,7 +17,7 @@ function getB64String(): string | null {
   return null;
 }
 
-function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number } {
+function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number; env?: { part1Len: number; part2Len: number; singleLen: number } } {
   const b64Raw = getB64String();
   if (b64Raw && b64Raw.length > 100) {
     const b64 = b64Raw;
@@ -28,16 +28,28 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
       const parsed = JSON.parse(normalized) as Record<string, unknown>;
       return { parsed, source: 'b64' };
     } catch {
+      const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
+      const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
+      const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+      const env = {
+        part1Len: typeof p1 === 'string' ? p1.length : 0,
+        part2Len: typeof p2 === 'string' ? p2.length : 0,
+        singleLen: typeof one === 'string' ? one.length : 0,
+      };
       const hint =
         b64Raw.length < 3500
-          ? `Base64 truncado (${b64Raw.length} chars). Se ja criou B64_PART1 e B64_PART2 no Vercel, faca REDEPLOY (Deployments → Redeploy) para as variaveis serem usadas. Senao, rode scripts/vercel-env-service-account-b64-parts.js e crie as duas variaveis, depois Redeploy.`
-          : 'Base64 invalido. Use o script vercel-env-service-account-b64-parts.js e defina B64_PART1 e B64_PART2 no Vercel, depois Redeploy.';
-      return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length };
+          ? `Base64 truncado (${b64Raw.length} chars). env no servidor: part1Len=${env.part1Len} part2Len=${env.part2Len} singleLen=${env.singleLen}. Se part2Len=0, PART2 nao chegou ao Vercel: confira nome exato e Redeploy.`
+          : 'Base64 invalido. Use scripts/vercel-env-service-account-b64-parts.js e defina B64_PART1 e B64_PART2 no Vercel, depois Redeploy.';
+      return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length, env };
     }
   }
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!raw || typeof raw !== 'string') {
-    return { ok: false, reason: 'env_missing', hint: 'Defina FIREBASE_SERVICE_ACCOUNT_JSON ou FIREBASE_SERVICE_ACCOUNT_B64 no Vercel.' };
+    const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
+    const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
+    const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+    const env = { part1Len: typeof p1 === 'string' ? p1.length : 0, part2Len: typeof p2 === 'string' ? p2.length : 0, singleLen: typeof one === 'string' ? one.length : 0 };
+    return { ok: false, reason: 'env_missing', hint: 'Nenhum B64 valido. env no servidor: part1Len=' + env.part1Len + ' part2Len=' + env.part2Len + '. Defina B64_PART1 e B64_PART2 (ou FIREBASE_SERVICE_ACCOUNT_JSON) e Redeploy.', env };
   }
   const hasNewlines = raw.includes('\n') && !raw.trimStart().startsWith('{');
   if (hasNewlines) {
@@ -58,8 +70,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const result = getParsedServiceAccount();
   if (!('parsed' in result)) {
-    const body: { ok: false; reason: string; hint: string; b64Length?: number } = { ok: false, reason: result.reason, hint: result.hint };
+    const body: { ok: false; reason: string; hint: string; b64Length?: number; env?: { part1Len: number; part2Len: number; singleLen: number } } = { ok: false, reason: result.reason, hint: result.hint };
     if (result.b64Length !== undefined) body.b64Length = result.b64Length;
+    if (result.env) body.env = result.env;
     return res.status(200).json(body);
   }
   const parsed = result.parsed as { project_id?: string; projectId?: string; client_email?: string; private_key?: string };
