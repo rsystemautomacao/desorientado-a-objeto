@@ -6,11 +6,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * Use para conferir no navegador se o Vercel está lendo a variável corretamente.
  */
 function getB64String(): string | null {
-  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (one && typeof one === 'string' && one.length > 3500) return one.replace(/\s/g, '');
   const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
   const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
-  if (p1 && p2 && typeof p1 === 'string' && typeof p2 === 'string') return (p1 + p2).replace(/\s/g, '');
+  if (p1 && p2 && typeof p1 === 'string' && typeof p2 === 'string' && p1.length > 100 && p2.length > 10) {
+    return (p1 + p2).replace(/\s/g, '');
+  }
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (one && typeof one === 'string' && one.length > 3500) return one.replace(/\s/g, '');
   if (one && typeof one === 'string' && one.length > 100) return one.replace(/\s/g, '');
   return null;
 }
@@ -28,8 +30,8 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
     } catch {
       const hint =
         b64Raw.length < 3500
-          ? `Base64 truncado (${b64Raw.length} chars). Use PART1+PART2: rode scripts/vercel-env-service-account-b64-parts.js e crie no Vercel as variaveis B64_PART1 e B64_PART2.`
-          : 'Base64 invalido. Use o script vercel-env-service-account-b64-parts.js e defina B64_PART1 e B64_PART2 no Vercel.';
+          ? `Base64 truncado (${b64Raw.length} chars). Se ja criou B64_PART1 e B64_PART2 no Vercel, faca REDEPLOY (Deployments → Redeploy) para as variaveis serem usadas. Senao, rode scripts/vercel-env-service-account-b64-parts.js e crie as duas variaveis, depois Redeploy.`
+          : 'Base64 invalido. Use o script vercel-env-service-account-b64-parts.js e defina B64_PART1 e B64_PART2 no Vercel, depois Redeploy.';
       return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length };
     }
   }

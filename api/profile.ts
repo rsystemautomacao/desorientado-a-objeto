@@ -33,11 +33,13 @@ function getMongoClient() {
 }
 
 function getB64String(): string | null {
-  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
-  if (one && typeof one === 'string' && one.length > 3500) return one.replace(/\s/g, '');
   const p1 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART1;
   const p2 = process.env.FIREBASE_SERVICE_ACCOUNT_B64_PART2;
-  if (p1 && p2 && typeof p1 === 'string' && typeof p2 === 'string') return (p1 + p2).replace(/\s/g, '');
+  if (p1 && p2 && typeof p1 === 'string' && typeof p2 === 'string' && p1.length > 100 && p2.length > 10) {
+    return (p1 + p2).replace(/\s/g, '');
+  }
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (one && typeof one === 'string' && one.length > 3500) return one.replace(/\s/g, '');
   if (one && typeof one === 'string' && one.length > 100) return one.replace(/\s/g, '');
   return null;
 }
