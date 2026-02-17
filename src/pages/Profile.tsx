@@ -55,7 +55,7 @@ export default function Profile() {
       .catch((err: Error & { status?: number }) => {
         setSaving(false);
         if (err?.status === 401) {
-          toast.error('Sessão inválida. Faça logout, entre novamente com Google e tente salvar de novo.');
+          toast.error('O servidor não validou seu login. No Vercel, confira se FIREBASE_SERVICE_ACCOUNT_JSON está em uma única linha.');
         } else {
           toast.error('Erro ao salvar. Tente novamente.');
         }

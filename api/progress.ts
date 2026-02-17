@@ -33,11 +33,24 @@ function getFirebaseAdmin() {
   if (admin.apps.length > 0) return admin.app();
   let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccount) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set');
+  if (serviceAccount.includes('\n') && !serviceAccount.trimStart().startsWith('{')) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: valor parece ter quebras de linha. No Vercel use o JSON em UMA so linha.');
+  }
   serviceAccount = serviceAccount.replace(/\\n/g, '\n');
-  const parsed = JSON.parse(serviceAccount) as admin.ServiceAccount;
+  let parsed: admin.ServiceAccount;
+  try {
+    parsed = JSON.parse(serviceAccount) as admin.ServiceAccount;
+  } catch (e) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: JSON invalido. Cole o JSON minificado em uma unica linha.');
+    throw e;
+  }
+  if (!parsed.private_key || !parsed.client_email) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON: falta private_key ou client_email. O valor foi truncado? Use uma unica linha.');
+  }
+  const projectId = parsed.projectId ?? (parsed as { project_id?: string }).project_id;
   return admin.initializeApp({
     credential: admin.credential.cert(parsed),
-    projectId: parsed.project_id,
+    projectId: projectId ?? 'desorientado-a-objetos',
   });
 }
 

@@ -99,18 +99,21 @@ O 401 nas rotas `/api/progress` e `/api/profile` significa que o **token do Fire
 2. **Onde gerar a chave**  
    Firebase Console → projeto do app → **Configurações do projeto** (engrenagem) → **Contas de serviço** → **Gerar nova chave privada**. Use esse JSON no Vercel.
 
-3. **Formato no Vercel**  
-   O valor deve ser o JSON **em uma única linha**. No terminal (substitua o caminho pelo do seu arquivo `.json`):
+3. **Formato no Vercel (muito importante)**  
+   Se você colar o JSON **com quebras de linha** no campo Value do Vercel, a variável pode ser **truncada** na primeira linha. O app continua mostrando você logado (Firebase no navegador), mas a API não consegue validar o token e retorna 401.  
+   O valor **tem que ser** o JSON **em uma única linha**. No terminal, a partir da pasta do projeto (substitua pelo caminho do seu arquivo `.json`):
    ```bash
-   node -e "console.log(JSON.stringify(require('C:/Users/richa/Downloads/desorientado-a-objetos-firebase-adminsdk-fbsvc-93363393bd.json')))"
+   node scripts/vercel-env-service-account.js "C:\caminho\para\sua-chave.json"
    ```
-   Copie **toda** a saída e cole no campo Value de `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel. Não adicione aspas em volta.
+   Copie **toda** a saída (uma linha longa) e cole no campo Value de `FIREBASE_SERVICE_ACCOUNT_JSON` no Vercel. Não adicione aspas em volta. Depois, faça **Redeploy** do projeto.
 
 4. **Ambiente**  
    No Vercel, a variável `FIREBASE_SERVICE_ACCOUNT_JSON` precisa existir no ambiente que você está usando (Production / Preview).
 
 5. **Logs no Vercel**  
-   Em **Vercel → projeto → Logs** (ou Deployments → função), veja se aparece `Progress API verifyIdToken failed:` ou `Profile API verifyIdToken failed:` e a mensagem de erro (ex.: "Decoding error", "Expected project X") para saber o que o Firebase está rejeitando.
+   Em **Vercel → projeto → Logs** (ou Deployments → função), veja se aparece:
+   - `FIREBASE_SERVICE_ACCOUNT_JSON: JSON invalido...` ou `...falta private_key ou client_email` → o valor foi truncado; use uma única linha e redeploy.
+   - `Progress API verifyIdToken failed:` ou `Profile API verifyIdToken failed:` → mensagem do Firebase (ex.: "Decoding error", "Expected project X").
 
 ## How can I deploy this project?
 
