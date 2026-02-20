@@ -83,11 +83,12 @@ export default function Admin() {
         let detail = '';
         try {
           const j = JSON.parse(text);
-          if (j.message) detail = `: ${j.message}`;
+          if (j.hint) detail = ` ${j.hint}`;
+          else if (j.message) detail = ` ${j.message}`;
         } catch {
-          if (text.length < 120) detail = `: ${text}`;
+          if (text.length < 120) detail = ` ${text}`;
         }
-        setHistoryError(`Erro ao carregar dados (${res.status})${detail}. Verifique MONGODB_URI e Firebase na Vercel.`);
+        setHistoryError(`Erro ao carregar dados (${res.status}).${detail}`);
         return;
       }
       const data = await res.json();

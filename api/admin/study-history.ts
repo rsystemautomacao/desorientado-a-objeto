@@ -165,7 +165,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ entries });
   } catch (err) {
     console.error('Admin study-history error:', err);
-    const msg = process.env.NODE_ENV === 'production' ? undefined : (err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ error: 'Internal server error', ...(msg && { message: msg }) });
+    const raw = err instanceof Error ? err.message : String(err);
+    let hint = 'Veja os logs em Vercel > Deployments > seu deploy > Functions.';
+    if (/MONGODB_URI|not set/i.test(raw)) hint = 'MONGODB_URI não está definida na Vercel.';
+    else if (/MongoServerError|MongoNetworkError|connection|ECONNREFUSED|authentication failed/i.test(raw)) hint = 'MongoDB: falha na conexão. Verifique URI, senha (URL-encoded), IP no Atlas (0.0.0.0/0) e nome do banco.';
+    else if (/Firebase|cert|private_key|service.account|FIREBASE/i.test(raw)) hint = 'Firebase: verifique FIREBASE_SERVICE_ACCOUNT_JSON (ou B64) na Vercel.';
+    return res.status(500).json({ error: 'Internal server error', hint });
   }
 }
