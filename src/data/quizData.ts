@@ -80,9 +80,34 @@ export const quizQuestions: QuizQuestion[] = [
   // M3 - POO
   { id: 'q60', lessonId: 'm3-whatispoo', question: 'Quais são os 4 pilares da POO?', options: ['Variáveis, Funções, Arrays, Loops', 'Classe, Objeto, Método, Atributo', 'Encapsulamento, Herança, Polimorfismo, Abstração', 'public, private, protected, static'], correct: 2, explanation: 'Os 4 pilares da POO são: Encapsulamento, Herança, Polimorfismo e Abstração.' },
   { id: 'q61', lessonId: 'm3-whatispoo', question: 'Qual o principal benefício da POO?', options: ['Código mais rápido', 'Código mais curto', 'Código organizado, seguro e manutenível', 'Funciona apenas em Java'], correct: 2, explanation: 'POO organiza o código em objetos com responsabilidades claras, protege dados e facilita manutenção.' },
+  { id: 'q62', lessonId: 'm3-whatispoo', question: 'No código procedural, o que tende a acontecer quando o sistema cresce?', options: ['Fica mais rápido', 'Dados e regras ficam espalhados, difícil de manter', 'O compilador otimiza sozinho', 'Só funciona em Java'], correct: 1, explanation: 'Sem POO, funções e dados soltos tornam o código frágil e difícil de manter quando o sistema cresce.' },
 
   // M3 - Classes
   { id: 'q65', lessonId: 'm3-classes', question: 'Qual a relação entre Classe e Objeto?', options: ['São a mesma coisa', 'Classe é o molde, Objeto é a instância', 'Objeto é o molde, Classe é a instância', 'Não há relação'], correct: 1, explanation: 'A Classe é o molde/template. O Objeto é a instância criada a partir da classe com new.' },
+  { id: 'q66', lessonId: 'm3-classes', question: 'Como criar um novo objeto em Java?', options: ['Objeto obj = Objeto();', 'Objeto obj = new Objeto();', 'new Objeto obj;', 'Objeto.create();'], correct: 1, explanation: 'Use new NomeClasse() para instanciar. O construtor é chamado automaticamente.' },
+  { id: 'q67', lessonId: 'm3-classes', question: 'Cada objeto de uma mesma classe tem seus próprios atributos?', options: ['Não, todos compartilham', 'Sim, cada instância tem sua própria cópia dos atributos', 'Só se forem static', 'Só em C++'], correct: 1, explanation: 'Atributos de instância (não static) são próprios de cada objeto.' },
+
+  // M3 - Attributes
+  { id: 'q68', lessonId: 'm3-attributes', question: 'Atributos representam o quê no objeto?', options: ['Apenas constantes', 'O estado (dados) do objeto', 'Só métodos', 'Nada'], correct: 1, explanation: 'Atributos são o estado: os dados que o objeto guarda (nome, preço, estoque, etc.).' },
+  { id: 'q69', lessonId: 'm3-attributes', question: 'Métodos que alteram o estado devem:', options: ['Sempre ser public', 'Validar quando necessário antes de alterar', 'Ser static', 'Retornar int'], correct: 1, explanation: 'Boa prática: validar (ex.: quantidade <= estoque) antes de modificar atributos.' },
+  { id: 'q69b', lessonId: 'm3-attributes', question: 'O que são métodos na POO?', options: ['Variáveis da classe', 'Comportamentos (ações) do objeto', 'Só construtores', 'Imports'], correct: 1, explanation: 'Métodos definem o que o objeto faz (vender, calcularTotal, exibirInfo).' },
+
+  // M3 - Constructors
+  { id: 'q69c', lessonId: 'm3-constructors', question: 'Quando o construtor é chamado?', options: ['Ao declarar a classe', 'No momento do new', 'No final do programa', 'Quando chamamos super()'], correct: 1, explanation: 'O construtor roda automaticamente quando você executa new NomeClasse(...).' },
+  { id: 'q69d', lessonId: 'm3-constructors', question: 'O construtor pode ter tipo de retorno (ex.: void)?', options: ['Sim, void', 'Não, construtor não tem tipo de retorno', 'Sim, int', 'Opcional'], correct: 1, explanation: 'Construtor tem o mesmo nome da classe e não declara tipo de retorno.' },
+  { id: 'q69e', lessonId: 'm3-constructors', question: 'Para que serve this.nome = nome no construtor?', options: ['Chamar o pai', 'Diferenciar o atributo da classe do parâmetro', 'Criar novo objeto', 'Retornar valor'], correct: 1, explanation: 'this.nome é o atributo; nome é o parâmetro. Assim atribuímos o parâmetro ao atributo.' },
+
+  // M3 - Static
+  { id: 'q73', lessonId: 'm3-static', question: 'Membros static pertencem a:', options: ['Cada objeto', 'À classe (compartilhados por todos)', 'Só ao main', 'Nenhum'], correct: 1, explanation: 'static = da classe, compartilhado por todas as instâncias.' },
+  { id: 'q74', lessonId: 'm3-static', question: 'Um método static pode acessar um atributo de instância (não static)?', options: ['Sim, sempre', 'Não, não existe this em contexto static', 'Só se for public', 'Só em C++'], correct: 1, explanation: 'Em método static não há referência a um objeto (this); logo não dá para acessar atributos de instância.' },
+  { id: 'q75', lessonId: 'm3-static', question: 'Como chamar um método static?', options: ['objeto.metodo()', 'NomeClasse.metodo()', 'super.metodo()', 'this.metodo()'], correct: 1, explanation: 'Métodos static são chamados pela classe: Funcionario.getTotal().' },
+
+  // M3 - this
+  { id: 'q76', lessonId: 'm3-this', question: 'O que é this dentro de um método de instância?', options: ['A classe', 'Referência ao objeto atual que está executando o método', 'O método pai', 'O pacote'], correct: 1, explanation: 'this é a referência ao próprio objeto que recebeu a chamada do método.' },
+  { id: 'q77', lessonId: 'm3-this', question: 'Para que serve retornar this em um setter?', options: ['Para compilar', 'Para permitir method chaining (encadear chamadas)', 'Para criar cópia', 'Nada'], correct: 1, explanation: 'return this permite objeto.setA(1).setB(2).' },
+  { id: 'q78', lessonId: 'm3-this', question: 'Podemos usar this em um método static?', options: ['Sim', 'Não, não existe objeto atual em static', 'Só no main', 'Só em interface'], correct: 1, explanation: 'Em static não há "objeto atual"; this não existe.' },
+
+  // M3 - Inheritance (already has q80, q81)
 
   // M3 - Encapsulation
   { id: 'q70', lessonId: 'm3-encapsulation', question: 'Por que usar private nos atributos?', options: ['Para o código compilar mais rápido', 'Para proteger dados de alterações inválidas', 'Porque é obrigatório em Java', 'Para economizar memória'], correct: 1, explanation: 'private impede acesso direto. Com getters/setters, você controla e valida toda alteração nos dados.' },
@@ -92,14 +117,50 @@ export const quizQuestions: QuizQuestion[] = [
   // M3 - Inheritance
   { id: 'q80', lessonId: 'm3-inheritance', question: 'Qual palavra-chave indica herança?', options: ['implements', 'extends', 'inherits', 'super'], correct: 1, explanation: 'extends indica que uma classe herda de outra. implements é para interfaces.' },
   { id: 'q81', lessonId: 'm3-inheritance', question: 'Quando NÃO usar herança?', options: ['Quando a relação é "é um"', 'Quando a relação é "tem um"', 'Quando quer reaproveitar código sempre', 'Nunca, sempre use'], correct: 1, explanation: 'Se a relação é "tem um" (Carro TEM Motor), use composição. Herança é para "é um" (Cachorro É Animal).' },
+  { id: 'q82', lessonId: 'm3-inheritance', question: 'No construtor da subclasse, a primeira linha deve ser:', options: ['this()', 'super() ou super(args)', 'return', 'new Pai()'], correct: 1, explanation: 'A primeira linha do construtor da subclasse deve chamar super(...) para inicializar a parte herdada.' },
 
   // M3 - Polymorphism
   { id: 'q85', lessonId: 'm3-polymorphism', question: 'O que é polimorfismo?', options: ['Muitas classes', 'Um método com comportamentos diferentes dependendo do objeto', 'Herança múltipla', 'Criar muitos objetos'], correct: 1, explanation: 'Polimorfismo = "muitas formas". O mesmo método se comporta diferentemente em cada subclasse.' },
   { id: 'q86', lessonId: 'm3-polymorphism', question: 'Para que serve @Override?', options: ['Criar um método novo', 'Indicar sobrescrita de método do pai', 'Tornar o método static', 'Ocultar o método do pai'], correct: 1, explanation: '@Override indica que o método está sobrescrevendo um método da superclasse. Ajuda a evitar erros de digitação.' },
+  { id: 'q87', lessonId: 'm3-polymorphism', question: 'Animal a = new Cachorro(); a.emitirSom(); qual método roda?', options: ['O de Animal', 'O de Cachorro (objeto real)', 'Nenhum', 'Dá erro'], correct: 1, explanation: 'O Java escolhe o método pelo tipo do objeto em tempo de execução (polimorfismo).' },
+
+  // M3 - Abstraction
+  { id: 'q88', lessonId: 'm3-abstraction', question: 'Uma classe abstrata (abstract class) pode ser instanciada com new?', options: ['Sim', 'Não', 'Só no main', 'Só se tiver um método'], correct: 1, explanation: 'Classe abstrata não pode ser instanciada; só suas subclasses concretas.' },
+  { id: 'q89', lessonId: 'm3-abstraction', question: 'Método abstract deve ter corpo (implementação)?', options: ['Sim', 'Não, só assinatura; a subclasse implementa', 'Opcional', 'Só em interface'], correct: 1, explanation: 'Método abstract não tem corpo; cada subclasse concreta implementa.' },
+  { id: 'q89b', lessonId: 'm3-abstraction', question: 'Uma classe abstrata pode ter métodos concretos (com corpo)?', options: ['Não', 'Sim', 'Só um', 'Só static'], correct: 1, explanation: 'Pode misturar métodos abstract e métodos concretos na mesma classe abstrata.' },
 
   // M3 - Interfaces
   { id: 'q90', lessonId: 'm3-interfaces', question: 'Uma classe pode implementar múltiplas interfaces?', options: ['Não', 'Sim', 'Apenas 2', 'Apenas com abstract'], correct: 1, explanation: 'Java permite implementar MÚLTIPLAS interfaces, mas só pode estender UMA classe.' },
+  { id: 'q91', lessonId: 'm3-interfaces', question: 'Quem implementa uma interface deve:', options: ['Só estender outra classe', 'Implementar todos os métodos declarados na interface', 'Usar abstract em todos', 'Não usar new'], correct: 1, explanation: 'A classe que implements deve fornecer implementação para todos os métodos da interface.' },
+  { id: 'q92', lessonId: 'm3-interfaces', question: 'Interface em Java define principalmente:', options: ['Implementação', 'Contrato (quais métodos existirão)', 'Atributos privados', 'Construtores'], correct: 1, explanation: 'Interface define o contrato: assinaturas dos métodos que as implementações devem ter.' },
+
+  // M3 - Composition
+  { id: 'q93', lessonId: 'm3-composition', question: '"Carro tem um Motor" deve ser modelado com:', options: ['Herança (Carro extends Motor)', 'Composição (atributo Motor no Carro)', 'Interface', 'Classe abstrata'], correct: 1, explanation: '"Tem um" = composição (atributo). "É um" = herança.' },
+  { id: 'q94', lessonId: 'm3-composition', question: 'Composição costuma ser mais flexível que herança porque:', options: ['É mais rápida', 'Permite trocar componentes e não cria acoplamento forte com a superclasse', 'Obriga a usar abstract', 'Não usa new'], correct: 1, explanation: 'Você pode trocar o componente (ex.: outro Motor) sem mudar a hierarquia de classes.' },
+  { id: 'q95a', lessonId: 'm3-composition', question: 'Prefira composição a herança quando a relação for:', options: ['"é um"', '"tem um"', '"implementa"', '"estende"'], correct: 1, explanation: '"Tem um" → composição. "É um" → herança.' },
+
+  // M3 - Overloading
+  { id: 'q95b', lessonId: 'm3-overloading', question: 'Sobrecarga (overloading) é:', options: ['Mesmo nome, parâmetros diferentes, mesma classe', 'Mesmo nome na classe filha', 'Só para construtores', 'Herança'], correct: 0, explanation: 'Sobrecarga = vários métodos mesmo nome, parâmetros diferentes, na mesma classe.' },
+  { id: 'q95c', lessonId: 'm3-overloading', question: 'Sobrescrita (overriding) é decidida em:', options: ['Compilação', 'Execução (polimorfismo)', 'Load da classe', 'Nunca'], correct: 1, explanation: 'A JVM escolhe qual método chamar em tempo de execução pelo tipo real do objeto.' },
+  { id: 'q95d', lessonId: 'm3-overloading', question: 'Posso sobrecarregar mudando só o tipo de retorno?', options: ['Sim', 'Não, a lista de parâmetros deve ser diferente', 'Só com @Override', 'Só em interface'], correct: 1, explanation: 'Sobrecarga exige parâmetros diferentes; retorno sozinho não diferencia.' },
+
+  // M3 - Access
+  { id: 'q95e', lessonId: 'm3-access', question: 'private é acessível em:', options: ['Qualquer lugar', 'Apenas dentro da própria classe', 'No pacote', 'Nas subclasses'], correct: 1, explanation: 'private = só dentro da mesma classe.' },
+  { id: 'q95f', lessonId: 'm3-access', question: 'protected permite acesso em:', options: ['Só na classe', 'Mesmo pacote ou subclasses', 'Só em subclasses', 'Em qualquer arquivo'], correct: 1, explanation: 'protected = mesma classe, mesmo pacote e subclasses (mesmo em outro pacote).' },
+  { id: 'q95g', lessonId: 'm3-access', question: 'Modificador default (nenhum) permite acesso em:', options: ['Qualquer lugar', 'Apenas no mesmo pacote', 'Só na classe', 'Só em subclasses'], correct: 1, explanation: 'Sem modificador = visibilidade de pacote (package-private).' },
 
   // M3 - Exceptions
   { id: 'q95', lessonId: 'm3-exceptions', question: 'O bloco finally sempre executa?', options: ['Não, só quando há erro', 'Sim, com ou sem exceção', 'Apenas se não houver catch', 'Apenas com exceções checked'], correct: 1, explanation: 'finally sempre executa, independentemente de ter ocorrido exceção ou não. Útil para cleanup.' },
+  { id: 'q96', lessonId: 'm3-exceptions', question: 'Exceções checked (ex.: IOException) devem ser:', options: ['Ignoradas', 'Tratadas com try/catch ou declaradas com throws', 'Só em main', 'Convertidas em unchecked'], correct: 1, explanation: 'Checked exceptions obrigam tratamento ou declaração throws.' },
+  { id: 'q97', lessonId: 'm3-exceptions', question: 'NullPointerException é checked ou unchecked?', options: ['Checked', 'Unchecked (RuntimeException)', 'Ambos', 'Nenhum'], correct: 1, explanation: 'RuntimeException e subclasses são unchecked; não obrigam try/catch.' },
+
+  // M3 - SOLID
+  { id: 'q98', lessonId: 'm3-solid', question: 'SRP (Single Responsibility) significa:', options: ['Uma classe faz tudo', 'Uma classe deve ter apenas uma razão para mudar', 'Só um método por classe', 'Só um atributo'], correct: 1, explanation: 'Cada classe com uma responsabilidade bem definida.' },
+  { id: 'q99', lessonId: 'm3-solid', question: 'Open/Closed prega:', options: ['Abrir e fechar arquivos', 'Aberta para extensão, fechada para modificação', 'Só uma subclasse', 'Código fechado'], correct: 1, explanation: 'Estender com novas classes sem modificar o código existente.' },
+  { id: 'q100', lessonId: 'm3-solid', question: 'Dependency Inversion: devemos depender de:', options: ['Classes concretas só', 'Abstrações (interfaces/classes abstratas)', 'Só de static', 'Do main'], correct: 1, explanation: 'Depender de abstrações permite trocar implementações sem quebrar o código.' },
+
+  // M3 - Project
+  { id: 'q101', lessonId: 'm3-project', question: 'No projeto final, Exibivel é:', options: ['Classe abstrata', 'Interface (contrato)', 'Classe concreta', 'Método'], correct: 1, explanation: 'Interface que define o contrato exibir().' },
+  { id: 'q102', lessonId: 'm3-project', question: 'ItemCadastro é classe abstrata porque:', options: ['Não tem métodos', 'Tem método abstrato (ex.: calcularValor) e não deve ser instanciada diretamente', 'É interface', 'É final'], correct: 1, explanation: 'Define comportamento base e obriga subclasses a implementar calcularValor().' },
+  { id: 'q103', lessonId: 'm3-project', question: 'Produto estende ItemCadastro e implementa Exibivel. Isso usa:', options: ['Só herança', 'Herança e interface (reuso + contrato)', 'Só interface', 'Nada'], correct: 1, explanation: 'extends para herdar ItemCadastro; implements para o contrato Exibivel.' },
 ];
