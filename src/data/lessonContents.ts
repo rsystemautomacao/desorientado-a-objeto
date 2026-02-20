@@ -647,9 +647,9 @@ for (int i = 0; i < matriz.length; i++) {
 
   'm2-io': {
     id: 'm2-io', moduleId: 2,
-    objectives: ['Ler dados do usuário com Scanner', 'Entender boas práticas de entrada/saída'],
+    objectives: ['Ler dados do usuário com Scanner', 'Entender boas práticas de entrada/saída', 'Evitar o bug do buffer ao misturar nextInt/nextDouble com nextLine'],
     sections: [
-      { title: 'Scanner para Entrada de Dados', body: 'O Scanner lê dados digitados pelo usuário no console.',
+      { title: 'Scanner para Entrada de Dados', body: 'O Scanner é a forma mais comum de ler dados digitados pelo usuário no console em Java. Ele lê a partir de System.in (entrada padrão) e oferece métodos como nextInt(), nextDouble(), nextLine(), etc., que interpretam o texto digitado.\n\nUse nextLine() para linhas completas (nome, endereço), nextInt() e nextDouble() para números. Um detalhe importante: após ler um número com nextInt() ou nextDouble(), o Enter que o usuário digitou fica no buffer. Se você não consumir essa quebra de linha com um nextLine() em seguida, o próximo nextLine() vai "engolir" essa linha vazia e parecer que pulou a leitura. Sempre que misturar leitura de números e de texto, chame nextLine() após o número para limpar o buffer.',
         code: `import java.util.Scanner;
 
 public class EntradaDados {
@@ -671,17 +671,39 @@ public class EntradaDados {
         scanner.close(); // sempre fechar o scanner
     }
 }`,
+        codeExplanation: 'Criamos o Scanner com System.in. Cada next...() lê o próximo token ou linha. O nextLine() após nextInt() evita que o Enter fique no buffer e atrapalhe a próxima leitura.',
         warning: 'Após nextInt() ou nextDouble(), sempre chame nextLine() para limpar o buffer do teclado. Caso contrário, o próximo nextLine() será pulado!',
       },
+      { title: 'Quando usar cada método', body: 'next() lê até o próximo espaço ou quebra de linha. nextLine() lê a linha inteira. nextInt(), nextDouble(), nextBoolean() leem um valor daquele tipo. Para ler vários números na mesma linha, você pode usar nextInt() várias vezes ou ler a linha com nextLine() e depois fazer split() e Integer.parseInt().',
+      },
     ],
-    summary: ['Scanner lê dados do console', 'nextLine() para texto, nextInt() para inteiros', 'Limpe o buffer com nextLine() após ler números', 'Sempre feche o Scanner com close()'],
+    summary: ['Scanner lê dados do console', 'nextLine() para texto, nextInt()/nextDouble() para números', 'Limpe o buffer com nextLine() após ler números', 'Sempre feche o Scanner com close()'],
+    tryItCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Digite seu nome: ");
+        String nome = sc.nextLine();
+        System.out.print("Digite sua idade: ");
+        int idade = sc.hasNextInt() ? sc.nextInt() : 0;
+        sc.nextLine();
+        System.out.println("Nome: " + nome + ", Idade: " + idade);
+        sc.close();
+    }
+}`,
+    tryItPrompt: 'Aqui a entrada é vazia; rode no seu computador (IDE/terminal) para digitar dados de verdade.',
+    commonErrors: [
+      { title: 'Buffer após nextInt/nextDouble', description: 'Chame nextLine() depois de nextInt() ou nextDouble() para consumir a quebra de linha.' },
+      { title: 'Não fechar o Scanner', description: 'Use scanner.close() ao terminar para liberar recursos.' },
+    ],
   },
 
   'm2-strings': {
     id: 'm2-strings', moduleId: 2,
-    objectives: ['Dominar os principais métodos de String', 'Entender imutabilidade e StringBuilder'],
+    objectives: ['Dominar os principais métodos de String', 'Entender imutabilidade e StringBuilder', 'Saber quando usar StringBuilder em loops'],
     sections: [
-      { title: 'Métodos Essenciais de String', body: 'Strings em Java são imutáveis — toda operação retorna uma NOVA String.',
+      { title: 'Métodos Essenciais de String', body: 'Strings em Java são imutáveis: você não altera o conteúdo de um objeto String. Métodos como toUpperCase(), trim(), replace() retornam uma NOVA String; a original permanece igual. Por isso é comum fazer: texto = texto.trim(); para "atualizar" a variável com a versão sem espaços.\n\nOs métodos mais usados são: length(), charAt(i), substring(início, fim), indexOf(str), contains(str), startsWith/endsWith, replace, split(regex), trim(), toUpperCase()/toLowerCase(), e para comparar conteúdo use sempre equals() ou equalsIgnoreCase(), nunca ==.',
         code: `String texto = "  Java é incrível!  ";
 
 // Limpeza
@@ -708,17 +730,38 @@ for (int i = 0; i < 100; i++) {
     sb.append("Item ").append(i).append(", ");
 }
 String resultado = sb.toString();`,
+        codeExplanation: 'trim() e strip() removem espaços nas pontas. indexOf retorna a posição (ou -1). split() quebra em um array. StringBuilder evita criar várias Strings ao concatenar em loop.',
         tip: 'Para concatenar strings em loops, use StringBuilder. Concatenar com + dentro de loops cria muitos objetos desnecessários.',
+      },
+      { title: 'Comparando Strings', body: 'Nunca use == para comparar conteúdo. Use s1.equals(s2) ou s1.equalsIgnoreCase(s2). O == compara se são o mesmo objeto na memória, não o texto.',
       },
     ],
     summary: ['Strings são imutáveis em Java', 'Use .equals() para comparar, nunca ==', 'StringBuilder é mais eficiente para concatenações em loop', 'split() divide, trim() limpa espaços'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        String s = "  Java Intermediario  ";
+        System.out.println("Original: [" + s + "]");
+        System.out.println("Trim: [" + s.trim() + "]");
+        System.out.println("Maiusculas: " + s.trim().toUpperCase());
+        String[] partes = "a,b,c".split(",");
+        for (String p : partes) System.out.println("Parte: " + p);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Hello ").append("World");
+        System.out.println(sb);
+    }
+}`,
+    tryItPrompt: 'Altere a String s e os métodos usados; teste split com outro separador.',
+    commonErrors: [
+      { title: 'Comparar String com ==', description: 'Use .equals() para comparar o conteúdo.' },
+      { title: 'Concatenar muitas vezes em loop com +', description: 'Use StringBuilder para melhor desempenho.' },
+    ],
   },
 
   'm2-debug': {
     id: 'm2-debug', moduleId: 2,
     objectives: ['Ler e interpretar stack traces', 'Identificar erros comuns', 'Usar técnicas básicas de debug'],
     sections: [
-      { title: 'Lendo um Stack Trace', body: 'Quando ocorre um erro, Java mostra um stack trace. Aprender a lê-lo é ESSENCIAL.',
+      { title: 'Lendo um Stack Trace', body: 'Quando ocorre um erro em tempo de execução, a JVM imprime um stack trace (rastro da pilha de chamadas). Saber ler isso é uma das habilidades mais importantes para corrigir bugs.\n\nO stack trace mostra: (1) O tipo da exceção (ex.: ArrayIndexOutOfBoundsException, NullPointerException); (2) A mensagem de erro, que muitas vezes explica o que falhou (ex.: "Index 5 out of bounds for length 3"); (3) A lista de "at arquivo.classe.método(arquivo:linha)" — cada linha é um nível de chamada. O primeiro "at" é onde o erro ocorreu; os de baixo mostram quem chamou quem. Em programas simples, o primeiro at já aponta para a linha do seu código que causou o problema.',
         code: `// Erro típico:
 // Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: 
 //     Index 5 out of bounds for length 3
@@ -732,17 +775,31 @@ String resultado = sb.toString();`,
 // 4. Método: main
 
 // Leia DE BAIXO PRA CIMA para entender a sequência de chamadas`,
+        codeExplanation: 'A primeira linha indica a exceção e a mensagem. As linhas "at" indicam o arquivo e a linha exata. Vá direto ao primeiro "at" do seu código para encontrar a causa.',
         tip: 'Sempre leia o stack trace! A primeira linha diz o TIPO de erro, a mensagem explica O QUE aconteceu, e o local diz ONDE aconteceu.',
+      },
+      { title: 'Erros mais comuns', body: 'NullPointerException: chamou método ou acessou campo em uma referência null. ArrayIndexOutOfBoundsException: índice fora do tamanho do array. NumberFormatException: tentativa de converter uma String que não é número (ex.: Integer.parseInt("abc")). Verifique a linha indicada e a variável que está null ou com índice inválido.',
       },
     ],
     summary: ['Stack trace mostra tipo, mensagem e localização do erro', 'Leia de baixo para cima para entender a sequência', 'Erros comuns: NullPointerException, ArrayIndexOutOfBounds, NumberFormatException'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int[] arr = { 10, 20, 30 };
+        System.out.println(arr[5]); // proposital: indice invalido
+    }
+}`,
+    tryItPrompt: 'Execute para ver o stack trace. Depois mude o índice para 0 ou 1 e rode de novo.',
+    commonErrors: [
+      { title: 'Ignorar o stack trace', description: 'Sempre leia a mensagem e o primeiro "at" do seu arquivo.' },
+      { title: 'NullPointerException', description: 'Alguma variável está null; verifique quem chamou o método na linha indicada.' },
+    ],
   },
 
   'm2-collections': {
     id: 'm2-collections', moduleId: 2,
-    objectives: ['Entender a diferença entre Array e ArrayList', 'Usar ArrayList para listas dinâmicas'],
+    objectives: ['Entender a diferença entre Array e ArrayList', 'Usar ArrayList para listas dinâmicas', 'Conhecer add, remove, get, size e o for-each'],
     sections: [
-      { title: 'ArrayList vs Array', body: 'Arrays têm tamanho fixo. ArrayList cresce e diminui dinamicamente.',
+      { title: 'ArrayList vs Array', body: 'Um array (int[], String[]) tem tamanho fixo no momento da criação. Se você precisa adicionar ou remover elementos ao longo do programa, use ArrayList, que é uma lista de tamanho dinâmico.\n\nArrayList faz parte do pacote java.util e usa generics: ArrayList<String>, ArrayList<Integer>. Não use ArrayList<int> — para tipos primitivos use o wrapper Integer. Os métodos mais usados são: add(elemento), add(índice, elemento), remove(índice ou elemento), get(índice), size(), contains(elemento), clear(). Você pode percorrer com for-each: for (String s : lista) { ... }.',
         code: `import java.util.ArrayList;
 
 // Array: tamanho fixo
@@ -765,17 +822,37 @@ System.out.println(nomes.contains("Carlos")); // true
 for (String nome : nomes) {
     System.out.println(nome);
 }`,
+        codeExplanation: 'new ArrayList<>() cria uma lista vazia. add() insere no final; add(1, "Bia") insere na posição 1. remove() pode ser por índice ou por valor (remove a primeira ocorrência).',
         tip: 'ArrayList usa tipos wrapper (Integer, Double) ao invés de primitivos (int, double). Ex: ArrayList<Integer>, não ArrayList<int>.',
       },
     ],
     summary: ['Array: tamanho fixo, acesso por índice', 'ArrayList: tamanho dinâmico, mais métodos disponíveis', 'ArrayList usa generics: ArrayList<Tipo>', 'Prefira ArrayList quando o tamanho pode mudar'],
+    tryItCode: `import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<String> nomes = new ArrayList<>();
+        nomes.add("Ana");
+        nomes.add("Bruno");
+        nomes.add("Carlos");
+        System.out.println("Tamanho: " + nomes.size());
+        System.out.println("Primeiro: " + nomes.get(0));
+        nomes.remove(1);
+        for (String n : nomes) System.out.println(n);
+    }
+}`,
+    tryItPrompt: 'Adicione mais nomes, remova por índice ou por valor, e use get(i).',
+    commonErrors: [
+      { title: 'ArrayList<int>', description: 'Use ArrayList<Integer>; generics não aceitam primitivos.' },
+      { title: 'Índice fora do tamanho', description: 'get(i) e remove(i) exigem 0 <= i < size().' },
+    ],
   },
 
   'm2-packages': {
     id: 'm2-packages', moduleId: 2,
-    objectives: ['Organizar código em pacotes', 'Usar import corretamente'],
+    objectives: ['Organizar código em pacotes', 'Usar import corretamente', 'Conhecer a convenção de nomes de pacotes'],
     sections: [
-      { title: 'Pacotes em Java', body: 'Pacotes organizam classes em diretórios lógicos, evitando conflitos de nomes.',
+      { title: 'Pacotes em Java', body: 'Pacotes organizam classes em diretórios lógicos e evitam conflitos de nomes: duas classes com o mesmo nome podem coexistir se estiverem em pacotes diferentes (ex.: com.loja.Cliente e com.banco.Cliente).\n\nA declaração package deve ser a primeira linha útil do arquivo (após comentários). O caminho da pasta no disco deve refletir o pacote: a classe com.empresa.modelo.Cliente fica em com/empresa/modelo/Cliente.java. Para usar uma classe de outro pacote, use import no topo do arquivo: import java.util.ArrayList; ou import java.util.*; (importar tudo do pacote). Classes no mesmo pacote não precisam ser importadas.',
         code: `// Declaração de pacote (primeira linha do arquivo)
 package com.empresa.modelo;
 
@@ -795,9 +872,27 @@ public class Cliente {
 // com.loja.modelo     (classes de dados)
 // com.loja.servico    (lógica de negócio)
 // com.loja.util       (utilitários)`,
+        codeExplanation: 'package define o "endereço" da classe. import traz classes de outros pacotes para você usar pelo nome curto (ArrayList em vez de java.util.ArrayList).',
+      },
+      { title: 'Import estático e nome fully qualified', body: 'Você pode usar o nome completo sem import: java.util.ArrayList lista = new java.util.ArrayList<>();. Para métodos estáticos, import static java.lang.Math.PI; permite usar PI em vez de Math.PI.',
       },
     ],
     summary: ['Pacotes organizam classes em diretórios', 'Declare com package na primeira linha', 'Use import para usar classes de outros pacotes', 'Convenção: com.empresa.projeto.modulo'],
+    tryItCode: `import java.util.ArrayList;
+import java.util.Arrays;
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
+        System.out.println("Lista: " + list);
+        System.out.println("Classe de list: " + list.getClass().getName());
+    }
+}`,
+    tryItPrompt: 'Veja como import java.util.ArrayList e Arrays.asList permitem usar essas classes.',
+    commonErrors: [
+      { title: 'Package não bate com a pasta', description: 'O diretório no disco deve corresponder ao nome do pacote.' },
+      { title: 'Import de classe que não existe', description: 'Verifique o nome do pacote e da classe (case-sensitive).' },
+    ],
   },
 
   'm3-whatispoo': {

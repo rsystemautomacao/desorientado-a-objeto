@@ -52,6 +52,31 @@ export const quizQuestions: QuizQuestion[] = [
   { id: 'q50', lessonId: 'm1-operators', question: 'Qual o resultado de 10 / 3 em Java (inteiros)?', options: ['3.33', '3', '4', '3.0'], correct: 1, explanation: 'Divisão entre inteiros resulta em inteiro. 10 / 3 = 3 (truncado). Para decimal: 10.0 / 3 = 3.33...' },
   { id: 'q51', lessonId: 'm1-operators', question: 'O que o operador % retorna?', options: ['A divisão', 'O quociente', 'O resto da divisão', 'A porcentagem'], correct: 2, explanation: '% (módulo) retorna o RESTO da divisão inteira. Ex: 10 % 3 = 1.' },
 
+  // M2 - I/O (Scanner)
+  { id: 'qm2-1', lessonId: 'm2-io', question: 'Por que chamar nextLine() após nextInt() ou nextDouble()?', options: ['Para fechar o Scanner', 'Para limpar o buffer e evitar pular a próxima leitura', 'É obrigatório em Java', 'Para ler a próxima linha'], correct: 1, explanation: 'O Enter digitado após o número fica no buffer. Sem nextLine(), o próximo nextLine() consome essa linha vazia.' },
+  { id: 'qm2-2', lessonId: 'm2-io', question: 'Qual método do Scanner lê uma linha inteira?', options: ['next()', 'nextLine()', 'nextString()', 'readLine()'], correct: 1, explanation: 'nextLine() lê até a quebra de linha. next() lê até o próximo espaço ou fim de linha.' },
+  { id: 'qm2-3', lessonId: 'm2-io', question: 'Para ler dados do teclado, o Scanner é criado com:', options: ['new Scanner(File)', 'new Scanner(System.in)', 'new Scanner(Keyboard)', 'Scanner.create()'], correct: 1, explanation: 'System.in é o fluxo de entrada padrão (teclado).' },
+
+  // M2 - Strings
+  { id: 'qm2-4', lessonId: 'm2-strings', question: 'Strings em Java são imutáveis. Isso significa:', options: ['Não podem ser usadas', 'Métodos como trim() retornam uma nova String, a original não muda', 'Só podem ser criadas uma vez', 'Não podem ser comparadas'], correct: 1, explanation: 'Imutável = o conteúdo do objeto não muda. Operações retornam novos objetos.' },
+  { id: 'qm2-5', lessonId: 'm2-strings', question: 'Para concatenar muitas strings em um loop, o mais eficiente é:', options: ['Usar + em cada iteração', 'StringBuilder', 'String.concat() em cada iteração', 'Arrays de char'], correct: 1, explanation: 'StringBuilder evita criar dezenas de objetos String intermediários.' },
+  { id: 'qm2-6', lessonId: 'm2-strings', question: '"a,b,c".split(",") retorna:', options: ['Uma String', 'Um array String[] com três elementos', 'Um ArrayList', 'Um char[]'], correct: 1, explanation: 'split() divide a String e retorna um array de Strings.' },
+
+  // M2 - Debug
+  { id: 'qm2-7', lessonId: 'm2-debug', question: 'No stack trace, a primeira linha "at arquivo.java:10" indica:', options: ['A linha 10 do arquivo onde o erro ocorreu', 'O número de erros', 'A versão do Java', 'O nome do projeto'], correct: 0, explanation: 'Indica o arquivo e o número da linha onde a exceção foi lançada.' },
+  { id: 'qm2-8', lessonId: 'm2-debug', question: 'NullPointerException geralmente significa:', options: ['Array vazio', 'Chamou método ou acessou campo em uma referência null', 'Divisão por zero', 'Arquivo não encontrado'], correct: 1, explanation: 'Alguma variável está null e você tentou usá-la (método ou campo).' },
+  { id: 'qm2-9', lessonId: 'm2-debug', question: 'ArrayIndexOutOfBoundsException indica:', options: ['O array é null', 'Você acessou um índice fora do tamanho do array', 'O array está vazio', 'Tipo errado no array'], correct: 1, explanation: 'Ex.: acessar índice 5 em um array de tamanho 3.' },
+
+  // M2 - Collections
+  { id: 'qm2-10', lessonId: 'm2-collections', question: 'Qual a principal vantagem do ArrayList em relação ao array?', options: ['É mais rápido', 'Tamanho dinâmico: pode adicionar e remover elementos', 'Usa menos memória', 'Só aceita objetos'], correct: 1, explanation: 'Array tem tamanho fixo; ArrayList cresce e diminui conforme necessário.' },
+  { id: 'qm2-11', lessonId: 'm2-collections', question: 'Por que não podemos usar ArrayList<int>?', options: ['Podemos, é válido', 'Generics em Java não aceitam tipos primitivos; use ArrayList<Integer>', 'int não existe em Java', 'ArrayList só aceita String'], correct: 1, explanation: 'Generics trabalham apenas com tipos de referência (objetos).' },
+  { id: 'qm2-12', lessonId: 'm2-collections', question: 'Para obter o número de elementos em um ArrayList lista:', options: ['lista.length', 'lista.length()', 'lista.size()', 'lista.count()'], correct: 2, explanation: 'ArrayList usa size(); arrays usam length.' },
+
+  // M2 - Packages
+  { id: 'qm2-13', lessonId: 'm2-packages', question: 'A declaração package no arquivo Java deve estar:', options: ['No final do arquivo', 'Na primeira linha útil do arquivo (após comentários)', 'Dentro da classe', 'No import'], correct: 1, explanation: 'package é a primeira instrução do arquivo (comentários podem vir antes).' },
+  { id: 'qm2-14', lessonId: 'm2-packages', question: 'Para usar a classe ArrayList de outro pacote, usamos:', options: ['package java.util.ArrayList', 'import java.util.ArrayList;', 'include java.util.ArrayList', 'require java.util.ArrayList'], correct: 1, explanation: 'import traz a classe para o escopo do arquivo.' },
+  { id: 'qm2-15', lessonId: 'm2-packages', question: 'A convenção de nomes para pacotes em Java é:', options: ['PascalCase', 'geralmente minúsculo, ex: com.empresa.projeto', 'UPPER_SNAKE', 'camelCase'], correct: 1, explanation: 'Pacotes são em minúsculas; múltiplas palavras em um nível podem usar algo como com.empresa.meuProjeto.' },
+
   // M3 - POO
   { id: 'q60', lessonId: 'm3-whatispoo', question: 'Quais são os 4 pilares da POO?', options: ['Variáveis, Funções, Arrays, Loops', 'Classe, Objeto, Método, Atributo', 'Encapsulamento, Herança, Polimorfismo, Abstração', 'public, private, protected, static'], correct: 2, explanation: 'Os 4 pilares da POO são: Encapsulamento, Herança, Polimorfismo e Abstração.' },
   { id: 'q61', lessonId: 'm3-whatispoo', question: 'Qual o principal benefício da POO?', options: ['Código mais rápido', 'Código mais curto', 'Código organizado, seguro e manutenível', 'Funciona apenas em Java'], correct: 2, explanation: 'POO organiza o código em objetos com responsabilidades claras, protege dados e facilita manutenção.' },
