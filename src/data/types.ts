@@ -20,6 +20,10 @@ export interface Section {
   codeExplanation?: string;
   tip?: string;
   warning?: string;
+  /** Código Java completo (classe + main) para o aluno editar e executar nesta seção */
+  tryItCode?: string;
+  /** Instrução curta para o exercício (ex: "Altere a mensagem e execute.") */
+  tryItPrompt?: string;
 }
 
 export interface LessonContent {
@@ -27,6 +31,10 @@ export interface LessonContent {
   moduleId: number;
   objectives: string[];
   sections: Section[];
+  /** Código Java completo para "Experimente aqui" ao final da aula (classe + main) */
+  tryItCode?: string;
+  /** Instrução para o bloco Experimente (ex: "Teste o que você aprendeu: altere valores e execute.") */
+  tryItPrompt?: string;
   commonErrors?: { title: string; description: string; code?: string }[];
   withoutPoo?: string;
   withPoo?: string;

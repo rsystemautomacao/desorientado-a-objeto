@@ -35,6 +35,18 @@ export const quizQuestions: QuizQuestion[] = [
 
   // M1 - Switch
   { id: 'q45', lessonId: 'm1-switch', question: 'O que acontece se esquecer o break num case?', options: ['Erro de compilação', 'Fall-through: executa os cases seguintes', 'O switch para', 'Volta ao primeiro case'], correct: 1, explanation: 'Sem break, a execução "cai" para o próximo case (fall-through). Geralmente é um bug.' },
+  { id: 'q46', lessonId: 'm1-switch', question: 'O switch pode ser usado com String?', options: ['Não, apenas com int', 'Sim, a partir do Java 7', 'Apenas com enum', 'Não em Java'], correct: 1, explanation: 'A partir do Java 7, switch aceita String na variável.' },
+  { id: 'q47', lessonId: 'm1-switch', question: 'Para que serve o default no switch?', options: ['É obrigatório', 'É executado quando nenhum case corresponde', 'Reinicia o switch', 'Define o valor padrão da variável'], correct: 1, explanation: 'default é como o "else": executado quando nenhum case corresponde ao valor.' },
+
+  // M1 - Matrices
+  { id: 'q25', lessonId: 'm1-matrices', question: 'O que é uma matriz em Java?', options: ['Um array de uma dimensão', 'Um array de arrays (2D)', 'Um tipo primitivo', 'Uma classe especial'], correct: 1, explanation: 'Matriz é um array bidimensional: int[][] — cada elemento é um array.' },
+  { id: 'q26', lessonId: 'm1-matrices', question: 'Como acessar o elemento da linha 1, coluna 2?', options: ['matriz(1, 2)', 'matriz[1][2]', 'matriz.get(1, 2)', 'matriz[2][1]'], correct: 1, explanation: 'Acesso é por colchetes: matriz[linha][coluna]. Índices começam em 0.' },
+  { id: 'q27', lessonId: 'm1-matrices', question: 'matriz.length retorna o quê?', options: ['Número total de elementos', 'Número de colunas', 'Número de linhas', 'O tamanho em memória'], correct: 2, explanation: 'Em uma matriz 2D, matriz.length é o número de linhas (quantos arrays ela contém).' },
+
+  // M1 - Functions
+  { id: 'q28', lessonId: 'm1-functions', question: 'O que significa void em um método?', options: ['O método retorna 0', 'O método não retorna valor', 'O método é vazio', 'O método é opcional'], correct: 1, explanation: 'void indica que o método não retorna nenhum valor.' },
+  { id: 'q29', lessonId: 'm1-functions', question: 'O que é sobrecarga de método?', options: ['Método com muitos parâmetros', 'Vários métodos com o mesmo nome e parâmetros diferentes', 'Método que chama a si mesmo', 'Método que retorna sobrecarga'], correct: 1, explanation: 'Sobrecarga (overloading): mesmo nome, lista de parâmetros diferente na mesma classe.' },
+  { id: 'q33', lessonId: 'm1-functions', question: 'Onde variáveis locais existem?', options: ['Em todo o programa', 'Apenas dentro do método onde foram declaradas', 'Em todas as classes', 'Em arquivos .java'], correct: 1, explanation: 'Variáveis declaradas dentro de um método são locais a esse método e deixam de existir quando ele termina.' },
 
   // M1 - Operators
   { id: 'q50', lessonId: 'm1-operators', question: 'Qual o resultado de 10 / 3 em Java (inteiros)?', options: ['3.33', '3', '4', '3.0'], correct: 1, explanation: 'Divisão entre inteiros resulta em inteiro. 10 / 3 = 3 (truncado). Para decimal: 10.0 / 3 = 3.33...' },

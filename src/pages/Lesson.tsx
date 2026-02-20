@@ -3,6 +3,7 @@ import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
 import QuizComponent from '@/components/QuizComponent';
+import TryItBox from '@/components/TryItBox';
 import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
@@ -92,6 +93,11 @@ export default function Lesson() {
             )}
             {s.tip && <InfoBox type="tip">{s.tip}</InfoBox>}
             {s.warning && <InfoBox type="warning">{s.warning}</InfoBox>}
+            {s.tryItCode && (
+              <div className="mt-6">
+                <TryItBox initialCode={s.tryItCode} prompt={s.tryItPrompt} />
+              </div>
+            )}
           </section>
         ))}
 
@@ -130,6 +136,17 @@ export default function Lesson() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Experimente aqui — bloco da aula inteira */}
+        {content?.tryItCode && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold mb-3">🧪 Teste o que você aprendeu</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Edite o código abaixo, clique em <strong>Executar</strong> e veja o resultado. Você pode alterar valores, mensagens e experimentar à vontade.
+            </p>
+            <TryItBox initialCode={content.tryItCode} prompt={content.tryItPrompt} />
           </section>
         )}
 

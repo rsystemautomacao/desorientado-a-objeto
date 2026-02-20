@@ -13,7 +13,7 @@ export const lessonContents: Record<string, LessonContent> = {
     sections: [
       {
         title: 'O que é Java?',
-        body: 'Java é uma linguagem de programação criada em 1995 pela Sun Microsystems (hoje Oracle). É uma das linguagens mais populares do mundo, usada em aplicações web, mobile (Android), sistemas bancários, e-commerces e muito mais.\n\nO grande diferencial do Java é o conceito "Write Once, Run Anywhere" (Escreva uma vez, rode em qualquer lugar). Isso é possível graças à JVM (Java Virtual Machine), que interpreta o código compilado (.class) em qualquer sistema operacional.',
+        body: 'Java é uma linguagem de programação criada em 1995 pela Sun Microsystems (hoje Oracle). É uma das linguagens mais populares do mundo e está presente em praticamente todo lugar: aplicações web (backend), apps Android, sistemas bancários, e-commerces, IoT e muito mais.\n\nO grande diferencial do Java é o conceito "Write Once, Run Anywhere" (Escreva uma vez, rode em qualquer lugar). Você compila seu código uma vez e o arquivo gerado (.class) pode ser executado em qualquer sistema que tenha uma JVM — Windows, Linux, Mac. Isso é possível graças à JVM (Java Virtual Machine), que interpreta o bytecode em qualquer sistema operacional.\n\nPor que aprender Java? Além da ampla adoção no mercado, Java tem sintaxe clara, tipagem estática (o que ajuda a evitar erros), enorme ecossistema de bibliotecas e uma comunidade muito ativa. Dominar Java abre portas para desenvolvimento backend, Android e sistemas enterprise.',
       },
       {
         title: 'JDK, JRE e JVM — Qual a diferença?',
@@ -22,7 +22,7 @@ export const lessonContents: Record<string, LessonContent> = {
       },
       {
         title: 'Estrutura Básica de um Programa',
-        body: 'Todo programa Java precisa de pelo menos uma classe e um método main. O método main é o ponto de entrada — é por onde o programa começa a executar.',
+        body: 'Todo programa Java precisa de pelo menos uma classe e um método main. A classe é o “recipiente” do seu código; o método main é o ponto de entrada — é por onde a JVM começa a executar. Sem um método main com essa assinatura exata, o programa não “roda”.\n\nResumo do que você vê no exemplo abaixo:\n• A classe deve ter o mesmo nome do arquivo (ex.: MeuPrograma.java → class MeuPrograma).\n• public static void main(String[] args) é obrigatório para executar.\n• System.out.println() imprime uma linha e pula para a próxima; System.out.print() imprime sem pular linha.',
         code: `// Todo arquivo Java deve ter uma classe com o mesmo nome do arquivo
 // Este arquivo se chamaria MeuPrograma.java
 public class MeuPrograma {
@@ -47,7 +47,7 @@ public class MeuPrograma {
       },
       {
         title: 'Compilação e Execução',
-        body: 'Java é uma linguagem compilada + interpretada:\n\n1. Você escreve o código-fonte (.java)\n2. O compilador javac transforma em bytecode (.class)\n3. A JVM interpreta e executa o bytecode',
+        body: 'Java é uma linguagem compilada e interpretada. O fluxo é:\n\n1. Você escreve o código-fonte em um arquivo .java.\n2. O compilador javac transforma esse código em bytecode (arquivo .class). O bytecode é uma “linguagem intermediária” que a JVM entende.\n3. A JVM lê o .class e executa as instruções no seu sistema.\n\nIsso explica por que Java é portável: o mesmo .class pode rodar em Windows, Linux ou Mac, desde que haja uma JVM instalada.',
         code: `// No terminal:
 // 1. Compilar:
 javac MeuPrograma.java
@@ -79,6 +79,15 @@ java MeuPrograma
         codeExplanation: 'Use // para comentários curtos, /* */ para blocos maiores, e /** */ para documentação Javadoc que pode ser extraída automaticamente.',
       },
     ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Olá, mundo!");
+        System.out.println("Estou aprendendo Java.");
+        System.out.print("Linha sem pular ");
+        System.out.print("--- ainda na mesma linha.");
+    }
+}`,
+    tryItPrompt: 'Altere as mensagens, adicione mais println ou print e execute para ver a saída.',
     commonErrors: [
       { title: 'Nome do arquivo diferente da classe', description: 'O arquivo deve ter o mesmo nome da classe pública. MeuPrograma.java para a classe MeuPrograma.' },
       { title: 'Esquecer o ponto-e-vírgula', description: 'Toda instrução em Java termina com ; (ponto-e-vírgula).' },
@@ -106,11 +115,11 @@ java MeuPrograma
     sections: [
       {
         title: 'O que são variáveis?',
-        body: 'Variáveis são espaços na memória do computador que guardam valores. Pense nelas como "caixas etiquetadas" — cada caixa tem um nome (identificador), um tipo (o que pode guardar) e um valor.',
+        body: 'Variáveis são espaços na memória do computador que guardam valores. Pense nelas como "caixas etiquetadas": cada caixa tem um nome (identificador), um tipo (o que pode guardar) e um valor.\n\nEm Java você declara o tipo antes de usar. Isso ajuda o compilador a encontrar erros e deixa o código mais claro. Exemplo: int idade = 25; declara uma variável chamada idade, do tipo inteiro, com valor 25. Depois você pode usar idade em cálculos ou alterar o valor (idade = 26;).',
       },
       {
         title: 'Tipos Primitivos',
-        body: 'Java tem 8 tipos primitivos. Eles são os blocos fundamentais de dados:',
+        body: 'Java tem exatamente 8 tipos primitivos. Eles são os blocos fundamentais de dados e não são objetos (não têm métodos). Cada um ocupa um tamanho fixo na memória e tem um intervalo de valores bem definido. Os mais usados no dia a dia são int (números inteiros) e double (números decimais).',
         code: `// INTEIROS (números sem decimal)
 byte idade = 25;         // -128 a 127 (1 byte)
 short ano = 2024;        // -32768 a 32767 (2 bytes)
@@ -200,13 +209,24 @@ final String EMPRESA = "Tech Corp";
       'Casting implícito é automático (menor → maior), explícito precisa de (tipo)',
       'Use final para constantes',
     ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int idade = 25;
+        double preco = 19.90;
+        String nome = "Maria";
+        System.out.println("Nome: " + nome + ", Idade: " + idade);
+        System.out.println("Preco: " + preco);
+        // Teste: altere os valores acima e execute novamente.
+    }
+}`,
+    tryItPrompt: 'Altere idade, preco e nome; execute e veja a saída.',
   },
 
   'm1-operators': {
     id: 'm1-operators', moduleId: 1,
     objectives: ['Dominar operadores aritméticos, relacionais e lógicos', 'Entender precedência de operadores', 'Usar operadores de atribuição compostos'],
     sections: [
-      { title: 'Operadores Aritméticos', body: 'São os operadores matemáticos básicos.',
+      { title: 'Operadores Aritméticos', body: 'Os operadores aritméticos são os mesmos da matemática: +, -, *, /. Em Java, o operador % (módulo) retorna o resto da divisão — muito útil para saber se um número é par (x % 2 == 0) ou para ciclos. Importante: a divisão entre dois inteiros resulta em inteiro (truncada); para obter decimal, use pelo menos um operando como double.',
         code: `int a = 10, b = 3;
 System.out.println(a + b);  // 13 (soma)
 System.out.println(a - b);  // 7  (subtração)
@@ -253,6 +273,17 @@ boolean podeVotar = idade >= 16 && idade <= 120; // true`,
       },
     ],
     summary: ['Operadores aritméticos: + - * / %', 'Divisão inteira trunca — use double para decimais', 'Operadores relacionais retornam boolean', 'Operadores lógicos: && (e), || (ou), ! (não)'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int a = 10, b = 3;
+        System.out.println("a + b = " + (a + b));
+        System.out.println("a / b (inteiros) = " + (a / b));
+        System.out.println("a / b (decimal) = " + (10.0 / 3));
+        System.out.println("a % b (resto) = " + (a % b));
+        System.out.println("a > b? " + (a > b));
+    }
+}`,
+    tryItPrompt: 'Mude os valores de a e b e veja os resultados.',
   },
 
   'm1-ifelse': {
@@ -311,6 +342,22 @@ if (isIdoso || isEstudante) {
       { title: 'Esquecer as chaves {}', description: 'Sem chaves, apenas a próxima linha pertence ao if. Sempre use chaves!' },
     ],
     summary: ['if/else permite executar código condicionalmente', 'else if encadeia múltiplas condições', 'Operador ternário: condição ? valorTrue : valorFalse', 'Combine condições com && e ||'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int nota = 7;
+        if (nota >= 9) {
+            System.out.println("Excelente!");
+        } else if (nota >= 7) {
+            System.out.println("Aprovado");
+        } else if (nota >= 5) {
+            System.out.println("Recuperação");
+        } else {
+            System.out.println("Reprovado");
+        }
+        // Altere o valor de nota e execute.
+    }
+}`,
+    tryItPrompt: 'Altere o valor de nota (0 a 10) e veja a mensagem.',
   },
 
   'm1-switch': {
@@ -359,6 +406,20 @@ switch (cor.toLowerCase()) {
       },
     ],
     summary: ['switch compara uma variável com valores fixos', 'Sempre use break para evitar fall-through', 'default é o "else" do switch', 'Funciona com int, char, String, enum'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int diaSemana = 3;
+        switch (diaSemana) {
+            case 1: System.out.println("Domingo"); break;
+            case 2: System.out.println("Segunda"); break;
+            case 3: System.out.println("Terça"); break;
+            case 4: System.out.println("Quarta"); break;
+            default: System.out.println("Outro dia"); break;
+        }
+        // Mude diaSemana de 1 a 7 e execute.
+    }
+}`,
+    tryItPrompt: 'Altere diaSemana (1 a 7) e execute.',
   },
 
   'm1-loops': {
@@ -418,6 +479,19 @@ for (int i = 1; i <= 10; i++) {
       },
     ],
     summary: ['for: quando sabe o número de repetições', 'while: quando depende de uma condição', 'do-while: garante pelo menos uma execução', 'break sai do laço, continue pula a iteração'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Contando de 1 a 5:");
+        for (int i = 1; i <= 5; i++) {
+            System.out.println(i);
+        }
+        System.out.println("Tabuada do 3:");
+        for (int i = 1; i <= 5; i++) {
+            System.out.println("3 x " + i + " = " + (3 * i));
+        }
+    }
+}`,
+    tryItPrompt: 'Altere o limite do for ou a tabuada e execute.',
   },
 
   'm1-arrays': {
@@ -467,6 +541,18 @@ System.out.println("Média: " + media); // 30.0`,
       { title: 'Confundir length com length()', description: 'Arrays usam .length (sem parênteses). Strings usam .length() (com parênteses).' },
     ],
     summary: ['Arrays armazenam múltiplos valores do mesmo tipo', 'Índices começam em 0', 'Use .length para saber o tamanho', 'for-each é mais limpo quando não precisa do índice', 'Cuidado com IndexOutOfBoundsException'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int[] notas = {10, 8, 7, 9, 6};
+        System.out.println("Primeira nota: " + notas[0]);
+        System.out.println("Quantidade: " + notas.length);
+        int soma = 0;
+        for (int n : notas) soma += n;
+        double media = (double) soma / notas.length;
+        System.out.println("Media: " + media);
+    }
+}`,
+    tryItPrompt: 'Altere os valores do array ou adicione mais elementos.',
   },
 
   'm1-matrices': {
@@ -495,6 +581,20 @@ for (int i = 0; i < matriz.length; i++) {
       },
     ],
     summary: ['Matrizes são arrays de arrays (2D)', 'Acesse com [linha][coluna]', 'Use loops aninhados para percorrer'],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        int[][] m = { {1, 2}, {3, 4} };
+        System.out.println("matriz[0][0] = " + m[0][0]);
+        System.out.println("matriz[1][1] = " + m[1][1]);
+        for (int i = 0; i < m.length; i++) {
+            for (int j = 0; j < m[i].length; j++) {
+                System.out.print(m[i][j] + " ");
+            }
+            System.out.println();
+        }
+    }
+}`,
+    tryItPrompt: 'Altere os valores da matriz e execute.',
   },
 
   'm1-functions': {
@@ -532,6 +632,17 @@ for (int i = 0; i < matriz.length; i++) {
       },
     ],
     summary: ['Métodos organizam e reutilizam código', 'void = sem retorno, return = com retorno', 'Sobrecarga: mesmo nome, parâmetros diferentes', 'Variáveis locais existem apenas dentro do método'],
+    tryItCode: `public class Main {
+    public static int somar(int a, int b) {
+        return a + b;
+    }
+    public static void main(String[] args) {
+        System.out.println("5 + 3 = " + somar(5, 3));
+        System.out.println("10 + 20 = " + somar(10, 20));
+        // Altere os números na chamada ou crie outro método.
+    }
+}`,
+    tryItPrompt: 'Altere os argumentos de somar() ou crie um método multiplicar().',
   },
 
   'm2-io': {
