@@ -51,7 +51,7 @@ function parseServiceAccountEnv(): admin.ServiceAccount {
     try {
       let json = Buffer.from(b64Raw, 'base64').toString('utf8');
       if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
-      return JSON.parse(json.replace(/\\n/g, '\n')) as admin.ServiceAccount;
+      return JSON.parse(json) as admin.ServiceAccount;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`B64 decode/parse falhou (${b64Raw.length} chars): ${msg}`);
@@ -61,7 +61,7 @@ function parseServiceAccountEnv(): admin.ServiceAccount {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!raw || typeof raw !== 'string') throw new Error('Nenhuma service account configurada.');
   try {
-    return JSON.parse(raw.replace(/\\n/g, '\n')) as admin.ServiceAccount;
+    return JSON.parse(raw) as admin.ServiceAccount;
   } catch (e) {
     console.error('FIREBASE_SERVICE_ACCOUNT_JSON parse falhou.');
     throw e;

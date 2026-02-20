@@ -42,8 +42,7 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
     try {
       let json = Buffer.from(b64Raw, 'base64').toString('utf8');
       if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
-      const normalized = json.replace(/\\n/g, '\n');
-      const parsed = JSON.parse(normalized) as Record<string, unknown>;
+      const parsed = JSON.parse(json) as Record<string, unknown>;
       return { parsed, source: 'b64' };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -63,8 +62,7 @@ function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: '
   }
 
   try {
-    const normalized = raw.replace(/\\n/g, '\n');
-    const parsed = JSON.parse(normalized) as Record<string, unknown>;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
     return { parsed, source: 'json' };
   } catch {
     return { ok: false, reason: 'json_invalid', hint: 'JSON invalido. Use: node scripts/vercel-env-service-account-b64-parts.js sua-chave.json' };
