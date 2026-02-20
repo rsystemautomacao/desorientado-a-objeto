@@ -82,7 +82,7 @@ function getFirebaseAdmin() {
   });
 }
 
-async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string } | { userId: null; code: string }> {
+async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string } | { userId: null; code: string; detail?: string }> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     console.error('Profile API: missing or invalid Authorization header');
