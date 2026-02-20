@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MongoClient } from 'mongodb';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import type { ServiceAccount } from 'firebase-admin/app';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'progress';
@@ -68,22 +70,18 @@ function parseServiceAccountEnv(): Record<string, unknown> {
   }
 }
 
-function getFirebaseAdmin() {
-  if (admin.apps.length > 0) return admin.app();
+function getFirebaseApp() {
+  if (getApps().length > 0) return getApp();
   const raw = parseServiceAccountEnv();
 
-  // Garante que o JSON tenha os campos no formato snake_case que
-  // google-auth-library e node-forge esperam internamente.
-  // Passar o objeto raw completo (com type, auth_uri, token_uri, etc.)
-  // é mais robusto do que extrair apenas 3 campos.
   if (!raw.project_id && raw.projectId) raw.project_id = raw.projectId;
   if (!raw.private_key && raw.privateKey) raw.private_key = raw.privateKey;
   if (!raw.client_email && raw.clientEmail) raw.client_email = raw.clientEmail;
 
   const projectId = (raw.project_id ?? 'desorientado-a-objetos') as string;
 
-  return admin.initializeApp({
-    credential: admin.credential.cert(raw as admin.ServiceAccount),
+  return initializeApp({
+    credential: cert(raw as ServiceAccount),
     projectId,
   });
 }
@@ -100,8 +98,8 @@ async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string 
     return { userId: null, code: 'NO_HEADER' };
   }
   try {
-    const app = getFirebaseAdmin();
-    const decoded = await app.auth().verifyIdToken(token);
+    const app = getFirebaseApp();
+    const decoded = await getAuth(app).verifyIdToken(token);
     return { userId: decoded.uid };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

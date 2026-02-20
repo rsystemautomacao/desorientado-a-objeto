@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, getApp, cert, deleteApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import type { ServiceAccount } from 'firebase-admin/app';
 
 /**
  * GET /api/auth-status
@@ -85,11 +87,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const keyStartsCorrectly = privateKey.startsWith('-----BEGIN');
   const keyHasNewlines = privateKey.includes('\n');
 
-  // Step 4: Try admin.credential.cert() — passa o JSON raw completo
+  // Step 4: Try cert() + initializeApp (API modular v13 — evita admin.apps undefined no Vercel)
   try {
-    // Delete existing app to test fresh
-    if (admin.apps.length > 0) {
-      await admin.app().delete();
+    if (getApps().length > 0) {
+      await deleteApp(getApp());
     }
 
     // Garante snake_case no JSON raw (cert() + google-auth-library precisam)
@@ -99,8 +100,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const pid = (parsed.project_id ?? 'desorientado-a-objetos') as string;
 
-    admin.initializeApp({
-      credential: admin.credential.cert(parsed as admin.ServiceAccount),
+    initializeApp({
+      credential: cert(parsed as ServiceAccount),
       projectId: pid,
     });
   } catch (e) {
@@ -122,13 +123,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Step 5: Try verifyIdToken with a dummy to confirm auth module works
+  // Step 5: Try verifyIdToken com token dummy para confirmar que o auth funciona
   let authModuleOk = false;
   try {
-    await admin.app().auth().verifyIdToken('dummy-token-for-test');
+    await getAuth(getApp()).verifyIdToken('dummy-token-for-test');
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    // "Decoding ... failed" means the auth module is working (just the token is invalid)
     authModuleOk = msg.includes('Decoding') || msg.includes('must be a') || msg.includes('INVALID_ARGUMENT');
   }
 
