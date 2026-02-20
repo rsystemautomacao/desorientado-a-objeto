@@ -27,7 +27,9 @@ interface StudyHistoryEntry {
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_BASE_URL;
-  return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : '';
+  if (typeof base === 'string' && base.length > 0) return base.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin;
+  return '';
 }
 
 export default function Admin() {
@@ -64,21 +66,35 @@ export default function Admin() {
     try {
       const token = await user.getIdToken(true);
       const base = getApiBase();
-      const res = await fetch(`${base}/api/admin/study-history`, {
+      const url = `${base}/api/admin/study-history`;
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 403) {
-        setHistoryError('Acesso negado.');
+        setHistoryError('Acesso negado. Verifique se ADMIN_EMAIL está correto na Vercel.');
+        return;
+      }
+      if (res.status === 404) {
+        setHistoryError('API do admin não encontrada (404). Confira se o deploy inclui a pasta api/admin.');
         return;
       }
       if (!res.ok) {
-        setHistoryError('Erro ao carregar dados.');
+        const text = await res.text();
+        let detail = '';
+        try {
+          const j = JSON.parse(text);
+          if (j.message) detail = `: ${j.message}`;
+        } catch {
+          if (text.length < 120) detail = `: ${text}`;
+        }
+        setHistoryError(`Erro ao carregar dados (${res.status})${detail}. Verifique MONGODB_URI e Firebase na Vercel.`);
         return;
       }
       const data = await res.json();
       setEntries(data.entries ?? []);
-    } catch {
-      setHistoryError('Erro de conexão.');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setHistoryError(`Erro de conexão: ${msg}`);
     } finally {
       setHistoryLoading(false);
     }
@@ -187,8 +203,11 @@ export default function Admin() {
 
       <main className="container py-6">
         {historyError && (
-          <div className="mb-4 p-4 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive text-sm">
-            {historyError}
+          <div className="mb-4 p-4 rounded-lg border border-destructive/30 bg-destructive/10 text-sm flex flex-wrap items-center justify-between gap-3">
+            <span className="text-destructive">{historyError}</span>
+            <Button variant="outline" size="sm" onClick={() => loadHistory()}>
+              Tentar novamente
+            </Button>
           </div>
         )}
 
