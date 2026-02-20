@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Loader2, LogOut, User } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
-/** Chave na URL: /admin?k=XXX. Defina VITE_ADMIN_KEY em produção para um valor secreto. */
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'desorientado-admin';
+/** Chave padrão sempre aceita. Opcional: VITE_ADMIN_KEY para uma chave extra. */
+const DEFAULT_ADMIN_KEY = 'desorientado-admin';
+const EXTRA_ADMIN_KEY = (import.meta.env.VITE_ADMIN_KEY || '').trim();
 
 interface StudyHistoryEntry {
   userId: string;
@@ -42,7 +43,9 @@ export default function Admin() {
   const [historyError, setHistoryError] = useState('');
 
   const isAdmin = user?.email?.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase();
-  const keyValid = key === ADMIN_KEY;
+  const keyTrimmed = key.trim();
+  const keyValid =
+    keyTrimmed === DEFAULT_ADMIN_KEY || (EXTRA_ADMIN_KEY.length > 0 && keyTrimmed === EXTRA_ADMIN_KEY);
 
   // Quem não tem a chave correta na URL não pode saber que a página existe
   if (!keyValid) {
