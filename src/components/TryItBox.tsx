@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Play, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const PISTON_API = 'https://emkc.org/api/v2/piston/execute';
+const JUDGE0_URL = 'https://ce.judge0.com';
+const JAVA_LANGUAGE_ID = 91; // Java (JDK 17.0.6)
+const POLL_INTERVAL_MS = 800;
+const MAX_POLL_ATTEMPTS = 30;
 
 type RunState = 'idle' | 'running' | 'success' | 'error';
 
@@ -10,6 +13,28 @@ interface TryItBoxProps {
   initialCode: string;
   prompt?: string;
   className?: string;
+}
+
+function buildOutput(data: {
+  stdout?: string | null;
+  stderr?: string | null;
+  compile_output?: string | null;
+  message?: string | null;
+  status?: { id: number; description?: string };
+}): string {
+  const statusId = data.status?.id;
+  if (statusId === 6 && data.compile_output) {
+    return 'Compilação:\n' + data.compile_output + (data.stderr ? '\n\n' + data.stderr : '');
+  }
+  const out = data.stdout ?? '';
+  const err = data.stderr ?? '';
+  const msg = data.message ?? '';
+  const parts = [out, err ? `[stderr]\n${err}` : '', msg].filter(Boolean);
+  return parts.join('\n').trim() || '(Nenhuma saída)';
+}
+
+function isTerminalStatus(statusId: number): boolean {
+  return [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(statusId);
 }
 
 export default function TryItBox({ initialCode, prompt, className = '' }: TryItBoxProps) {
@@ -22,46 +47,91 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     setOutput('');
 
     try {
-      // Piston espera arquivo com nome igual à classe pública; extrair nome da classe
-      const publicClassMatch = code.match(/public\s+class\s+(\w+)/);
-      const className = publicClassMatch ? publicClassMatch[1] : 'Main';
-      const fileName = className + '.java';
+      // Tentar modo síncrono (wait=true) primeiro
+      const res = await fetch(
+        `${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_code: code,
+            language_id: JAVA_LANGUAGE_ID,
+          }),
+        }
+      );
 
-      const res = await fetch(PISTON_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: 'java',
-          version: '*',
-          files: [{ name: fileName, content: code }],
-          run_timeout: 10000,
-        }),
-      });
+      const data: {
+        token?: string;
+        stdout?: string | null;
+        stderr?: string | null;
+        compile_output?: string | null;
+        message?: string | null;
+        status?: { id: number; description?: string };
+        error?: string;
+      } = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        setOutput(`Erro na API (${res.status}). Tente novamente ou copie o código e execute no seu computador.`);
-        setState('error');
-        return;
+      if (res.ok) {
+        const statusId = data.status?.id ?? 0;
+        if (isTerminalStatus(statusId)) {
+          setOutput(buildOutput(data));
+          setState(statusId === 3 ? 'success' : 'error');
+          return;
+        }
+        if (data.token) {
+          const polled = await pollSubmission(data.token);
+          setOutput(buildOutput(polled));
+          setState(polled.status?.id === 3 ? 'success' : 'error');
+          return;
+        }
       }
 
-      const data = await res.json();
-
-      if (data.compile?.stderr) {
-        setOutput('Compilação:\n' + data.compile.stderr + (data.run?.stderr ? '\n\nExecução:\n' + data.run.stderr : ''));
-        setState('error');
-        return;
+      if (res.status === 400 && data.error?.toLowerCase().includes('wait')) {
+        const createRes = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_code: code,
+            language_id: JAVA_LANGUAGE_ID,
+          }),
+        });
+        if (!createRes.ok) {
+          setOutput(`Erro na API (${createRes.status}). Copie o código e execute no seu computador.`);
+          setState('error');
+          return;
+        }
+        const createData = await createRes.json();
+        if (createData.token) {
+          const polled = await pollSubmission(createData.token);
+          setOutput(buildOutput(polled));
+          setState(polled.status?.id === 3 ? 'success' : 'error');
+          return;
+        }
       }
 
-      const runOut = data.run?.stdout ?? '';
-      const runErr = data.run?.stderr ?? '';
-      const combined = runOut + (runErr ? '\n[stderr]\n' + runErr : '');
-      setOutput(combined.trim() || '(Nenhuma saída)');
-      setState(runErr ? 'error' : 'success');
-    } catch (e) {
+      setOutput(`Erro na API (${res.status}). Tente novamente ou copie o código e execute no seu computador.`);
+      setState('error');
+    } catch {
       setOutput('Não foi possível executar. Verifique sua conexão ou copie o código e execute no seu IDE (ex: VS Code, IntelliJ).');
       setState('error');
     }
   };
+
+  async function pollSubmission(token: string): Promise<{
+    stdout?: string | null;
+    stderr?: string | null;
+    compile_output?: string | null;
+    message?: string | null;
+    status?: { id: number; description?: string };
+  }> {
+    for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      const res = await fetch(`${JUDGE0_URL}/submissions/${token}?base64_encoded=false`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.status?.id != null && isTerminalStatus(data.status.id)) return data;
+    }
+    return { status: { id: 0, description: 'Timeout' }, message: 'Tempo esgotado. Tente novamente.' };
+  }
 
   const handleReset = () => {
     setCode(initialCode);
