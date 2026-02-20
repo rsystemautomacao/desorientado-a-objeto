@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import * as admin from 'firebase-admin';
 
 /**
  * GET /api/auth-status
- * Diagnostico (sem autenticacao): indica se a Service Account esta configurada e valida.
+ * Diagnostico completo: parseia, valida e tenta inicializar o Firebase Admin.
  */
 
 function getB64String(): string | null {
@@ -34,69 +35,92 @@ function getEnvDiagnostics() {
   return env;
 }
 
-function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number; env?: Record<string, number> } {
-  const b64Raw = getB64String();
-  const env = getEnvDiagnostics();
-
-  if (b64Raw && b64Raw.length > 100) {
-    try {
-      let json = Buffer.from(b64Raw, 'base64').toString('utf8');
-      if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
-      const parsed = JSON.parse(json) as Record<string, unknown>;
-      return { parsed, source: 'b64' };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      const hint = `Base64 com ${b64Raw.length} chars nao gerou JSON valido. Erro: ${msg}. Regenere com: node scripts/vercel-env-service-account-b64-parts.js sua-chave.json. env: ${JSON.stringify(env)}`;
-      return { ok: false, reason: 'b64_invalid', hint, b64Length: b64Raw.length, env };
-    }
-  }
-
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw || typeof raw !== 'string') {
-    return { ok: false, reason: 'env_missing', hint: `Nenhum B64 valido. Defina PART1..PARTN ou FIREBASE_SERVICE_ACCOUNT_B64. env: ${JSON.stringify(env)}`, env };
-  }
-
-  const hasNewlines = raw.includes('\n') && !raw.trimStart().startsWith('{');
-  if (hasNewlines) {
-    return { ok: false, reason: 'json_multiline', hint: 'Use o JSON em uma unica linha ou use FIREBASE_SERVICE_ACCOUNT_B64 (Base64).' };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return { parsed, source: 'json' };
-  } catch {
-    return { ok: false, reason: 'json_invalid', hint: 'JSON invalido. Use: node scripts/vercel-env-service-account-b64-parts.js sua-chave.json' };
-  }
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const result = getParsedServiceAccount();
-  if (!('parsed' in result)) {
-    const body: { ok: false; reason: string; hint: string; b64Length?: number; env?: Record<string, number> } = { ok: false, reason: result.reason, hint: result.hint };
-    if (result.b64Length !== undefined) body.b64Length = result.b64Length;
-    if (result.env) body.env = result.env;
-    return res.status(200).json(body);
+  const env = getEnvDiagnostics();
+  const b64Raw = getB64String();
+
+  // Step 1: Parse JSON
+  let parsed: Record<string, unknown>;
+  let source: string;
+  if (b64Raw && b64Raw.length > 100) {
+    try {
+      let json = Buffer.from(b64Raw, 'base64').toString('utf8');
+      if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
+      parsed = JSON.parse(json) as Record<string, unknown>;
+      source = 'b64';
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return res.status(200).json({ ok: false, step: 'parse_b64', error: msg, env });
+    }
+  } else {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (!raw || typeof raw !== 'string') {
+      return res.status(200).json({ ok: false, step: 'env_missing', env });
+    }
+    try {
+      parsed = JSON.parse(raw) as Record<string, unknown>;
+      source = 'json';
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return res.status(200).json({ ok: false, step: 'parse_json', error: msg });
+    }
   }
 
-  const parsed = result.parsed as { project_id?: string; projectId?: string; client_email?: string; private_key?: string };
-  const projectId = parsed.project_id ?? parsed.projectId;
-  const hasKey = typeof parsed.private_key === 'string' && parsed.private_key.length > 100;
-  const hasEmail = typeof parsed.client_email === 'string' && parsed.client_email.includes('@');
+  // Step 2: Validate fields
+  const projectId = (parsed.project_id ?? parsed.projectId) as string | undefined;
+  const privateKey = (parsed.private_key ?? parsed.privateKey) as string | undefined;
+  const clientEmail = (parsed.client_email ?? parsed.clientEmail) as string | undefined;
 
-  if (!hasKey || !hasEmail) {
+  if (!privateKey || privateKey.length < 100) {
+    return res.status(200).json({ ok: false, step: 'validate', error: 'private_key ausente ou curta', privateKeyLen: privateKey?.length ?? 0 });
+  }
+  if (!clientEmail) {
+    return res.status(200).json({ ok: false, step: 'validate', error: 'client_email ausente' });
+  }
+
+  // Step 3: Check private_key format
+  const keyStartsCorrectly = privateKey.startsWith('-----BEGIN');
+  const keyHasNewlines = privateKey.includes('\n');
+
+  // Step 4: Try admin.credential.cert()
+  try {
+    // Delete existing app to test fresh
+    if (admin.apps.length > 0) {
+      await admin.app().delete();
+    }
+    const sa: admin.ServiceAccount = {
+      projectId: projectId ?? 'desorientado-a-objetos',
+      clientEmail: clientEmail,
+      privateKey: privateKey,
+    };
+    admin.initializeApp({
+      credential: admin.credential.cert(sa),
+      projectId: sa.projectId,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     return res.status(200).json({
       ok: false,
-      reason: 'key_incomplete',
-      hint: 'O valor pode ter sido truncado. Regenere com: node scripts/vercel-env-service-account-b64-parts.js sua-chave.json',
+      step: 'cert_init',
+      error: msg,
+      source,
+      projectId: projectId ?? null,
+      privateKeyLen: privateKey.length,
+      keyStartsCorrectly,
+      keyHasNewlines,
     });
   }
 
   return res.status(200).json({
     ok: true,
+    step: 'all_passed',
     projectId: projectId ?? null,
-    source: result.source,
+    source,
+    privateKeyLen: privateKey.length,
+    keyStartsCorrectly,
+    keyHasNewlines,
   });
 }
