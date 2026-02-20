@@ -114,14 +114,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const result = await getUserIdFromToken(req);
-  if (!result.userId) {
-    const code = 'code' in result ? result.code : 'TOKEN_INVALID';
-    return res.status(401).json({ error: 'Unauthorized', code });
-  }
-  const userId = result.userId;
+  try {
+    const result = await getUserIdFromToken(req);
+    if (!result.userId) {
+      const code = 'code' in result ? result.code : 'TOKEN_INVALID';
+      return res.status(401).json({ error: 'Unauthorized', code });
+    }
+    const userId = result.userId;
 
-  if (req.method === 'GET') {
+    if (req.method === 'GET') {
     try {
       const client = getMongoClient();
       const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
@@ -139,9 +140,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(e);
       return res.status(500).json({ error: 'Failed to load progress' });
     }
-  }
+    }
 
-  if (req.method === 'PUT') {
+    if (req.method === 'PUT') {
     let body = req.body;
     if (typeof body === 'string') {
       try {
@@ -172,7 +173,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(e);
       return res.status(500).json({ error: 'Failed to save progress' });
     }
-  }
+    }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (err) {
+    console.error('Progress API unhandled error:', err);
+    const message = process.env.NODE_ENV === 'production' ? undefined : (err instanceof Error ? err.message : String(err));
+    return res.status(500).json({ error: 'Internal server error', ...(message && { message }) });
+  }
 }
