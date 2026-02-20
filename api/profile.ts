@@ -48,13 +48,13 @@ function getB64String(): string | null {
   return null;
 }
 
-function parseServiceAccountEnv(): admin.ServiceAccount {
+function parseServiceAccountEnv(): Record<string, unknown> {
   const b64Raw = getB64String();
   if (b64Raw && b64Raw.length > 100) {
     try {
       let json = Buffer.from(b64Raw, 'base64').toString('utf8');
       if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
-      return JSON.parse(json) as admin.ServiceAccount;
+      return JSON.parse(json) as Record<string, unknown>;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`B64 decode/parse falhou (${b64Raw.length} chars): ${msg}`);
@@ -64,7 +64,7 @@ function parseServiceAccountEnv(): admin.ServiceAccount {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!raw || typeof raw !== 'string') throw new Error('Nenhuma service account configurada.');
   try {
-    return JSON.parse(raw) as admin.ServiceAccount;
+    return JSON.parse(raw) as Record<string, unknown>;
   } catch (e) {
     console.error('FIREBASE_SERVICE_ACCOUNT_JSON parse falhou.');
     throw e;
@@ -73,12 +73,15 @@ function parseServiceAccountEnv(): admin.ServiceAccount {
 
 function getFirebaseAdmin() {
   if (admin.apps.length > 0) return admin.app();
-  const parsed = parseServiceAccountEnv();
-  const sa = parsed as admin.ServiceAccount & { private_key?: string; client_email?: string; project_id?: string };
-  const projectId = parsed.projectId ?? sa.project_id;
+  const raw = parseServiceAccountEnv();
+  const sa: admin.ServiceAccount = {
+    projectId: (raw.project_id ?? raw.projectId ?? 'desorientado-a-objetos') as string,
+    clientEmail: (raw.client_email ?? raw.clientEmail) as string,
+    privateKey: (raw.private_key ?? raw.privateKey) as string,
+  };
   return admin.initializeApp({
-    credential: admin.credential.cert(parsed),
-    projectId: projectId ?? 'desorientado-a-objetos',
+    credential: admin.credential.cert(sa),
+    projectId: sa.projectId,
   });
 }
 
