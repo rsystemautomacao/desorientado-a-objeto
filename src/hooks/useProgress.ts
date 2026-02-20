@@ -67,21 +67,22 @@ export function useProgress() {
     }
   }, [user?.uid, authLoading]);
 
-  // Persistir: logado → API só se a API estiver OK (evita vários 401 ao abrir a página)
+  // Persistir: logado → API (com retry em caso de falha temporaria); deslogado → localStorage
   useEffect(() => {
     if (!progressLoaded || authLoading) return;
+    // Sempre salva localmente como backup
+    saveLocalProgress(progress);
     if (user) {
       if (!apiOkRef.current) return;
       isSavingRef.current = true;
       user
         .getIdToken(true)
         .then((token) => saveProgressToApi(token, progress))
+        .then(() => { apiOkRef.current = true; })
         .catch(() => { apiOkRef.current = false; })
         .finally(() => {
           isSavingRef.current = false;
         });
-    } else {
-      saveLocalProgress(progress);
     }
   }, [user?.uid, progress, progressLoaded, authLoading]);
 
