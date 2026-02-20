@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MongoClient } from 'mongodb';
-import { getFirebaseAdmin } from './_firebaseAdmin';
+import * as admin from 'firebase-admin';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'progress';
@@ -27,6 +27,56 @@ function getMongoClient() {
     globalWithMongo._mongoClient = new MongoClient(uri);
   }
   return globalWithMongo._mongoClient;
+}
+
+function getB64String(): string | null {
+  const partKeys = Array.from({ length: 8 }, (_, i) => `FIREBASE_SERVICE_ACCOUNT_B64_PART${i + 1}`);
+  const parts: string[] = [];
+  for (const key of partKeys) {
+    const val = process.env[key];
+    if (typeof val === 'string' && val.length > 0) parts.push(val.trim());
+  }
+  if (parts.length >= 2) {
+    const joined = parts.join('').replace(/\s/g, '');
+    if (joined.length > 100) return joined;
+  }
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (typeof one === 'string' && one.length > 100) return one.replace(/\s/g, '');
+  return null;
+}
+
+function parseServiceAccountEnv(): admin.ServiceAccount {
+  const b64Raw = getB64String();
+  if (b64Raw && b64Raw.length > 100) {
+    try {
+      let json = Buffer.from(b64Raw, 'base64').toString('utf8');
+      if (json.charCodeAt(0) === 0xfeff) json = json.slice(1);
+      return JSON.parse(json.replace(/\\n/g, '\n')) as admin.ServiceAccount;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`B64 decode/parse falhou (${b64Raw.length} chars): ${msg}`);
+      throw e;
+    }
+  }
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!raw || typeof raw !== 'string') throw new Error('Nenhuma service account configurada.');
+  try {
+    return JSON.parse(raw.replace(/\\n/g, '\n')) as admin.ServiceAccount;
+  } catch (e) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON parse falhou.');
+    throw e;
+  }
+}
+
+function getFirebaseAdmin() {
+  if (admin.apps.length > 0) return admin.app();
+  const parsed = parseServiceAccountEnv();
+  const sa = parsed as admin.ServiceAccount & { private_key?: string; client_email?: string; project_id?: string };
+  const projectId = parsed.projectId ?? sa.project_id;
+  return admin.initializeApp({
+    credential: admin.credential.cert(parsed),
+    projectId: projectId ?? 'desorientado-a-objetos',
+  });
 }
 
 async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string } | { userId: null; code: string }> {

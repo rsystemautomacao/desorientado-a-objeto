@@ -1,10 +1,38 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getB64String, getEnvDiagnostics } from './_firebaseAdmin';
 
 /**
  * GET /api/auth-status
  * Diagnostico (sem autenticacao): indica se a Service Account esta configurada e valida.
  */
+
+function getB64String(): string | null {
+  const partKeys = Array.from({ length: 8 }, (_, i) => `FIREBASE_SERVICE_ACCOUNT_B64_PART${i + 1}`);
+  const parts: string[] = [];
+  for (const key of partKeys) {
+    const val = process.env[key];
+    if (typeof val === 'string' && val.length > 0) parts.push(val.trim());
+  }
+  if (parts.length >= 2) {
+    const joined = parts.join('').replace(/\s/g, '');
+    if (joined.length > 100) return joined;
+  }
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  if (typeof one === 'string' && one.length > 100) return one.replace(/\s/g, '');
+  return null;
+}
+
+function getEnvDiagnostics() {
+  const partKeys = Array.from({ length: 8 }, (_, i) => `FIREBASE_SERVICE_ACCOUNT_B64_PART${i + 1}`);
+  const env: Record<string, number> = {};
+  for (const key of partKeys) {
+    const val = process.env[key];
+    const shortKey = key.replace('FIREBASE_SERVICE_ACCOUNT_B64_', '').toLowerCase() + 'Len';
+    env[shortKey] = typeof val === 'string' ? val.length : 0;
+  }
+  const one = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  env.singleLen = typeof one === 'string' ? one.length : 0;
+  return env;
+}
 
 function getParsedServiceAccount(): { parsed: Record<string, unknown>; source: 'json' | 'b64' } | { ok: false; reason: string; hint: string; b64Length?: number; env?: Record<string, number> } {
   const b64Raw = getB64String();
