@@ -46,11 +46,12 @@ export async function saveProfileToApi(token: string, profile: Profile): Promise
     body: JSON.stringify(profile),
   });
   if (!res.ok) {
-    const err = new Error('Failed to save profile') as Error & { status?: number; code?: string };
+    const err = new Error('Failed to save profile') as Error & { status?: number; code?: string; detail?: string };
     err.status = res.status;
     try {
       const body = await res.json();
       if (body && typeof body.code === 'string') err.code = body.code;
+      if (body && typeof body.detail === 'string') err.detail = body.detail;
     } catch {}
     throw err;
   }

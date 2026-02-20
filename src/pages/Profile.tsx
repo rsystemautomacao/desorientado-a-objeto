@@ -55,22 +55,11 @@ export default function Profile() {
         toast.success('Perfil salvo com sucesso.');
         setSaving(false);
       })
-      .catch(async (err: Error & { status?: number; code?: string }) => {
+      .catch(async (err: Error & { status?: number; code?: string; detail?: string }) => {
         setSaving(false);
         if (err?.status === 401) {
-          try {
-            const statusRes = await fetch(`${base}/api/auth-status`);
-            const statusData = await statusRes.json();
-            if (statusData?.ok === false && statusData?.hint) {
-              toast.error(`Servidor: ${statusData.hint}`);
-            } else if (statusData?.ok === true) {
-              toast.error('Token não aceito. Faça logout e entre novamente com Google.');
-            } else {
-              toast.error('O servidor não validou seu login. Confira FIREBASE_SERVICE_ACCOUNT_JSON no Vercel (uma única linha) e faça Redeploy.');
-            }
-          } catch {
-            toast.error('O servidor não validou seu login. Confira FIREBASE_SERVICE_ACCOUNT_JSON no Vercel (uma única linha) e faça Redeploy.');
-          }
+          const detail = err.detail ?? err.code ?? '';
+          toast.error(`Erro de autenticação: ${detail || 'token não aceito'}. Faça logout e entre novamente.`);
         } else {
           toast.error('Erro ao salvar. Tente novamente.');
         }

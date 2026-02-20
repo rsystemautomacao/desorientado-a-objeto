@@ -100,7 +100,7 @@ async function getUserIdFromToken(req: VercelRequest): Promise<{ userId: string 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('Profile API verifyIdToken failed:', msg);
-    return { userId: null, code: 'TOKEN_VERIFY_FAILED' };
+    return { userId: null, code: 'TOKEN_VERIFY_FAILED', detail: msg };
   }
 }
 
@@ -113,7 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const result = await getUserIdFromToken(req);
   if (!result.userId) {
     const code = 'code' in result ? result.code : 'TOKEN_INVALID';
-    return res.status(401).json({ error: 'Unauthorized', code });
+    const detail = 'detail' in result ? (result as { detail?: string }).detail : undefined;
+    return res.status(401).json({ error: 'Unauthorized', code, detail });
   }
   const userId = result.userId;
 
