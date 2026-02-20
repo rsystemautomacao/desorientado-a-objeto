@@ -4,6 +4,7 @@ import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
 import QuizComponent from '@/components/QuizComponent';
 import TryItBox from '@/components/TryItBox';
+import CodeFillExerciseBox from '@/components/CodeFillExerciseBox';
 import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
@@ -134,6 +135,21 @@ export default function Lesson() {
                   <p className="text-sm text-foreground/80 mt-1">{e.description}</p>
                   {e.code && <CodeBlock code={e.code} />}
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Complete o código */}
+        {content?.codeFillExercises && content.codeFillExercises.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-bold mb-4">✏️ Complete o código</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Selecione o trecho correto para completar cada código e clique em <strong>Verificar resposta</strong>.
+            </p>
+            <div className="space-y-6">
+              {content.codeFillExercises.map((ex, i) => (
+                <CodeFillExerciseBox key={i} exercise={ex} index={i} />
               ))}
             </div>
           </section>

@@ -26,11 +26,29 @@ export interface Section {
   tryItPrompt?: string;
 }
 
+/** Exercício "complete o código": aluno escolhe o trecho correto e recebe feedback */
+export interface CodeFillExercise {
+  /** Enunciado (ex.: "Selecione o método correto para imprimir Hello World em Java.") */
+  instruction: string;
+  /** Trecho de código antes da lacuna */
+  snippetBefore: string;
+  /** Trecho de código depois da lacuna */
+  snippetAfter: string;
+  /** Opções para preencher a lacuna (uma é a correta) */
+  options: string[];
+  /** Índice da opção correta (0-based) */
+  correctIndex: number;
+  /** Explicação exibida após verificar (opcional) */
+  explanation?: string;
+}
+
 export interface LessonContent {
   id: string;
   moduleId: number;
   objectives: string[];
   sections: Section[];
+  /** Exercícios de "complete o código" (escolher trecho correto) */
+  codeFillExercises?: CodeFillExercise[];
   /** Código Java completo para "Experimente aqui" ao final da aula (classe + main) */
   tryItCode?: string;
   /** Instrução para o bloco Experimente (ex: "Teste o que você aprendeu: altere valores e execute.") */

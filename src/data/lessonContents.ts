@@ -88,6 +88,9 @@ java MeuPrograma
     }
 }`,
     tryItPrompt: 'Altere as mensagens, adicione mais println ou print e execute para ver a saída.',
+    codeFillExercises: [
+      { instruction: 'Selecione o método correto para imprimir Hello World em Java.', snippetBefore: 'System.out.', snippetAfter: '("Hello World");', options: ['prntl', 'println', 'echo', 'printline'], correctIndex: 1, explanation: 'println é o método da classe PrintStream que imprime o texto e pula uma linha.' },
+    ],
     commonErrors: [
       { title: 'Nome do arquivo diferente da classe', description: 'O arquivo deve ter o mesmo nome da classe pública. MeuPrograma.java para a classe MeuPrograma.' },
       { title: 'Esquecer o ponto-e-vírgula', description: 'Toda instrução em Java termina com ; (ponto-e-vírgula).' },
@@ -201,6 +204,10 @@ final String EMPRESA = "Tech Corp";
       { title: 'Esquecer o L em long', description: 'Números grandes precisam do L: long x = 9999999999L;' },
       { title: 'Variável não inicializada', description: 'Java exige que variáveis locais sejam inicializadas antes do uso.' },
     ],
+    codeFillExercises: [
+      { instruction: 'Complete a declaração de uma variável inteira chamada idade com valor 25.', snippetBefore: '', snippetAfter: ' idade = 25;', options: ['int', 'integer', 'Integer', 'var'], correctIndex: 0, explanation: 'Em Java usamos o tipo primitivo int para números inteiros.' },
+      { instruction: 'Para comparar o conteúdo de duas Strings em Java, qual método usar?', snippetBefore: 'if (nome.', snippetAfter: '("Maria")) { ... }', options: ['==', 'equals', 'compare', 'same'], correctIndex: 1, explanation: 'Strings devem ser comparadas com .equals() para comparar conteúdo; == compara referências.' },
+    ],
     summary: [
       'Java tem 8 tipos primitivos: byte, short, int, long, float, double, char, boolean',
       'int e double são os mais usados',
@@ -272,6 +279,9 @@ boolean podeVotar = idade >= 16 && idade <= 120; // true`,
         tip: 'Java usa "curto-circuito": em &&, se o primeiro for false, não avalia o segundo. Em ||, se o primeiro for true, não avalia o segundo.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual operador retorna o resto da divisão entre dois inteiros?', snippetBefore: 'int resto = 10 ', snippetAfter: ' 3; // resto = 1', options: ['/', '%', 'mod', 'rem'], correctIndex: 1, explanation: 'O operador % (módulo) retorna o resto da divisão inteira.' },
+    ],
     summary: ['Operadores aritméticos: + - * / %', 'Divisão inteira trunca — use double para decimais', 'Operadores relacionais retornam boolean', 'Operadores lógicos: && (e), || (ou), ! (não)'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -341,6 +351,9 @@ if (isIdoso || isEstudante) {
       { title: 'Usar = ao invés de ==', description: 'if (x = 5) é atribuição, não comparação. Use if (x == 5).' },
       { title: 'Esquecer as chaves {}', description: 'Sem chaves, apenas a próxima linha pertence ao if. Sempre use chaves!' },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual operador deve ser usado para comparar dois valores em uma condição?', snippetBefore: 'if (idade ', snippetAfter: ' 18) { ... }', options: ['=', '==', 'equals', ':='], correctIndex: 1, explanation: '== é o operador de igualdade; = é atribuição.' },
+    ],
     summary: ['if/else permite executar código condicionalmente', 'else if encadeia múltiplas condições', 'Operador ternário: condição ? valorTrue : valorFalse', 'Combine condições com && e ||'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -404,6 +417,9 @@ switch (cor.toLowerCase()) {
         System.out.println("Cor inválida");
 }`,
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual palavra-chave encerra cada case no switch para evitar fall-through?', snippetBefore: 'case 1:\n    System.out.println("Domingo");\n    ', snippetAfter: ';\n    break;', options: ['break', 'exit', 'stop', 'end'], correctIndex: 0, explanation: 'break encerra o case e impede que a execução caia nos cases seguintes.' },
     ],
     summary: ['switch compara uma variável com valores fixos', 'Sempre use break para evitar fall-through', 'default é o "else" do switch', 'Funciona com int, char, String, enum'],
     tryItCode: `public class Main {
@@ -478,6 +494,9 @@ for (int i = 1; i <= 10; i++) {
 }`,
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Complete o laço for que repete de 1 a 10. Qual palavra-chave inicia um laço for?', snippetBefore: 'for (int i = 1; i <= 10; i', snippetAfter: ') { ... }', options: ['++', 'i++', '+= 1', '+ 1'], correctIndex: 1, explanation: 'i++ incrementa a variável i em 1 a cada iteração. ++ sozinho não é válido no lugar do incremento.' },
+    ],
     summary: ['for: quando sabe o número de repetições', 'while: quando depende de uma condição', 'do-while: garante pelo menos uma execução', 'break sai do laço, continue pula a iteração'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -540,6 +559,9 @@ System.out.println("Média: " + media); // 30.0`,
       { title: 'ArrayIndexOutOfBoundsException', description: 'Acessar um índice que não existe. Ex: array[5] em um array de tamanho 5 (máximo é 4).' },
       { title: 'Confundir length com length()', description: 'Arrays usam .length (sem parênteses). Strings usam .length() (com parênteses).' },
     ],
+    codeFillExercises: [
+      { instruction: 'Como obter o tamanho de um array em Java?', snippetBefore: 'int[] notas = {10, 8, 7};\nint n = notas.', snippetAfter: ';', options: ['length', 'length()', 'size', 'size()'], correctIndex: 0, explanation: 'Arrays usam o atributo .length (sem parênteses). Strings usam .length().' },
+    ],
     summary: ['Arrays armazenam múltiplos valores do mesmo tipo', 'Índices começam em 0', 'Use .length para saber o tamanho', 'for-each é mais limpo quando não precisa do índice', 'Cuidado com IndexOutOfBoundsException'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -579,6 +601,9 @@ for (int i = 0; i < matriz.length; i++) {
     System.out.println(); // pula linha
 }`,
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Como declarar uma matriz (array 2D) de inteiros em Java?', snippetBefore: '', snippetAfter: '[][] matriz = new int[3][4];', options: ['int', 'array', 'matrix', 'Integer'], correctIndex: 0, explanation: 'Matrizes são declaradas com dois pares de colchetes: int[][] para inteiros.' },
     ],
     summary: ['Matrizes são arrays de arrays (2D)', 'Acesse com [linha][coluna]', 'Use loops aninhados para percorrer'],
     tryItCode: `public class Main {
@@ -631,6 +656,9 @@ for (int i = 0; i < matriz.length; i++) {
         codeExplanation: 'Sobrecarga permite criar métodos com o mesmo nome mas parâmetros diferentes. O Java escolhe o método correto baseado nos argumentos passados.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual palavra-chave indica que um método não retorna valor?', snippetBefore: 'public static ', snippetAfter: ' saudacao(String nome) { ... }', options: ['void', 'null', 'none', 'empty'], correctIndex: 0, explanation: 'void indica que o método não retorna nenhum valor.' },
+    ],
     summary: ['Métodos organizam e reutilizam código', 'void = sem retorno, return = com retorno', 'Sobrecarga: mesmo nome, parâmetros diferentes', 'Variáveis locais existem apenas dentro do método'],
     tryItCode: `public class Main {
     public static int somar(int a, int b) {
@@ -676,6 +704,9 @@ public class EntradaDados {
       },
       { title: 'Quando usar cada método', body: 'next() lê até o próximo espaço ou quebra de linha. nextLine() lê a linha inteira. nextInt(), nextDouble(), nextBoolean() leem um valor daquele tipo. Para ler vários números na mesma linha, você pode usar nextInt() várias vezes ou ler a linha com nextLine() e depois fazer split() e Integer.parseInt().',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual método do Scanner lê uma linha completa de texto?', snippetBefore: 'String linha = scanner.', snippetAfter: '();', options: ['next', 'nextLine', 'readLine', 'getLine'], correctIndex: 1, explanation: 'nextLine() lê até a quebra de linha; next() lê apenas até o próximo espaço.' },
     ],
     summary: ['Scanner lê dados do console', 'nextLine() para texto, nextInt()/nextDouble() para números', 'Limpe o buffer com nextLine() após ler números', 'Sempre feche o Scanner com close()'],
     tryItCode: `import java.util.Scanner;
@@ -736,6 +767,9 @@ String resultado = sb.toString();`,
       { title: 'Comparando Strings', body: 'Nunca use == para comparar conteúdo. Use s1.equals(s2) ou s1.equalsIgnoreCase(s2). O == compara se são o mesmo objeto na memória, não o texto.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual método divide uma String em um array usando um separador?', snippetBefore: 'String[] partes = "a,b,c".', snippetAfter: '(",");', options: ['split', 'divide', 'break', 'cut'], correctIndex: 0, explanation: 'split(regex) divide a String e retorna um array de partes.' },
+    ],
     summary: ['Strings são imutáveis em Java', 'Use .equals() para comparar, nunca ==', 'StringBuilder é mais eficiente para concatenações em loop', 'split() divide, trim() limpa espaços'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -781,6 +815,9 @@ String resultado = sb.toString();`,
       { title: 'Erros mais comuns', body: 'NullPointerException: chamou método ou acessou campo em uma referência null. ArrayIndexOutOfBoundsException: índice fora do tamanho do array. NumberFormatException: tentativa de converter uma String que não é número (ex.: Integer.parseInt("abc")). Verifique a linha indicada e a variável que está null ou com índice inválido.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual exceção ocorre ao acessar um índice fora do tamanho do array?', snippetBefore: 'int[] a = {1, 2, 3};\nint x = a[5]; // lança ', snippetAfter: '', options: ['ArrayIndexOutOfBoundsException', 'IndexError', 'OutOfBounds', 'ArrayException'], correctIndex: 0, explanation: 'ArrayIndexOutOfBoundsException é lançada quando o índice é negativo ou >= length.' },
+    ],
     summary: ['Stack trace mostra tipo, mensagem e localização do erro', 'Leia de baixo para cima para entender a sequência', 'Erros comuns: NullPointerException, ArrayIndexOutOfBounds, NumberFormatException'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -825,6 +862,9 @@ for (String nome : nomes) {
         codeExplanation: 'new ArrayList<>() cria uma lista vazia. add() insere no final; add(1, "Bia") insere na posição 1. remove() pode ser por índice ou por valor (remove a primeira ocorrência).',
         tip: 'ArrayList usa tipos wrapper (Integer, Double) ao invés de primitivos (int, double). Ex: ArrayList<Integer>, não ArrayList<int>.',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual método do ArrayList retorna o número de elementos?', snippetBefore: 'ArrayList<String> list = ...;\nint n = list.', snippetAfter: '();', options: ['length', 'size', 'count', 'length()'], correctIndex: 1, explanation: 'ArrayList usa .size(); arrays usam .length (atributo).' },
     ],
     summary: ['Array: tamanho fixo, acesso por índice', 'ArrayList: tamanho dinâmico, mais métodos disponíveis', 'ArrayList usa generics: ArrayList<Tipo>', 'Prefira ArrayList quando o tamanho pode mudar'],
     tryItCode: `import java.util.ArrayList;
@@ -876,6 +916,9 @@ public class Cliente {
       },
       { title: 'Import estático e nome fully qualified', body: 'Você pode usar o nome completo sem import: java.util.ArrayList lista = new java.util.ArrayList<>();. Para métodos estáticos, import static java.lang.Math.PI; permite usar PI em vez de Math.PI.',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Como importar a classe ArrayList do pacote java.util?', snippetBefore: '', snippetAfter: ' java.util.ArrayList;', options: ['import', 'use', 'include', 'require'], correctIndex: 0, explanation: 'A palavra-chave import permite usar classes de outros pacotes pelo nome curto.' },
     ],
     summary: ['Pacotes organizam classes em diretórios', 'Declare com package na primeira linha', 'Use import para usar classes de outros pacotes', 'Convenção: com.empresa.projeto.modulo'],
     tryItCode: `import java.util.ArrayList;
@@ -962,6 +1005,9 @@ public class ContaBancaria {
 // contaAna.depositar(500);  // Validação inclusa!
 // contaAna.sacar(200);      // Proteção automática!`,
     comparisonExplanation: 'Com POO, os dados (titular, saldo) ficam PROTEGIDOS dentro da classe. Ninguém pode alterar o saldo diretamente — precisa passar pelos métodos depositar() e sacar(), que fazem validação. O código fica organizado, seguro e fácil de manter.',
+    codeFillExercises: [
+      { instruction: 'Qual pilar da POO esconde os dados internos e expõe acesso apenas por métodos?', snippetBefore: 'O ', snippetAfter: ' protege os dados com private e getters/setters.', options: ['Encapsulamento', 'Herança', 'Polimorfismo', 'Abstração'], correctIndex: 0, explanation: 'Encapsulamento é esconder os dados e controlar o acesso por métodos.' },
+    ],
     summary: ['POO modela software como o mundo real, com objetos', 'Cada objeto tem atributos (dados) e métodos (comportamentos)', '4 pilares: Encapsulamento, Herança, Polimorfismo, Abstração', 'POO resolve problemas de organização, manutenção e segurança do código', 'Código procedural funciona para projetos simples, mas não escala bem'],
     tryItCode: `class ContaSimples {
     private String titular;
@@ -1047,6 +1093,9 @@ public class Main {
     }
 }`,
     tryItPrompt: 'Crie um segundo Carro (c2), atribua outros valores e chame ligar() e info().',
+    codeFillExercises: [
+      { instruction: 'Como criar uma nova instância (objeto) de uma classe em Java?', snippetBefore: 'Carro c = ', snippetAfter: ' Carro();', options: ['new', 'create', 'make', 'instance'], correctIndex: 0, explanation: 'A palavra-chave new instancia um objeto e chama o construtor da classe.' },
+    ],
     commonErrors: [
       { title: 'Esquecer o new', description: 'Carro c = Carro(); está errado. Use Carro c = new Carro();' },
       { title: 'Confundir classe e objeto', description: 'A classe é a definição; o objeto é a instância criada com new.' },
@@ -1108,6 +1157,9 @@ public class Main {
     }
 }`,
     tryItPrompt: 'Altere preço e estoque; tente vender mais do que tem em estoque.',
+    codeFillExercises: [
+      { instruction: 'O que define o estado atual de um objeto em POO?', snippetBefore: 'Os ', snippetAfter: ' armazenam os dados (nome, preço, estoque) do objeto.', options: ['atributos', 'métodos', 'construtores', 'classes'], correctIndex: 0, explanation: 'Atributos são as variáveis que guardam o estado; métodos são as ações.' },
+    ],
     commonErrors: [
       { title: 'Método que altera estado sem validar', description: 'Sempre verifique (ex.: quantidade <= estoque) antes de modificar atributos.' },
       { title: 'Atributos públicos demais', description: 'Mais à frente você verá que private + getters/setters protege melhor.' },
@@ -1164,6 +1216,9 @@ public class Main {
     }
 }`,
     tryItPrompt: 'Crie um terceiro construtor que receba só idade (e use nome padrão).',
+    codeFillExercises: [
+      { instruction: 'Como referenciar o atributo da classe quando o parâmetro tem o mesmo nome?', snippetBefore: 'public Pessoa(String nome) {\n    ', snippetAfter: '.nome = nome;\n}', options: ['this', 'self', 'super', 'obj'], correctIndex: 0, explanation: 'this refere-se ao objeto atual e diferencia atributo de parâmetro.' },
+    ],
     commonErrors: [
       { title: 'Colocar tipo de retorno no construtor', description: 'Construtor não tem void nem nenhum tipo; só o nome da classe.' },
       { title: 'Esquecer que o padrão some', description: 'Se definir Pessoa(String n), new Pessoa() sem argumentos deixa de compilar.' },
@@ -1265,6 +1320,9 @@ public class ContaProtegida {
       { title: 'Criar get/set para tudo sem pensar', description: 'Gerar getters e setters automáticos derrota o propósito. Pense se o atributo PRECISA ser exposto.' },
       { title: 'Setter sem validação', description: 'Um setter que apenas faz this.x = x não protege nada. Adicione validação!' },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual modificador de acesso esconde o atributo de outras classes e permite acesso só por métodos da própria classe?', snippetBefore: 'private double saldo;\n    // ', snippetAfter: ' controla o acesso aos dados.', options: ['private', 'public', 'hidden', 'internal'], correctIndex: 0, explanation: 'private torna o membro acessível apenas dentro da própria classe.' },
+    ],
     summary: ['Encapsulamento protege dados com private', 'Getters fornecem acesso de leitura controlado', 'Setters validam antes de alterar', 'Nem todo atributo precisa de get/set', 'Métodos de negócio (depositar, sacar) são melhor que setters genéricos'],
     tryItCode: `class Conta {
     private double saldo = 0;
@@ -1319,6 +1377,9 @@ System.out.println(Funcionario.getTotalFuncionarios()); // 2`,
         codeExplanation: 'totalFuncionarios e getTotalFuncionarios() são da classe; nome e salario são de cada instância. Acesse static pela classe: Funcionario.getTotalFuncionarios().',
         warning: 'Métodos static NÃO podem acessar atributos de instância (não-static). Eles não sabem qual objeto usar!',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual palavra-chave indica que um membro pertence à classe e não a cada objeto?', snippetBefore: 'private ', snippetAfter: ' int totalFuncionarios = 0;', options: ['static', 'class', 'shared', 'common'], correctIndex: 0, explanation: 'static faz o membro ser compartilhado por todos os objetos da classe.' },
     ],
     summary: ['static pertence à classe, não ao objeto', 'Use para contadores, constantes e utilitários', 'Métodos static não acessam this', 'Acesse via NomeClasse.metodo()'],
     tryItCode: `class Funcionario {
@@ -1390,6 +1451,9 @@ public class Main {
     }
 }`,
     tryItPrompt: 'Troque o nome do parâmetro para n e use this.nome = n; veja que this continua necessário para o atributo.',
+    codeFillExercises: [
+      { instruction: 'Para encadear chamadas como obj.setA(1).setB(2), o método deve retornar o quê?', snippetBefore: 'public Aluno setNome(String nome) {\n    this.nome = nome;\n    return ', snippetAfter: ';\n}', options: ['this', 'self', 'obj', 'nome'], correctIndex: 0, explanation: 'Retornar this permite method chaining (encadear chamadas).' },
+    ],
     commonErrors: [
       { title: 'Usar this em método static', description: 'Em static não existe "objeto atual", então this não pode ser usado.' },
       { title: 'Confundir parâmetro e atributo', description: 'Se o parâmetro se chama nome, use this.nome para o atributo.' },
@@ -1479,6 +1543,9 @@ public class Gato extends Animal {
 }
 // Mudou comer()? Muda só em Animal!`,
     comparisonExplanation: 'Com herança, o código comum fica na classe pai (Animal). Se precisar alterar o comportamento de comer(), muda em um lugar só. Sem herança, cada animal repete o mesmo código.',
+    codeFillExercises: [
+      { instruction: 'Como declarar que Cachorro herda de Animal em Java?', snippetBefore: 'public class Cachorro ', snippetAfter: ' Animal { ... }', options: ['extends', 'inherits', 'implements', 'from'], correctIndex: 0, explanation: 'extends indica que a classe herda da superclasse.' },
+    ],
     summary: ['Herança: classe filha herda da pai com extends', 'Use quando existe relação "é um" genuína', 'super() chama o construtor da classe pai', 'protected permite acesso nas subclasses', 'Prefira composição quando a relação é "tem um"'],
     tryItCode: `class Animal {
     protected String nome;
@@ -1543,6 +1610,9 @@ for (Animal a : animais) {
         codeExplanation: 'A variável é do tipo Animal, mas o objeto real é Cachorro ou Gato. O Java sabe qual método chamar em tempo de execução. Isso é polimorfismo!',
         tip: '@Override é opcional mas fortemente recomendado. Ele garante que você está realmente sobrescrevendo um método do pai (e não criando um novo por erro de digitação).',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual anotação indica que o método da subclasse sobrescreve o método do pai?', snippetBefore: '', snippetAfter: '\n    public void emitirSom() { ... }', options: ['@Override', '@Overrides', '@OverrideMethod', '@OverrideParent'], correctIndex: 0, explanation: '@Override deixa claro que é sobrescrita e o compilador verifica a assinatura.' },
     ],
     summary: ['Polimorfismo: mesmo método, comportamentos diferentes', '@Override indica sobrescrita do método do pai', 'Referência do tipo pai pode apontar para objeto do tipo filho', 'O Java decide qual método chamar em tempo de execução'],
     tryItCode: `class Animal {
@@ -1624,6 +1694,9 @@ public class Retangulo extends Forma {
         codeExplanation: 'Forma é abstrata; calcularArea() é abstract (sem corpo). Circulo e Retangulo são concretas e implementam calcularArea(). exibir() é concreto e usa calcularArea().',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual palavra-chave declara um método sem implementação que as subclasses devem implementar?', snippetBefore: 'public ', snippetAfter: ' double calcularArea();', options: ['abstract', 'virtual', 'empty', 'override'], correctIndex: 0, explanation: 'Métodos abstract não têm corpo e devem ser implementados nas subclasses concretas.' },
+    ],
     summary: ['abstract class não pode ser instanciada', 'Métodos abstract não têm corpo — subclasses implementam', 'Pode ter métodos concretos (com corpo)', 'Use quando quer forçar subclasses a implementar algo'],
     tryItCode: `abstract class Forma {
     protected String cor;
@@ -1696,6 +1769,9 @@ public class NotaFiscal implements Pagavel, Imprimivel {
         tip: 'Interface = "o que fazer". Classe = "como fazer". Use interfaces para desacoplar seu código.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Como declarar que uma classe implementa uma interface em Java?', snippetBefore: 'public class Campainha ', snippetAfter: ' Som { ... }', options: ['implements', 'extends', 'implements interface', 'uses'], correctIndex: 0, explanation: 'implements é usado para interfaces; extends é para herança de classe.' },
+    ],
     summary: ['Interface define contratos (métodos obrigatórios)', 'Uma classe pode implementar múltiplas interfaces', 'Todos os métodos da interface devem ser implementados', 'Use interfaces para código desacoplado e flexível'],
     tryItCode: `interface Som {
     void emitir();
@@ -1756,6 +1832,9 @@ public class Carro {
         codeExplanation: 'Carro tem um atributo Motor. No construtor cria new Motor(potencia). ligar() delega para motor.ligar().',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Quando um Carro contém um Motor como atributo, qual relação estamos modelando?', snippetBefore: 'Carro ', snippetAfter: ' Motor (atributo motor)', options: ['tem um', 'é um', 'extends', 'herda de'], correctIndex: 0, explanation: 'Composição modela "tem um"; herança modela "é um".' },
+    ],
     summary: ['Composição: objeto contém outro objeto', 'Use para relação "tem um" (Carro TEM Motor)', 'Herança para relação "é um" (Cachorro É Animal)', 'Composição é mais flexível e desacoplada'],
     tryItCode: `class Motor {
     int potencia;
@@ -1807,6 +1886,9 @@ public class Cachorro extends Animal {
         codeExplanation: 'Calculadora: três somar() com listas de parâmetros diferentes = sobrecarga. Cachorro.falar() redefine Animal.falar() = sobrescrita.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Vários métodos com o mesmo nome mas parâmetros diferentes na mesma classe é chamado de:', snippetBefore: 'int somar(int a, int b) { ... }\ndouble somar(double a, double b) { ... }\n// Isso é ', snippetAfter: '', options: ['sobrecarga', 'sobrescrita', 'polimorfismo', 'herança'], correctIndex: 0, explanation: 'Sobrecarga (overloading): mesmo nome, parâmetros diferentes, mesma classe.' },
+    ],
     summary: ['Sobrecarga: mesmo nome, parâmetros diferentes, mesma classe', 'Sobrescrita: mesmo nome e parâmetros, classe filha redefine', 'Sobrecarga é decidida em compilação', 'Sobrescrita é decidida em execução (polimorfismo)'],
     tryItCode: `class Calc {
     int somar(int a, int b) { return a + b; }
@@ -1842,6 +1924,9 @@ public class Main {
 // public > protected > default > private`,
         tip: 'Regra geral: use private por padrão. Exponha apenas o necessário com public. Use protected para herança.',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual modificador permite acesso apenas no mesmo pacote (sem escrever nada)?', snippetBefore: '// ', snippetAfter: ': visível só no mesmo pacote\nint c;', options: ['default', 'package', 'same', 'internal'], correctIndex: 0, explanation: 'Sem modificador (default/package-private) a visibilidade é apenas no pacote.' },
     ],
     summary: ['private: apenas na classe', 'default: apenas no pacote', 'protected: pacote + subclasses', 'public: qualquer lugar'],
     tryItCode: `class Exemplo {
@@ -1894,6 +1979,9 @@ public void lerArquivo(String caminho) throws IOException {
         codeExplanation: 'try envolve código que pode falhar. catch trata o erro específico. finally sempre executa (útil para fechar recursos). throws declara que o método pode lançar exceção.',
       },
     ],
+    codeFillExercises: [
+      { instruction: 'Qual bloco executa sempre, com ou sem exceção, e é usado para liberar recursos?', snippetBefore: 'try { ... } catch (Exception e) { ... }\n', snippetAfter: ' { System.out.println("Sempre executa"); }', options: ['finally', 'always', 'cleanup', 'end'], correctIndex: 0, explanation: 'O bloco finally é executado sempre, ideal para fechar arquivos ou conexões.' },
+    ],
     summary: ['try/catch trata erros em tempo de execução', 'finally sempre executa (cleanup)', 'Checked exceptions obrigam tratamento (IOException)', 'Unchecked não obrigam (NullPointerException)', 'throws declara exceções que o método pode lançar'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
@@ -1938,6 +2026,9 @@ public class FuncionarioRepository {
         codeExplanation: 'SRP: Funcionario só cuida de dados e cálculo de salário. RelatorioService e FuncionarioRepository têm responsabilidades separadas.',
         tip: 'Comece pelo S (SRP) — ele já resolve a maioria dos problemas de design. Se uma classe faz muita coisa, quebre em classes menores.',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Qual princípio SOLID diz que uma classe deve ter apenas uma razão para mudar?', snippetBefore: 'O princípio ', snippetAfter: ' (Single Responsibility) diz: uma classe, uma responsabilidade.', options: ['S', 'O', 'L', 'I'], correctIndex: 0, explanation: 'S = Single Responsibility Principle: uma classe deve ter uma única responsabilidade.' },
     ],
     summary: ['S: Uma classe, uma responsabilidade', 'O: Estenda comportamento sem modificar código existente', 'L: Subclasses devem funcionar onde a classe pai funciona', 'I: Interfaces pequenas e específicas', 'D: Dependa de abstrações (interfaces)'],
     commonErrors: [
@@ -2006,6 +2097,9 @@ for (Produto p : produtos) {
 }`,
         codeExplanation: 'Este projeto usa: interface (Exibivel), classe abstrata (ItemCadastro), herança (Produto extends ItemCadastro), encapsulamento (private + getters), static (contador), polimorfismo (calcularValor e exibir).',
       },
+    ],
+    codeFillExercises: [
+      { instruction: 'Para percorrer uma lista e chamar um método em cada elemento, qual estrutura usar?', snippetBefore: 'for (Produto p : ', snippetAfter: ') {\n    p.exibir();\n}', options: ['produtos', 'lista', 'array', 'itens'], correctIndex: 0, explanation: 'O for-each percorre a coleção e aplica a ação em cada elemento.' },
     ],
     summary: ['Combine todos os conceitos: classes, herança, interfaces, encapsulamento', 'Use interfaces para contratos', 'Classes abstratas para comportamento base', 'ArrayList para coleções dinâmicas', 'Parabéns! Você completou o curso! 🎉'],
     tryItCode: `import java.util.ArrayList;
