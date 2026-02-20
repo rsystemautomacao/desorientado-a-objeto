@@ -85,40 +85,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const keyStartsCorrectly = privateKey.startsWith('-----BEGIN');
   const keyHasNewlines = privateKey.includes('\n');
 
-  // Step 4: Try admin.credential.cert()
+  // Step 4: Try admin.credential.cert() — passa o JSON raw completo
   try {
     // Delete existing app to test fresh
     if (admin.apps.length > 0) {
       await admin.app().delete();
     }
-    const sa: admin.ServiceAccount = {
-      projectId: projectId ?? 'desorientado-a-objetos',
-      clientEmail: clientEmail,
-      privateKey: privateKey,
-    };
+
+    // Garante snake_case no JSON raw (cert() + google-auth-library precisam)
+    if (!parsed.project_id && parsed.projectId) parsed.project_id = parsed.projectId;
+    if (!parsed.private_key && parsed.privateKey) parsed.private_key = parsed.privateKey;
+    if (!parsed.client_email && parsed.clientEmail) parsed.client_email = parsed.clientEmail;
+
+    const pid = (parsed.project_id ?? 'desorientado-a-objetos') as string;
+
     admin.initializeApp({
-      credential: admin.credential.cert(sa),
-      projectId: sa.projectId,
+      credential: admin.credential.cert(parsed as admin.ServiceAccount),
+      projectId: pid,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? e.stack?.split('\n').slice(0, 8).join('\n') : undefined;
     return res.status(200).json({
       ok: false,
       step: 'cert_init',
       error: msg,
+      stack,
       source,
+      parsedKeys: Object.keys(parsed),
+      hasType: !!parsed.type,
       projectId: projectId ?? null,
       privateKeyLen: privateKey.length,
+      privateKeyFirst50: privateKey.substring(0, 50),
       keyStartsCorrectly,
       keyHasNewlines,
     });
   }
 
+  // Step 5: Try verifyIdToken with a dummy to confirm auth module works
+  let authModuleOk = false;
+  try {
+    await admin.app().auth().verifyIdToken('dummy-token-for-test');
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // "Decoding ... failed" means the auth module is working (just the token is invalid)
+    authModuleOk = msg.includes('Decoding') || msg.includes('must be a') || msg.includes('INVALID_ARGUMENT');
+  }
+
   return res.status(200).json({
     ok: true,
     step: 'all_passed',
+    authModuleOk,
     projectId: projectId ?? null,
     source,
+    parsedKeys: Object.keys(parsed),
+    hasType: !!parsed.type,
     privateKeyLen: privateKey.length,
     keyStartsCorrectly,
     keyHasNewlines,
