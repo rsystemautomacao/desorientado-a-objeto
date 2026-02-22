@@ -236,8 +236,11 @@ export default function Admin() {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-muted/30">
+              <div className="px-4 py-3 border-b border-border bg-muted/30 flex flex-col gap-1">
                 <h2 className="font-semibold">Por aluno</h2>
+                <p className="text-xs text-muted-foreground">
+                  Nome, Tipo, Curso e Série vêm do <strong>Perfil</strong> que o aluno preenche no site. Se estiver em branco, o aluno ainda não acessou a página Perfil.
+                </p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -262,10 +265,12 @@ export default function Admin() {
                     ) : (
                       entries.map((e) => (
                         <tr key={e.userId} className="border-b border-border/50 hover:bg-muted/20">
-                          <td className="px-4 py-3">{e.nome || e.userId.slice(0, 8)}</td>
-                          <td className="px-4 py-3">{e.tipo}</td>
-                          <td className="px-4 py-3">{e.curso}</td>
-                          <td className="px-4 py-3">{e.serieOuSemestre}</td>
+                          <td className="px-4 py-3" title={e.userId}>
+                            {e.nome ? e.nome : <span className="text-muted-foreground">id: {e.userId.slice(0, 12)}…</span>}
+                          </td>
+                          <td className="px-4 py-3">{e.tipo || '—'}</td>
+                          <td className="px-4 py-3">{e.curso || '—'}</td>
+                          <td className="px-4 py-3">{e.serieOuSemestre || '—'}</td>
                           <td className="px-4 py-3">
                             {e.completedCount} / {totalLessons}
                           </td>

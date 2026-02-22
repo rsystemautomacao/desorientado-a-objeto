@@ -47,69 +47,37 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     setOutput('');
 
     try {
-      // Tentar modo síncrono (wait=true) primeiro
-      const res = await fetch(
-        `${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`,
+      // Modo assíncrono apenas (evita 400 quando wait=true não é permitido)
+      const createRes = await fetch(
+        `${JUDGE0_URL}/submissions?base64_encoded=false`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             source_code: code,
             language_id: JAVA_LANGUAGE_ID,
+            stdin: '',
           }),
         }
       );
 
-      const data: {
-        token?: string;
-        stdout?: string | null;
-        stderr?: string | null;
-        compile_output?: string | null;
-        message?: string | null;
-        status?: { id: number; description?: string };
-        error?: string;
-      } = await res.json().catch(() => ({}));
+      const createData = await createRes.json().catch(() => ({}));
+      const token = createData.token;
 
-      if (res.ok) {
-        const statusId = data.status?.id ?? 0;
-        if (isTerminalStatus(statusId)) {
-          setOutput(buildOutput(data));
-          setState(statusId === 3 ? 'success' : 'error');
-          return;
-        }
-        if (data.token) {
-          const polled = await pollSubmission(data.token);
-          setOutput(buildOutput(polled));
-          setState(polled.status?.id === 3 ? 'success' : 'error');
-          return;
-        }
+      if (!createRes.ok || !token) {
+        const errMsg = typeof createData.error === 'string' ? createData.error : createData.message ?? createData.errors?.join?.(' ') ?? '';
+        setOutput(
+          errMsg
+            ? `API: ${errMsg}\n\nCopie o código e execute no seu computador se o erro persistir.`
+            : `Erro na API (${createRes.status}). Tente novamente ou copie o código e execute no seu computador.`
+        );
+        setState('error');
+        return;
       }
 
-      if (res.status === 400 && data.error?.toLowerCase().includes('wait')) {
-        const createRes = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_code: code,
-            language_id: JAVA_LANGUAGE_ID,
-          }),
-        });
-        if (!createRes.ok) {
-          setOutput(`Erro na API (${createRes.status}). Copie o código e execute no seu computador.`);
-          setState('error');
-          return;
-        }
-        const createData = await createRes.json();
-        if (createData.token) {
-          const polled = await pollSubmission(createData.token);
-          setOutput(buildOutput(polled));
-          setState(polled.status?.id === 3 ? 'success' : 'error');
-          return;
-        }
-      }
-
-      setOutput(`Erro na API (${res.status}). Tente novamente ou copie o código e execute no seu computador.`);
-      setState('error');
+      const polled = await pollSubmission(token);
+      setOutput(buildOutput(polled));
+      setState(polled.status?.id === 3 ? 'success' : 'error');
     } catch {
       setOutput('Não foi possível executar. Verifique sua conexão ou copie o código e execute no seu IDE (ex: VS Code, IntelliJ).');
       setState('error');

@@ -146,12 +146,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const entries: StudyHistoryEntry[] = progressList.map((doc) => {
       const profile = profileByUserId.get(doc.userId);
+      const empty = (s: string | undefined) => (s && s.trim() ? s.trim() : '');
       return {
         userId: doc.userId,
-        nome: profile?.nome ?? '—',
-        tipo: profile?.tipo ?? '—',
-        curso: profile?.curso ?? '—',
-        serieOuSemestre: profile?.serieOuSemestre ?? '—',
+        nome: empty(profile?.nome),
+        tipo: empty(profile?.tipo),
+        curso: empty(profile?.curso),
+        serieOuSemestre: empty(profile?.serieOuSemestre),
         completedLessons: Array.isArray(doc.completedLessons) ? doc.completedLessons : [],
         completedCount: Array.isArray(doc.completedLessons) ? doc.completedLessons.length : 0,
         quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},
