@@ -6,10 +6,10 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, profileComplete, profileLoading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Carregando...</div>
@@ -19,6 +19,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/?login=1" state={{ from: location.pathname }} replace />;
+  }
+
+  // Profile incomplete and not already on /perfil → force profile fill
+  if (profileComplete === false && location.pathname !== '/perfil') {
+    return <Navigate to="/perfil" replace />;
   }
 
   return <>{children}</>;

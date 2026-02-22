@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi, saveProfileToApi, type Profile } from '@/lib/profileStore';
@@ -13,11 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { User, Loader2 } from 'lucide-react';
+import { User, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, profileComplete, refreshProfileStatus } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile>({
     nome: '',
     tipo: 'Superior',
@@ -27,6 +29,8 @@ export default function Profile() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const isMandatoryFill = profileComplete === false;
 
   useEffect(() => {
     if (!user) return;
@@ -44,16 +48,24 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate mandatory fields
+    if (!profile.nome.trim() || !profile.curso.trim() || !profile.serieOuSemestre.trim()) {
+      toast.error('Preencha todos os campos obrigatórios (Nome, Curso, Série/Semestre).');
+      return;
+    }
+
     setSaving(true);
-    const base = typeof import.meta.env.VITE_API_BASE_URL === 'string' && import.meta.env.VITE_API_BASE_URL.length > 0
-      ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')
-      : '';
     user
       .getIdToken(true)
       .then((token) => saveProfileToApi(token, profile))
       .then(() => {
         toast.success('Perfil salvo com sucesso.');
         setSaving(false);
+        refreshProfileStatus(profile);
+        if (isMandatoryFill) {
+          navigate('/trilha');
+        }
       })
       .catch(async (err: Error & { status?: number; code?: string; detail?: string }) => {
         setSaving(false);
@@ -83,18 +95,31 @@ export default function Profile() {
           <User className="h-8 w-8 text-primary" />
           Perfil do Aluno
         </h1>
-        <p className="text-muted-foreground mb-8">
-          Preencha seus dados para personalizar sua experiência no curso.
+        <p className="text-muted-foreground mb-6">
+          {isMandatoryFill
+            ? 'Complete seu cadastro para liberar o acesso ao curso.'
+            : 'Atualize seus dados a qualquer momento.'}
         </p>
+
+        {isMandatoryFill && (
+          <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <p className="text-sm text-foreground">
+              <strong>Preencha seu perfil para continuar.</strong>{' '}
+              Os campos Nome, Curso e Série/Semestre são obrigatórios para acessar o conteúdo do curso.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome completo</Label>
+            <Label htmlFor="nome">Nome completo *</Label>
             <Input
               id="nome"
               value={profile.nome}
               onChange={(e) => setProfile((p) => ({ ...p, nome: e.target.value }))}
               placeholder={user?.displayName ?? 'Seu nome'}
+              required
             />
           </div>
 
@@ -115,18 +140,19 @@ export default function Profile() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="curso">Curso ou área de interesse</Label>
+            <Label htmlFor="curso">Curso ou área de interesse *</Label>
             <Input
               id="curso"
               value={profile.curso}
               onChange={(e) => setProfile((p) => ({ ...p, curso: e.target.value }))}
               placeholder="Ex: Ciência da Computação, Desenvolvimento Web..."
+              required
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="serie">
-              {profile.tipo === 'EM' ? 'Série' : 'Semestre ou período'}
+              {profile.tipo === 'EM' ? 'Série *' : 'Semestre ou período *'}
             </Label>
             <Input
               id="serie"
@@ -137,6 +163,7 @@ export default function Profile() {
                   ? 'Ex: 2º ano, 3º ano'
                   : 'Ex: 3º semestre, 2º período'
               }
+              required
             />
           </div>
 
@@ -158,6 +185,8 @@ export default function Profile() {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Salvando...
               </>
+            ) : isMandatoryFill ? (
+              'Salvar e continuar'
             ) : (
               'Salvar perfil'
             )}

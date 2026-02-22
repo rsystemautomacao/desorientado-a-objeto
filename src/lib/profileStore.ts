@@ -35,6 +35,14 @@ export async function getProfileFromApi(token: string): Promise<Profile> {
   };
 }
 
+export function isProfileComplete(profile: Profile): boolean {
+  return (
+    profile.nome.trim().length > 0 &&
+    profile.curso.trim().length > 0 &&
+    profile.serieOuSemestre.trim().length > 0
+  );
+}
+
 export async function saveProfileToApi(token: string, profile: Profile): Promise<void> {
   const base = getApiBase();
   const res = await fetch(`${base}/api/profile`, {
