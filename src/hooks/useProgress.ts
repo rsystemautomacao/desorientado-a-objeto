@@ -6,7 +6,7 @@ import {
   type Progress,
 } from '@/lib/progressStore';
 
-const STORAGE_KEY = 'desorientado-progress';
+const STORAGE_KEY_PREFIX = 'desorientado-progress';
 
 const DEFAULT_PROGRESS: Progress = {
   completedLessons: [],
@@ -14,16 +14,39 @@ const DEFAULT_PROGRESS: Progress = {
   favorites: [],
 };
 
-function loadLocalProgress(): Progress {
+function storageKey(uid: string | null): string {
+  return uid ? `${STORAGE_KEY_PREFIX}-${uid}` : STORAGE_KEY_PREFIX;
+}
+
+function loadLocalProgress(uid: string | null): Progress {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(uid));
     if (raw) return JSON.parse(raw);
   } catch {}
   return { ...DEFAULT_PROGRESS };
 }
 
-function saveLocalProgress(p: Progress) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+function saveLocalProgress(uid: string | null, p: Progress) {
+  localStorage.setItem(storageKey(uid), JSON.stringify(p));
+}
+
+/** Migra dados da chave antiga (sem uid) para a chave do usuário, se existir */
+function migrateOldLocalProgress(uid: string): Progress | null {
+  try {
+    const oldKey = STORAGE_KEY_PREFIX; // chave antiga compartilhada
+    const raw = localStorage.getItem(oldKey);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Progress;
+    const hasData = data.completedLessons?.length > 0 || Object.keys(data.quizResults ?? {}).length > 0;
+    if (hasData) {
+      // Move para a chave do usuário e remove a antiga
+      saveLocalProgress(uid, data);
+      localStorage.removeItem(oldKey);
+      return data;
+    }
+    localStorage.removeItem(oldKey);
+  } catch {}
+  return null;
 }
 
 export function useProgress() {
@@ -39,17 +62,22 @@ export function useProgress() {
     if (user) {
       setProgressLoaded(false);
       apiOkRef.current = true;
-      const local = loadLocalProgress();
+      const uid = user.uid;
+      const local = loadLocalProgress(uid);
+      // Migra dados da chave antiga (sem uid) se existirem — só para o primeiro login
+      const migrated = migrateOldLocalProgress(uid);
+      const effectiveLocal = migrated ?? local;
+
       user
         .getIdToken(true)
         .then((token) => getProgressFromApi(token))
         .then((p) => {
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
-          const hasLocal = local.completedLessons.length > 0 || Object.keys(local.quizResults).length > 0 || local.favorites.length > 0;
+          const hasLocal = effectiveLocal.completedLessons.length > 0 || Object.keys(effectiveLocal.quizResults).length > 0 || effectiveLocal.favorites.length > 0;
           if (!hasRemote && hasLocal) {
-            setProgress(local);
+            setProgress(effectiveLocal);
             if (apiOkRef.current) {
-              user.getIdToken(true).then((t) => saveProgressToApi(t, local).catch(() => { apiOkRef.current = false; }));
+              user.getIdToken(true).then((t) => saveProgressToApi(t, effectiveLocal).catch(() => { apiOkRef.current = false; }));
             }
           } else {
             setProgress(p);
@@ -58,11 +86,11 @@ export function useProgress() {
         })
         .catch(() => {
           apiOkRef.current = false;
-          setProgress(local);
+          setProgress(effectiveLocal);
           setProgressLoaded(true);
         });
     } else {
-      setProgress(loadLocalProgress());
+      setProgress(loadLocalProgress(null));
       setProgressLoaded(true);
     }
   }, [user?.uid, authLoading]);
@@ -70,8 +98,8 @@ export function useProgress() {
   // Persistir: logado → API (com retry em caso de falha temporaria); deslogado → localStorage
   useEffect(() => {
     if (!progressLoaded || authLoading) return;
-    // Sempre salva localmente como backup
-    saveLocalProgress(progress);
+    // Sempre salva localmente como backup (isolado por uid)
+    saveLocalProgress(user?.uid ?? null, progress);
     if (user) {
       if (!apiOkRef.current) return;
       isSavingRef.current = true;
