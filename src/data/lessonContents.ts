@@ -940,99 +940,635 @@ public class Main {
 
   'm3-whatispoo': {
     id: 'm3-whatispoo', moduleId: 3,
-    objectives: ['Entender o que é Programação Orientada a Objetos', 'Saber por que POO existe e quais problemas resolve', 'Comparar código procedural vs orientado a objetos'],
+    objectives: [
+      'Entender o que é Programação Orientada a Objetos (POO)',
+      'Compreender os problemas do código procedural que POO resolve',
+      'Saber criar um objeto simples com atributos e métodos',
+      'Conhecer os 4 pilares da POO com exemplos práticos',
+      'Comparar código procedural vs orientado a objetos',
+      'Usar Scanner para ler dados do teclado e preencher objetos',
+      'Criar múltiplos objetos usando laços de repetição (for)',
+    ],
     sections: [
-      { title: 'Por que POO existe?', body: 'Em programas pequenos, funções e variáveis soltas podem até funcionar. O problema aparece quando o sistema cresce: quem pode alterar quais dados? Onde está a validação? Onde mudar se a regra de negócio mudar? O código procedural tende a virar um emaranhado de dependências.\n\nPOO (Programação Orientada a Objetos) propõe modelar o software como o mundo real: entidades que têm dados (atributos) e ações (métodos). Cada objeto é responsável pelos seus próprios dados; o acesso é controlado pela própria classe. Assim, regras como "não pode ter saldo negativo" ficam em um único lugar (no método sacar), e qualquer parte do sistema que use a conta está automaticamente protegida. POO não é "mais difícil por ser difícil" — é uma forma de organizar e proteger o código em projetos maiores.',
+      // ────────── SEÇÃO 1: O Problema do Código Procedural ──────────
+      {
+        title: 'O Problema do Código Procedural',
+        body: 'Antes de entender o que é POO, você precisa entender **qual problema ela resolve**.\n\nImagine que você está criando um sistema de loja para cadastrar produtos. No início, com poucos dados, parece fácil usar variáveis soltas:\n\n- Uma variável para o nome, outra para o preço, outra para o estoque.\n\nMas e quando a loja tiver 50 produtos? 200? Você vai criar 200 variáveis `nome1`, `nome2`, `nome3`...? E se precisar adicionar um campo novo (como "categoria")? Vai alterar TUDO.\n\nEsse é o código **procedural**: tudo solto, sem organização. Os dados ficam espalhados, qualquer parte do código pode mudar qualquer variável, e não há proteção contra erros. Quando o sistema cresce, vira um caos.',
+        code: `// CÓDIGO PROCEDURAL — parece funcionar, mas...
+public class SemPOO {
+    public static void main(String[] args) {
+        // Produto 1
+        String nome1 = "Camiseta";
+        double preco1 = 49.90;
+        int estoque1 = 100;
+
+        // Produto 2
+        String nome2 = "Calça Jeans";
+        double preco2 = 129.90;
+        int estoque2 = 50;
+
+        // Vender 1 camiseta
+        estoque1 = estoque1 - 1;
+
+        // E se eu quiser validar se tem estoque?
+        // Tenho que repetir o if para CADA produto!
+        if (estoque2 > 0) {
+            estoque2 = estoque2 - 1;
+        }
+
+        // Imagina isso com 200 produtos...
+        // E se precisar adicionar "categoria"?
+        // Vai ter que criar categoria1, categoria2...
+        System.out.println(nome1 + " - Estoque: " + estoque1);
+        System.out.println(nome2 + " - Estoque: " + estoque2);
+    }
+}`,
+        codeExplanation: '**Linha 4-6**: Cada produto precisa de variáveis separadas (nome1, preco1, estoque1). Imagine fazer isso 200 vezes.\n\n**Linha 14**: Para vender, alteramos a variável diretamente. Não há nenhuma proteção — poderíamos colocar estoque1 = -50 e o programa não reclamaria.\n\n**Linha 17-19**: A validação (verificar se tem estoque) precisa ser repetida manualmente para CADA produto. Se esquecer em um lugar, gera bug.\n\n**Problema central**: os dados não estão agrupados nem protegidos. Qualquer parte do código pode alterar qualquer variável sem validação.',
+        warning: 'Código procedural funciona para programas muito pequenos (tipo exercícios de faculdade com 10 linhas). Mas em qualquer sistema real, ele se torna impossível de manter.',
       },
-      { title: 'Os 4 Pilares da POO', body: 'Os quatro pilares são formas de organizar e reutilizar código com segurança:\n\n**Encapsulamento**: Esconder os dados internos (private) e expor apenas o que for necessário por métodos. Assim você valida e controla todo acesso.\n\n**Herança**: Reaproveitar atributos e métodos de uma classe "pai" em classes "filhas", quando faz sentido a relação "é um" (ex.: Cachorro é um Animal).\n\n**Polimorfismo**: Um mesmo método pode se comportar de forma diferente em cada subclasse; o código que usa a referência do tipo pai não precisa saber qual implementação está rodando.\n\n**Abstração**: Esconder detalhes complexos e expor apenas o essencial — classes abstratas e interfaces definem "o que" sem fixar "como".',
-        tip: 'Não decore os pilares mecanicamente. Entenda o PROBLEMA que cada um resolve.',
+
+      // ────────── SEÇÃO 2: O que é POO? ──────────
+      {
+        title: 'O que é POO (Programação Orientada a Objetos)?',
+        body: 'POO é uma forma de organizar o código inspirada no mundo real. Em vez de ter variáveis soltas, você agrupa **dados** e **comportamentos** em uma entidade chamada **objeto**.\n\nPense no mundo real: um produto tem nome, preço e estoque (dados), e também tem ações como "vender" e "repor estoque" (comportamentos). Na POO, você cria uma **classe** que define esse molde, e depois cria **objetos** a partir dela.\n\n**Classe** = o molde, a receita, a planta da casa.\n**Objeto** = a coisa real criada a partir do molde.\n\nCom uma única classe `Produto`, você pode criar 1, 50 ou 200 produtos. Cada um tem seus próprios dados, e a validação fica dentro da própria classe — escreveu uma vez, vale para todos.',
+        code: `// COM POO: Uma classe resolve tudo
+public class Produto {
+    // Atributos (dados do produto)
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    // Construtor (como criar um produto)
+    public Produto(String nome, double preco, int estoque) {
+        this.nome = nome;
+        this.preco = preco;
+        this.estoque = estoque;
+    }
+
+    // Método vender (comportamento)
+    public boolean vender(int quantidade) {
+        if (quantidade > 0 && quantidade <= this.estoque) {
+            this.estoque -= quantidade;
+            System.out.println(quantidade + "x " + this.nome + " vendido(s)!");
+            return true;
+        }
+        System.out.println("Estoque insuficiente de " + this.nome + "!");
+        return false;
+    }
+
+    // Método para exibir informações
+    public void exibirInfo() {
+        System.out.println(this.nome + " - R$" + this.preco + " | Estoque: " + this.estoque);
+    }
+}`,
+        codeExplanation: '**Linha 3-6** (`private String nome; ...`): Os atributos são **private** — isso significa que NINGUÉM de fora da classe pode alterar esses valores diretamente. Essa é a primeira proteção.\n\n**Linha 9-13** (Construtor): O método especial que roda quando você faz `new Produto(...)`. Ele recebe os dados e preenche os atributos. O `this.nome` se refere ao atributo da classe; `nome` (sem this) é o parâmetro recebido.\n\n**Linha 16-24** (`vender`): A validação está DENTRO da classe! Antes de vender, verifica se `quantidade > 0` e se `quantidade <= this.estoque`. Essa validação vale para TODOS os produtos — não precisa repetir em cada lugar do código.\n\n**Linha 17** (`quantidade <= this.estoque`): `this.estoque` acessa o estoque daquele produto específico. Se você chamar `camiseta.vender(5)`, o `this` se refere à camiseta. Se chamar `calca.vender(2)`, o `this` se refere à calça.\n\n**Linha 18** (`this.estoque -= quantidade`): Só executa se passou na validação. O operador `-=` é atalho para `this.estoque = this.estoque - quantidade`.',
+        tip: 'Sempre que pensar "e se alguém alterar esse dado errado?", a resposta é: torne o atributo **private** e crie um método que valida antes de alterar.',
+      },
+
+      // ────────── SEÇÃO 3: Criando e Usando Objetos ──────────
+      {
+        title: 'Criando e Usando Objetos na Prática',
+        body: 'Agora que temos a classe `Produto`, vamos usá-la. Para criar um objeto, usamos a palavra-chave **new**:\n\n```\nProduto camiseta = new Produto("Camiseta", 49.90, 100);\n```\n\nIsso cria um objeto do tipo Produto, com nome "Camiseta", preço 49.90 e estoque 100. O construtor é chamado automaticamente.\n\nVocê pode criar quantos objetos quiser a partir da mesma classe. Cada um é independente — alterar o estoque de um não afeta o outro.',
+        code: `public class Main {
+    public static void main(String[] args) {
+        // Criando objetos (cada um é independente!)
+        Produto camiseta = new Produto("Camiseta", 49.90, 100);
+        Produto calca = new Produto("Calça Jeans", 129.90, 50);
+        Produto tenis = new Produto("Tênis", 199.90, 30);
+
+        // Exibir informações
+        camiseta.exibirInfo();  // Camiseta - R$49.9 | Estoque: 100
+        calca.exibirInfo();     // Calça Jeans - R$129.9 | Estoque: 50
+
+        // Vender produtos
+        camiseta.vender(3);     // 3x Camiseta vendido(s)!
+        calca.vender(100);      // Estoque insuficiente de Calça Jeans!
+
+        // Ver estoque atualizado
+        camiseta.exibirInfo();  // Camiseta - R$49.9 | Estoque: 97
+        calca.exibirInfo();     // Calça Jeans - R$129.9 | Estoque: 50 (não mudou!)
+    }
+}`,
+        codeExplanation: '**Linha 4** (`new Produto("Camiseta", 49.90, 100)`): Cria um NOVO objeto na memória e executa o construtor, passando "Camiseta" como nome, 49.90 como preço e 100 como estoque.\n\n**Linha 9** (`camiseta.exibirInfo()`): O ponto (.) significa "chame esse método DESTE objeto". Então exibirInfo() vai mostrar os dados da camiseta, não da calça.\n\n**Linha 13** (`camiseta.vender(3)`): Chama o método vender no objeto camiseta. Dentro do método, `this.estoque` é o estoque DA CAMISETA (100), então 3 <= 100 é true e a venda é realizada.\n\n**Linha 14** (`calca.vender(100)`): Tenta vender 100 calças, mas o estoque é 50. A validação dentro do método impede a venda — sem precisar de nenhum if externo.\n\n**Linha 18**: O estoque da calça continua 50 porque a venda foi rejeitada. A proteção funcionou!',
+        tip: 'Cada objeto criado com `new` é independente na memória. Alterar `camiseta` nunca afeta `calca`. Pense neles como cópias separadas do molde.',
+        tryItCode: `class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    public Produto(String nome, double preco, int estoque) {
+        this.nome = nome;
+        this.preco = preco;
+        this.estoque = estoque;
+    }
+
+    public boolean vender(int quantidade) {
+        if (quantidade > 0 && quantidade <= this.estoque) {
+            this.estoque -= quantidade;
+            System.out.println(quantidade + "x " + this.nome + " vendido(s)!");
+            return true;
+        }
+        System.out.println("Estoque insuficiente de " + this.nome + "!");
+        return false;
+    }
+
+    public void exibirInfo() {
+        System.out.println(this.nome + " - R$" + this.preco + " | Estoque: " + this.estoque);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Produto camiseta = new Produto("Camiseta", 49.90, 100);
+        Produto calca = new Produto("Calça Jeans", 129.90, 50);
+
+        camiseta.exibirInfo();
+        calca.exibirInfo();
+
+        camiseta.vender(3);
+        calca.vender(100);
+
+        System.out.println("\\n--- Após vendas ---");
+        camiseta.exibirInfo();
+        calca.exibirInfo();
+    }
+}`,
+        tryItPrompt: 'Experimente: crie um terceiro produto (ex: "Boné", 39.90, 20), venda algumas unidades e veja o estoque atualizado. Tente vender mais do que o estoque permite!',
+      },
+
+      // ────────── SEÇÃO 4: Usando Scanner para Preencher Objetos ──────────
+      {
+        title: 'Lendo Dados do Teclado com Scanner',
+        body: 'Em programas reais, os dados não vêm escritos no código — vêm do usuário. O **Scanner** é a classe do Java que lê dados do teclado.\n\nPara usar o Scanner, você precisa:\n1. **Importar**: `import java.util.Scanner;` (no topo do arquivo)\n2. **Criar**: `Scanner sc = new Scanner(System.in);`\n3. **Ler**: `sc.nextLine()` para texto, `sc.nextInt()` para inteiro, `sc.nextDouble()` para decimal\n\n**ATENÇÃO** — Existe uma pegadinha famosa: quando você usa `nextInt()` ou `nextDouble()`, o Enter que o usuário apertou fica "sobrando" no buffer. Se depois disso você chamar `nextLine()`, ele vai ler esse Enter vazio em vez do texto! A solução é colocar um `sc.nextLine()` extra para "limpar" o Enter.',
+        code: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Nome do produto: ");
+        String nome = sc.nextLine();
+
+        System.out.print("Preço: ");
+        double preco = sc.nextDouble();
+
+        sc.nextLine(); // <-- LIMPA O ENTER que sobrou do nextDouble()
+
+        System.out.print("Estoque inicial: ");
+        int estoque = sc.nextInt();
+
+        Produto p = new Produto(nome, preco, estoque);
+        p.exibirInfo();
+
+        sc.close();
+    }
+}`,
+        codeExplanation: '**Linha 1** (`import java.util.Scanner`): Importa a classe Scanner. Sem isso, o Java não sabe o que é Scanner.\n\n**Linha 5** (`new Scanner(System.in)`): Cria um Scanner que lê do teclado. `System.in` é a entrada padrão (teclado).\n\n**Linha 7** (`System.out.print`): Usa `print` (sem ln) para que o cursor fique na mesma linha — o usuário digita logo depois dos dois pontos.\n\n**Linha 8** (`sc.nextLine()`): Lê uma linha completa de texto (o nome do produto). O Enter finaliza a leitura.\n\n**Linha 11** (`sc.nextDouble()`): Lê um número decimal. O usuário digita, por exemplo, `49.90` e aperta Enter. O número é lido, mas o Enter fica "pendurado" no buffer.\n\n**Linha 13** (`sc.nextLine()` — LIMPEZA): **Esta linha é ESSENCIAL!** Ela consome o Enter que sobrou do `nextDouble()`. Sem ela, se tivéssemos outro `nextLine()` depois, ele leria uma string vazia em vez de esperar o usuário digitar.\n\n**Linha 18** (`new Produto(nome, preco, estoque)`): Usa as variáveis lidas do teclado para criar o objeto. Os dados vieram do usuário, não do código!\n\n**Linha 21** (`sc.close()`): Fecha o Scanner quando terminar. Boa prática para liberar recursos.',
+        warning: 'A pegadinha do nextLine() após nextInt()/nextDouble() é a causa número 1 de bugs em exercícios de faculdade! Sempre coloque um sc.nextLine() extra após ler números se for ler texto depois.',
+      },
+
+      // ────────── SEÇÃO 5: Criando Vários Objetos com Laço de Repetição ──────────
+      {
+        title: 'Criando Vários Objetos com Laço (for)',
+        body: 'E se você precisar cadastrar 5 produtos? 10? 50? Não faz sentido escrever `new Produto(...)` cinquenta vezes. É aí que usamos **laços de repetição** (loops).\n\nCom um `for` e um `ArrayList` (uma lista dinâmica do Java), podemos cadastrar quantos produtos quisermos:\n\n- O `for` repete o bloco de código N vezes\n- O `ArrayList` é uma lista que cresce automaticamente (diferente de array que tem tamanho fixo)\n- A cada volta do loop, lemos os dados do teclado e criamos um novo objeto',
+        code: `import java.util.Scanner;
+import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        ArrayList<Produto> produtos = new ArrayList<>();
+
+        System.out.print("Quantos produtos deseja cadastrar? ");
+        int quantidade = sc.nextInt();
+        sc.nextLine(); // limpa o Enter
+
+        for (int i = 0; i < quantidade; i++) {
+            System.out.println("\\n--- Produto " + (i + 1) + " ---");
+
+            System.out.print("Nome: ");
+            String nome = sc.nextLine();
+
+            System.out.print("Preço: ");
+            double preco = sc.nextDouble();
+            sc.nextLine(); // limpa o Enter após o double
+
+            System.out.print("Estoque: ");
+            int estoque = sc.nextInt();
+            sc.nextLine(); // limpa o Enter após o int
+
+            Produto p = new Produto(nome, preco, estoque);
+            produtos.add(p);
+        }
+
+        System.out.println("\\n=== PRODUTOS CADASTRADOS ===");
+        for (Produto p : produtos) {
+            p.exibirInfo();
+        }
+
+        sc.close();
+    }
+}`,
+        codeExplanation: '**Linha 7** (`ArrayList<Produto> produtos = new ArrayList<>()`): Cria uma lista que guarda objetos do tipo Produto. O `<Produto>` indica o tipo dos elementos. Diferente de array (`Produto[]`), o ArrayList cresce automaticamente.\n\n**Linha 10** (`sc.nextInt()`): Lê quantos produtos o usuário quer cadastrar.\n\n**Linha 11** (`sc.nextLine()`): Limpa o Enter — mesma pegadinha de sempre!\n\n**Linha 13** (`for (int i = 0; i < quantidade; i++)`): Repete o bloco `quantidade` vezes. Se o usuário digitou 3, o loop executa 3 vezes (i=0, i=1, i=2).\n\n**Linha 14** (`(i + 1)`): Mostra "Produto 1", "Produto 2"... (somamos 1 porque `i` começa em 0).\n\n**Linha 21 e 25** (`sc.nextLine()` após número): TODA vez que lemos um número e vamos ler texto depois, precisamos limpar o Enter. Dentro do loop isso acontece a cada repetição.\n\n**Linha 27-28** (`new Produto(...)` + `produtos.add(p)`): Cria o objeto com os dados lidos e adiciona na lista. A cada volta do loop, um novo Produto é criado e adicionado.\n\n**Linha 32-34** (`for (Produto p : produtos)`): O **for-each** percorre toda a lista. Para cada Produto `p` na lista, chama `exibirInfo()`. É mais simples que `for (int i = 0; ...)` quando você não precisa do índice.',
+        tip: 'O for-each (`for (Tipo item : lista)`) é a forma mais limpa de percorrer uma lista quando você não precisa do índice. Use `for` com índice quando precisar saber em qual posição está.',
+        tryItCode: `import java.util.ArrayList;
+
+class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    public Produto(String nome, double preco, int estoque) {
+        this.nome = nome;
+        this.preco = preco;
+        this.estoque = estoque;
+    }
+
+    public boolean vender(int quantidade) {
+        if (quantidade > 0 && quantidade <= this.estoque) {
+            this.estoque -= quantidade;
+            System.out.println(quantidade + "x " + this.nome + " vendido(s)!");
+            return true;
+        }
+        System.out.println("Estoque insuficiente de " + this.nome + "!");
+        return false;
+    }
+
+    public void exibirInfo() {
+        System.out.println(this.nome + " - R$" + this.preco + " | Estoque: " + this.estoque);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Produto> produtos = new ArrayList<>();
+
+        // Cadastrando produtos via código (sem Scanner no editor online)
+        produtos.add(new Produto("Camiseta", 49.90, 100));
+        produtos.add(new Produto("Calça Jeans", 129.90, 50));
+        produtos.add(new Produto("Tênis", 199.90, 30));
+
+        System.out.println("=== PRODUTOS ===");
+        for (Produto p : produtos) {
+            p.exibirInfo();
+        }
+
+        System.out.println("\\n=== VENDENDO ===");
+        produtos.get(0).vender(5);  // vende 5 camisetas
+        produtos.get(1).vender(2);  // vende 2 calças
+        produtos.get(2).vender(50); // tenta vender 50 tênis (não tem!)
+
+        System.out.println("\\n=== APÓS VENDAS ===");
+        for (Produto p : produtos) {
+            p.exibirInfo();
+        }
+    }
+}`,
+        tryItPrompt: 'Adicione mais produtos à lista, tente vender quantidades diferentes e veja como a validação funciona para cada objeto independente.',
+      },
+
+      // ────────── SEÇÃO 6: Os 4 Pilares da POO ──────────
+      {
+        title: 'Os 4 Pilares da POO (com Exemplos Práticos)',
+        body: 'Agora que você já entendeu o básico, vamos conhecer os **4 pilares da POO** — os princípios que guiam toda a programação orientada a objetos. Não decore nomes: entenda **qual problema cada um resolve**.',
+        code: `// ═══ 1. ENCAPSULAMENTO ═══
+// Problema: qualquer um pode alterar dados sem validação
+// Solução: atributos private + métodos que validam
+
+class ContaBancaria {
+    private double saldo; // ninguém acessa diretamente!
+
+    public void depositar(double valor) {
+        if (valor > 0) { // <-- validação!
+            this.saldo += valor;
+        }
+    }
+
+    public double getSaldo() {
+        return this.saldo; // leitura controlada
+    }
+}
+// saldo é private → só pode ser alterado por depositar()
+// Se alguém tentar: conta.saldo = -1000; → ERRO de compilação!
+
+// ═══ 2. HERANÇA ═══
+// Problema: repetir código igual em classes parecidas
+// Solução: classe filha HERDA atributos e métodos da pai
+
+class Animal {
+    String nome;
+    public void comer() {
+        System.out.println(nome + " está comendo");
+    }
+}
+
+class Cachorro extends Animal {  // "é um" Animal
+    public void latir() {
+        System.out.println(nome + " está latindo: Au au!");
+    }
+}
+// Cachorro tem nome e comer() (herdados) + latir() (próprio)
+
+// ═══ 3. POLIMORFISMO ═══
+// Problema: tratar tipos diferentes de forma igual
+// Solução: mesmo método, comportamento diferente por classe
+
+class Gato extends Animal {
+    public void comer() { // sobrescreve o método do pai!
+        System.out.println(nome + " come ração de gato");
+    }
+}
+// Animal a = new Gato(); a.comer(); → "come ração de gato"
+// O Java chama a versão do OBJETO REAL, não do tipo da variável
+
+// ═══ 4. ABSTRAÇÃO ═══
+// Problema: classes muito genéricas não devem ser instanciadas
+// Solução: abstract define "o que", subclasses definem "como"
+
+abstract class Forma {
+    abstract double calcularArea(); // sem corpo! Cada forma implementa
+}
+
+class Circulo extends Forma {
+    double raio;
+    double calcularArea() { return 3.14159 * raio * raio; }
+}
+
+class Retangulo extends Forma {
+    double largura, altura;
+    double calcularArea() { return largura * altura; }
+}`,
+        codeExplanation: '**Encapsulamento (linhas 5-18)**: `private double saldo` impede acesso direto. Para alterar, precisa usar `depositar()`, que valida se `valor > 0`. Isso garante que ninguém faça `conta.saldo = -1000` — o compilador nem permite!\n\n**Herança (linhas 24-36)**: `Cachorro extends Animal` significa que Cachorro herda tudo de Animal (nome, comer). Assim você não precisa reescrever `nome` e `comer()` na classe Cachorro. A palavra `extends` cria a relação "é um".\n\n**Polimorfismo (linhas 42-48)**: Gato também herda de Animal, mas **sobrescreve** o método `comer()` com sua própria versão. Quando você faz `Animal a = new Gato(); a.comer();`, o Java chama a versão do Gato, não a do Animal. Isso é polimorfismo: mesmo método, comportamento diferente.\n\n**Abstração (linhas 53-63)**: `abstract class Forma` não pode ser instanciada (não faz sentido criar "uma forma genérica"). O método `calcularArea()` é abstract — não tem corpo. Cada subclasse (Circulo, Retangulo) DEVE implementar sua própria versão. Isso define "o que" (toda forma tem área) sem fixar "como".',
+        tip: 'Não decore os pilares mecanicamente. Pense assim:\n- **Encapsulamento** → "proteger dados"\n- **Herança** → "reaproveitar código"\n- **Polimorfismo** → "mesmo método, comportamento diferente"\n- **Abstração** → "definir o que, sem definir como"',
+      },
+
+      // ────────── SEÇÃO 7: Quando Usar e Quando NÃO Usar POO ──────────
+      {
+        title: 'Quando Usar e Quando NÃO Usar POO',
+        body: 'POO não é a solução para TUDO. Existem casos onde código procedural é mais adequado:\n\n**Use POO quando:**\n- O sistema tem entidades claras (Produto, Cliente, Pedido, Conta)\n- Dados precisam de validação e proteção\n- Múltiplos objetos do mesmo tipo serão criados\n- O código precisa ser reutilizado e mantido por muito tempo\n- O projeto vai crescer (mais funcionalidades no futuro)\n\n**NÃO precisa de POO quando:**\n- Scripts simples de poucas linhas (ex: calcular média de 3 notas)\n- Algoritmos isolados que não modelam entidades\n- Programas que rodam uma vez e acabam\n\nNa prática, a maioria dos sistemas reais (web, mobile, desktop, jogos) usa POO. Java, em especial, foi projetado para POO — até o `public static void main` está dentro de uma classe!',
+        warning: 'Cuidado com os extremos: não crie classes para tudo (over-engineering), mas também não faça um sistema inteiro com variáveis soltas. O equilíbrio vem com prática.',
+        tryItCode: `class Aluno {
+    private String nome;
+    private double nota1;
+    private double nota2;
+
+    public Aluno(String nome, double nota1, double nota2) {
+        this.nome = nome;
+        this.nota1 = nota1;
+        this.nota2 = nota2;
+    }
+
+    public double calcularMedia() {
+        return (this.nota1 + this.nota2) / 2.0;
+    }
+
+    public String getSituacao() {
+        double media = calcularMedia();
+        if (media >= 7.0) return "Aprovado";
+        if (media >= 5.0) return "Recuperação";
+        return "Reprovado";
+    }
+
+    public void exibirBoletim() {
+        System.out.println("Aluno: " + this.nome);
+        System.out.println("Nota 1: " + this.nota1);
+        System.out.println("Nota 2: " + this.nota2);
+        System.out.println("Média: " + calcularMedia());
+        System.out.println("Situação: " + getSituacao());
+        System.out.println("---");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Aluno a1 = new Aluno("Maria", 8.5, 9.0);
+        Aluno a2 = new Aluno("João", 5.0, 4.5);
+        Aluno a3 = new Aluno("Ana", 6.0, 5.5);
+
+        a1.exibirBoletim();
+        a2.exibirBoletim();
+        a3.exibirBoletim();
+    }
+}`,
+        tryItPrompt: 'Crie mais alunos com notas diferentes e veja como o sistema de média e situação funciona automaticamente para cada um. Tente adicionar uma nota3 ao cálculo!',
       },
     ],
-    withoutPoo: `// SEM POO: Código procedural para gerenciar contas bancárias
+
+    // ────────── Comparação COM POO vs SEM POO ──────────
+    withoutPoo: `// SEM POO: Código procedural para gerenciar produtos
 public class SemPOO {
     public static void main(String[] args) {
         // Dados soltos em arrays
-        String[] nomes = {"Ana", "Bruno"};
-        double[] saldos = {1000, 2500};
-        
-        // Função para depositar
-        saldos[0] = saldos[0] + 500; // depositar na conta da Ana
-        
-        // Função para sacar
-        if (saldos[1] >= 200) {
-            saldos[1] = saldos[1] - 200; // sacar do Bruno
+        String[] nomes = {"Camiseta", "Calça", "Tênis"};
+        double[] precos = {49.90, 129.90, 199.90};
+        int[] estoques = {100, 50, 30};
+
+        // Vender: preciso repetir a validação PARA CADA produto
+        if (estoques[0] >= 3) {
+            estoques[0] -= 3;
         }
-        
+        // E se eu esquecer o if em algum lugar?
+        estoques[1] = estoques[1] - 999; // Bug! Estoque ficou NEGATIVO!
+
+        // Adicionar campo "categoria"? Criar OUTRO array!
+        String[] categorias = {"Roupa", "Roupa", "Calçado"};
+
         // PROBLEMAS:
-        // - Dados não estão protegidos (qualquer um altera saldo)
-        // - Sem validação centralizada
-        // - Se adicionar mais campos (cpf, tipo), fica caótico
-        // - Difícil de manter e escalar
+        // - Nenhuma proteção (estoque negativo é possível)
+        // - Validação precisa ser repetida manualmente
+        // - Arrays paralelos são difíceis de manter
+        // - Adicionar campos = mais arrays = mais caos
+        System.out.println(nomes[1] + " estoque: " + estoques[1]); // -949!
     }
 }`,
-    withPoo: `// COM POO: Código organizado com classes
-public class ContaBancaria {
-    private String titular;
-    private double saldo;
-    
-    public ContaBancaria(String titular, double saldoInicial) {
-        this.titular = titular;
-        this.saldo = saldoInicial;
+    withPoo: `// COM POO: Tudo organizado e protegido
+public class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+    private String categoria;
+
+    public Produto(String nome, double preco, int estoque, String categoria) {
+        this.nome = nome;
+        this.preco = preco;
+        this.estoque = Math.max(0, estoque); // nunca negativo!
+        this.categoria = categoria;
     }
-    
-    public void depositar(double valor) {
-        if (valor > 0) {
-            this.saldo += valor;
-            System.out.println("Depósito de R$" + valor + " realizado!");
-        }
-    }
-    
-    public boolean sacar(double valor) {
-        if (valor > 0 && valor <= this.saldo) {
-            this.saldo -= valor;
+
+    public boolean vender(int qtd) {
+        if (qtd > 0 && qtd <= this.estoque) {
+            this.estoque -= qtd;
             return true;
         }
-        System.out.println("Saldo insuficiente!");
+        System.out.println("Não é possível vender " + qtd + "x " + this.nome);
         return false;
     }
-    
-    public double getSaldo() { return this.saldo; }
-    public String getTitular() { return this.titular; }
+
+    public void exibirInfo() {
+        System.out.println("[" + categoria + "] " + nome
+            + " - R$" + preco + " | Estoque: " + estoque);
+    }
 }
 
 // Uso:
-// ContaBancaria contaAna = new ContaBancaria("Ana", 1000);
-// contaAna.depositar(500);  // Validação inclusa!
-// contaAna.sacar(200);      // Proteção automática!`,
-    comparisonExplanation: 'Com POO, os dados (titular, saldo) ficam PROTEGIDOS dentro da classe. Ninguém pode alterar o saldo diretamente — precisa passar pelos métodos depositar() e sacar(), que fazem validação. O código fica organizado, seguro e fácil de manter.',
+// Produto p1 = new Produto("Camiseta", 49.90, 100, "Roupa");
+// p1.vender(3);       // OK! Validação automática
+// p1.vender(999);     // Bloqueado! Estoque protegido
+// Adicionar campo? Muda só a classe, não o sistema inteiro`,
+    comparisonExplanation: 'SEM POO: dados em arrays paralelos, sem proteção (estoque ficou -949!), validação esquecida. COM POO: dados e validação juntos na classe, impossível ter estoque negativo, adicionar campo é alterar UM lugar. A diferença fica gritante conforme o sistema cresce.',
+
+    // ────────── Exercícios de Completar Código ──────────
     codeFillExercises: [
-      { instruction: 'Qual pilar da POO esconde os dados internos e expõe acesso apenas por métodos?', snippetBefore: 'O ', snippetAfter: ' protege os dados com private e getters/setters.', options: ['Encapsulamento', 'Herança', 'Polimorfismo', 'Abstração'], correctIndex: 0, explanation: 'Encapsulamento é esconder os dados e controlar o acesso por métodos.' },
+      {
+        instruction: 'Para proteger os dados de uma classe e impedir acesso direto, usamos qual modificador?',
+        snippetBefore: 'class Produto {\n    ',
+        snippetAfter: ' String nome;\n    // ninguém altera diretamente!',
+        options: ['public', 'private', 'static', 'void'],
+        correctIndex: 1,
+        explanation: 'O modificador "private" impede que código de fora da classe acesse o atributo diretamente. Esse é o princípio do Encapsulamento.',
+      },
+      {
+        instruction: 'Para criar um novo objeto Produto, qual palavra-chave é necessária?',
+        snippetBefore: 'Produto p = ',
+        snippetAfter: ' Produto("Camiseta", 49.90, 100);',
+        options: ['create', 'new', 'make', 'init'],
+        correctIndex: 1,
+        explanation: '"new" aloca memória para o objeto e chama o construtor da classe. Sem "new", nenhum objeto é criado.',
+      },
+      {
+        instruction: 'Qual pilar da POO permite que uma classe filha reaproveite atributos e métodos da classe pai?',
+        snippetBefore: 'class Cachorro ',
+        snippetAfter: ' Animal {\n    // herda nome e comer()\n}',
+        options: ['implements', 'extends', 'includes', 'inherits'],
+        correctIndex: 1,
+        explanation: '"extends" é a palavra-chave Java para herança. Cachorro extends Animal significa que Cachorro herda tudo de Animal.',
+      },
     ],
-    summary: ['POO modela software como o mundo real, com objetos', 'Cada objeto tem atributos (dados) e métodos (comportamentos)', '4 pilares: Encapsulamento, Herança, Polimorfismo, Abstração', 'POO resolve problemas de organização, manutenção e segurança do código', 'Código procedural funciona para projetos simples, mas não escala bem'],
-    tryItCode: `class ContaSimples {
-    private String titular;
-    private double saldo;
-    public ContaSimples(String t, double s) { titular = t; saldo = s; }
-    public void depositar(double v) { if (v > 0) saldo += v; }
-    public boolean sacar(double v) {
-        if (v > 0 && v <= saldo) { saldo -= v; return true; }
-        return false;
-    }
-    public double getSaldo() { return saldo; }
+
+    // ────────── Erros Comuns ──────────
+    commonErrors: [
+      {
+        title: 'Esquecer sc.nextLine() após nextInt()/nextDouble()',
+        description: 'O Enter fica no buffer e o próximo nextLine() lê uma string vazia. Sempre coloque sc.nextLine() extra após ler números.',
+        code: `Scanner sc = new Scanner(System.in);
+int idade = sc.nextInt();
+// sc.nextLine(); // <-- SEM ISSO, o nome abaixo fica vazio!
+String nome = sc.nextLine(); // Lê "" (Enter do nextInt)
+System.out.println(nome); // Imprime vazio!`,
+      },
+      {
+        title: 'Expor atributos com public em vez de private',
+        description: 'Atributos public permitem que qualquer código altere os dados sem validação. Sempre use private + métodos.',
+        code: `// ERRADO:
+class Produto {
+    public int estoque; // qualquer um altera!
 }
-public class Main {
-    public static void main(String[] args) {
-        ContaSimples c = new ContaSimples("Ana", 1000);
-        c.depositar(500);
-        c.sacar(200);
-        System.out.println("Saldo final: " + c.getSaldo());
+// produto.estoque = -500; // Compila! Nenhum erro!
+
+// CORRETO:
+class Produto {
+    private int estoque;
+    public boolean vender(int qtd) {
+        if (qtd > 0 && qtd <= estoque) {
+            estoque -= qtd;
+            return true;
+        }
+        return false; // protegido!
     }
 }`,
-    tryItPrompt: 'Altere valores de depósito e saque; tente sacar mais que o saldo e veja que a validação protege.',
-    commonErrors: [
-      { title: 'Usar POO onde não precisa', description: 'Para scripts pequenos ou algoritmos isolados, funções podem ser suficientes.' },
-      { title: 'Expor tudo com public', description: 'Atributos públicos permitem qualquer um alterar os dados; prefira private + métodos.' },
+      },
+      {
+        title: 'Esquecer o "new" ao criar objeto',
+        description: 'Sem new, a variável fica null e dá NullPointerException ao usar.',
+        code: `// ERRADO:
+Produto p; // apenas declarou, NÃO criou o objeto!
+p.exibirInfo(); // NullPointerException!
+
+// CORRETO:
+Produto p = new Produto("Camiseta", 49.90, 100);
+p.exibirInfo(); // Funciona!`,
+      },
+      {
+        title: 'Confundir classe com objeto',
+        description: 'A classe é o molde (receita), o objeto é a instância real (bolo). Você não pode "usar" a receita — precisa assar o bolo (new).',
+        code: `// Produto é a CLASSE (o molde)
+// Para usar, precisa criar OBJETOS (instâncias):
+Produto p1 = new Produto("Camiseta", 49.90, 100); // objeto 1
+Produto p2 = new Produto("Calça", 129.90, 50);     // objeto 2
+// p1 e p2 são independentes!`,
+      },
     ],
+
+    // ────────── Resumo ──────────
+    summary: [
+      'Código procedural usa variáveis soltas — funciona para programas pequenos mas vira caos em sistemas grandes',
+      'POO agrupa dados (atributos) e comportamentos (métodos) em objetos',
+      'Classe é o molde; Objeto é a instância criada com new',
+      'Atributos private + métodos públicos = Encapsulamento (proteger dados)',
+      'Scanner lê dados do teclado: nextLine() para texto, nextInt() para inteiro, nextDouble() para decimal',
+      'SEMPRE coloque sc.nextLine() extra após nextInt()/nextDouble() para limpar o Enter do buffer',
+      'ArrayList + for permitem criar e gerenciar múltiplos objetos facilmente',
+      '4 pilares: Encapsulamento (proteger), Herança (reaproveitar), Polimorfismo (mesmo método, comportamento diferente), Abstração (definir o que, não como)',
+    ],
+
+    // ────────── Código do "Experimente Aqui" final ──────────
+    tryItCode: `import java.util.ArrayList;
+
+class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    public Produto(String nome, double preco, int estoque) {
+        this.nome = nome;
+        this.preco = preco;
+        this.estoque = estoque;
+    }
+
+    public boolean vender(int quantidade) {
+        if (quantidade > 0 && quantidade <= this.estoque) {
+            this.estoque -= quantidade;
+            System.out.println("Vendido: " + quantidade + "x " + this.nome);
+            return true;
+        }
+        System.out.println("Estoque insuficiente de " + this.nome
+            + "! (tem " + this.estoque + ", pediu " + quantidade + ")");
+        return false;
+    }
+
+    public void exibirInfo() {
+        System.out.println(this.nome + " - R$" + this.preco
+            + " | Estoque: " + this.estoque);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Produto> loja = new ArrayList<>();
+
+        loja.add(new Produto("Camiseta", 49.90, 100));
+        loja.add(new Produto("Calça Jeans", 129.90, 50));
+        loja.add(new Produto("Tênis", 199.90, 30));
+        loja.add(new Produto("Boné", 39.90, 80));
+
+        System.out.println("=== ESTOQUE INICIAL ===");
+        for (Produto p : loja) {
+            p.exibirInfo();
+        }
+
+        System.out.println("\\n=== REALIZANDO VENDAS ===");
+        loja.get(0).vender(10);  // 10 camisetas
+        loja.get(1).vender(3);   // 3 calças
+        loja.get(2).vender(50);  // 50 tênis (vai falhar!)
+        loja.get(3).vender(5);   // 5 bonés
+
+        System.out.println("\\n=== ESTOQUE ATUALIZADO ===");
+        for (Produto p : loja) {
+            p.exibirInfo();
+        }
+    }
+}`,
+    tryItPrompt: 'Experimente tudo: adicione novos produtos, venda quantidades diferentes, tente vender mais do que o estoque. Veja como a validação protege cada objeto independentemente!',
   },
 
   'm3-classes': {
