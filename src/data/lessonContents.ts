@@ -4582,111 +4582,392 @@ public Config setNome(String n) { this.nome = n; return this; }`,
 
   'm3-inheritance': {
     id: 'm3-inheritance', moduleId: 3,
-    objectives: ['Entender herança e quando usá-la', 'Usar extends e super', 'Saber quando herança NÃO é apropriada'],
+    objectives: [
+      'Entender o que é herança e o problema que ela resolve',
+      'Usar extends para criar subclasses',
+      'Usar super() para chamar o construtor da classe pai',
+      'Entender protected e o acesso entre classes pai e filha',
+      'Sobrescrever métodos do pai com @Override',
+      'Saber quando usar herança ("é um") e quando NÃO usar',
+    ],
     sections: [
-      { title: 'O que é Herança?', body: '**Herança** permite que uma classe (subclasse/filha) herde atributos e métodos de outra (superclasse/pai), usando **extends**. Use quando a relação entre os conceitos é genuinamente "é um": Cachorro **é um** Animal, Funcionário **é uma** Pessoa.\n\nNa subclasse você pode: usar os membros herdados (nome, comer(), dormir()), adicionar novos (raca, latir()) e **sobrescrever** métodos do pai (redefinir o comportamento). O construtor da subclasse deve chamar **super(...)** na primeira linha para inicializar a parte herdada — senão o compilador tenta super() sem argumentos e pode dar erro se o pai não tiver esse construtor.',
-        code: `// Classe pai (superclasse)
-public class Animal {
+      // ────────── SEÇÃO 1: O Problema da Duplicação ──────────
+      {
+        title: 'O Problema: Código Duplicado Entre Classes Parecidas',
+        body: 'Imagine que você está criando classes para um sistema de RH: Funcionario, Gerente, Estagiario. Todos têm nome, cpf, salario e os métodos exibirInfo() e receberPagamento(). Sem herança, você teria que copiar esses atributos e métodos em TODAS as classes.\n\nProblemas:\n- Se mudar a regra de receberPagamento(), precisa alterar em 3 classes\n- Se adicionar um atributo (como email), precisa adicionar em 3 classes\n- Se corrigir um bug em exibirInfo(), precisa corrigir em 3 lugares\n\n**Herança** resolve isso: você coloca o que é COMUM em uma classe **pai** e as classes **filhas** herdam automaticamente.',
+        code: `// SEM HERANÇA — código duplicado!
+class Funcionario {
+    String nome; String cpf; double salario;
+    void exibirInfo() {
+        System.out.println(nome + " | CPF: " + cpf + " | R$" + salario);
+    }
+}
+class Gerente {
+    String nome; String cpf; double salario;  // DUPLICADO!
+    String departamento;  // próprio do Gerente
+    void exibirInfo() {  // DUPLICADO!
+        System.out.println(nome + " | CPF: " + cpf + " | R$" + salario);
+    }
+}
+class Estagiario {
+    String nome; String cpf; double salario;  // DUPLICADO!
+    String faculdade;  // próprio do Estagiário
+    void exibirInfo() {  // DUPLICADO!
+        System.out.println(nome + " | CPF: " + cpf + " | R$" + salario);
+    }
+}
+// 3 classes com código repetido! Manutenção = pesadelo!`,
+        codeExplanation: '**Linhas 2-6, 8-13, 15-21**: nome, cpf, salario e exibirInfo() se repetem em TODAS as classes. Se a empresa mudar o formato de exibição (adicionar email, por exemplo), você precisa alterar 3 classes.\n\nCom herança, colocamos o que é comum em uma classe pai `Funcionario`, e `Gerente` e `Estagiario` herdam tudo.',
+        warning: 'Código duplicado é o inimigo número 1 da manutenção. Herança é uma das ferramentas para eliminá-lo.',
+      },
+
+      // ────────── SEÇÃO 2: extends e super ──────────
+      {
+        title: 'Herança com extends e super()',
+        body: 'Para criar herança em Java, use **extends**:\n\n```\nclass Gerente extends Funcionario { ... }\n```\n\nIsso significa: "Gerente **é um** Funcionario e herda todos os atributos e métodos".\n\nTerminologia:\n- **Superclasse** (classe pai) = Funcionario\n- **Subclasse** (classe filha) = Gerente\n\nO construtor da subclasse DEVE chamar **super(...)** na primeira linha para inicializar a parte herdada. Se o pai tem `Funcionario(String nome, String cpf, double salario)`, o filho deve fazer `super(nome, cpf, salario)` antes de inicializar seus próprios atributos.',
+        code: `// ═══ CLASSE PAI (Superclasse) ═══
+class Funcionario {
     protected String nome;
-    protected int idade;
-    
-    public Animal(String nome, int idade) {
+    protected String cpf;
+    protected double salario;
+
+    public Funcionario(String nome, String cpf, double salario) {
         this.nome = nome;
-        this.idade = idade;
+        this.cpf = cpf;
+        this.salario = salario;
     }
-    
-    public void comer() {
-        System.out.println(nome + " está comendo");
+
+    public void exibirInfo() {
+        System.out.println(nome + " | CPF: " + cpf + " | R$" + salario);
     }
-    
-    public void dormir() {
-        System.out.println(nome + " está dormindo");
+
+    public double calcularPagamento() {
+        return salario;
     }
 }
 
-// Classe filha (subclasse)
-public class Cachorro extends Animal {
-    private String raca;
-    
-    public Cachorro(String nome, int idade, String raca) {
-        super(nome, idade); // chama construtor do pai
-        this.raca = raca;
+// ═══ CLASSE FILHA 1 ═══
+class Gerente extends Funcionario {
+    private String departamento;
+
+    public Gerente(String nome, String cpf, double salario, String depto) {
+        super(nome, cpf, salario);  // chama construtor do PAI
+        this.departamento = depto;  // atributo próprio
     }
-    
-    // Método próprio da subclasse
-    public void latir() {
-        System.out.println(nome + " está latindo! Au au!");
-    }
+
+    // Método próprio (só gerente tem)
+    public String getDepartamento() { return departamento; }
 }
 
-// Uso:
-Cachorro rex = new Cachorro("Rex", 3, "Labrador");
-rex.comer();   // herdado de Animal
-rex.dormir();  // herdado de Animal
-rex.latir();   // próprio de Cachorro`,
-        codeExplanation: 'Cachorro herda comer() e dormir() de Animal, e adiciona latir(). O super(nome, idade) chama o construtor da classe pai; deve ser a primeira linha do construtor da filha.',
+// ═══ CLASSE FILHA 2 ═══
+class Estagiario extends Funcionario {
+    private String faculdade;
+    private int horasSemanais;
+
+    public Estagiario(String nome, String cpf, double salario, String faculdade, int horas) {
+        super(nome, cpf, salario);
+        this.faculdade = faculdade;
+        this.horasSemanais = horas;
+    }
+
+    public String getFaculdade() { return faculdade; }
+}`,
+        codeExplanation: '**Linha 3** (`protected`): Diferente de `private`, `protected` permite que as subclasses acessem o atributo. `private` bloquearia até as filhas.\n\n**Linha 23** (`extends Funcionario`): Gerente herda TUDO de Funcionario: nome, cpf, salario, exibirInfo(), calcularPagamento(). Não precisa reescrever nada!\n\n**Linha 27** (`super(nome, cpf, salario)`): Chama o construtor de Funcionario para inicializar os atributos herdados. DEVE ser a primeira linha.\n\n**Linha 28** (`this.departamento`): Depois de inicializar a parte herdada com super(), inicializa os atributos próprios.\n\n**Resultado**: Gerente e Estagiario têm nome, cpf, salario e exibirInfo() SEM duplicar código. Mudou exibirInfo()? Muda SÓ em Funcionario!',
+        tip: 'protected = acessível dentro da classe E nas subclasses. Use para atributos que filhas precisam acessar. private = só a própria classe acessa.',
       },
-      { title: 'Quando NÃO Usar Herança', body: 'Herança é poderosa mas perigosa se usada errado. Não use apenas para "reaproveitar código" — use quando realmente existe uma relação "é um". Carro **não é** um Motor; Carro **tem** um Motor (composição). Pilha **não é** uma ArrayList. Prefira composição quando a relação é "tem um".',
-        warning: 'Carro NÃO É UM Motor. Use composição: Carro TEM UM Motor. Pilha NÃO É UMA ArrayList. Use composição.',
-        tip: 'Regra de ouro: "Prefira composição a herança". Herança cria acoplamento forte entre classes. Veremos composição em detalhes numa aula futura.',
-      },
-    ],
-    withoutPoo: `// SEM herança: código duplicado
-public class Cachorro {
-    String nome; int idade;
-    void comer() { System.out.println(nome + " comendo"); }
-    void dormir() { System.out.println(nome + " dormindo"); }
-    void latir() { System.out.println("Au au!"); }
+
+      // ────────── SEÇÃO 3: Sobrescrevendo Métodos ──────────
+      {
+        title: 'Sobrescrevendo Métodos com @Override',
+        body: 'A subclasse pode **sobrescrever** (override) um método do pai para mudar o comportamento. Por exemplo, o pagamento de um gerente inclui bônus, e o de um estagiário é proporcional às horas.\n\nUse **@Override** antes do método sobrescrito. Essa anotação:\n1. Deixa CLARO que estamos sobrescrevendo\n2. Faz o compilador VERIFICAR se o método existe no pai (pega erros de digitação)\n\nDentro do método sobrescrito, você pode chamar **super.metodo()** para executar a versão do pai E adicionar comportamento extra.',
+        code: `class Gerente extends Funcionario {
+    private String departamento;
+    private double bonus;
+
+    public Gerente(String nome, String cpf, double salario, String depto, double bonus) {
+        super(nome, cpf, salario);
+        this.departamento = depto;
+        this.bonus = bonus;
+    }
+
+    // Sobrescreve calcularPagamento do pai
+    @Override
+    public double calcularPagamento() {
+        return salario + bonus;  // salário + bônus
+    }
+
+    // Sobrescreve exibirInfo para incluir departamento
+    @Override
+    public void exibirInfo() {
+        super.exibirInfo();  // chama a versão do PAI primeiro!
+        System.out.println("  Depto: " + departamento + " | Bônus: R$" + bonus);
+    }
 }
 
-public class Gato {
-    String nome; int idade;  // DUPLICADO!
-    void comer() { System.out.println(nome + " comendo"); } // DUPLICADO!
-    void dormir() { System.out.println(nome + " dormindo"); } // DUPLICADO!
-    void miar() { System.out.println("Miau!"); }
-}
-// Se mudar comer(), precisa mudar em TODAS as classes!`,
-    withPoo: `// COM herança: código centralizado
-public class Animal {
-    protected String nome;
-    protected int idade;
-    public void comer() { System.out.println(nome + " comendo"); }
-    public void dormir() { System.out.println(nome + " dormindo"); }
-}
+class Estagiario extends Funcionario {
+    private int horasSemanais;
 
-public class Cachorro extends Animal {
-    public void latir() { System.out.println("Au au!"); }
-}
+    public Estagiario(String nome, String cpf, double salario, int horas) {
+        super(nome, cpf, salario);
+        this.horasSemanais = horas;
+    }
 
-public class Gato extends Animal {
-    public void miar() { System.out.println("Miau!"); }
-}
-// Mudou comer()? Muda só em Animal!`,
-    comparisonExplanation: 'Com herança, o código comum fica na classe pai (Animal). Se precisar alterar o comportamento de comer(), muda em um lugar só. Sem herança, cada animal repete o mesmo código.',
-    codeFillExercises: [
-      { instruction: 'Como declarar que Cachorro herda de Animal em Java?', snippetBefore: 'public class Cachorro ', snippetAfter: ' Animal { ... }', options: ['extends', 'inherits', 'implements', 'from'], correctIndex: 0, explanation: 'extends indica que a classe herda da superclasse.' },
-    ],
-    summary: ['Herança: classe filha herda da pai com extends', 'Use quando existe relação "é um" genuína', 'super() chama o construtor da classe pai', 'protected permite acesso nas subclasses', 'Prefira composição quando a relação é "tem um"'],
-    tryItCode: `class Animal {
-    protected String nome;
-    public Animal(String nome) { this.nome = nome; }
-    public void comer() { System.out.println(nome + " comendo"); }
-}
-class Cachorro extends Animal {
-    public Cachorro(String nome) { super(nome); }
-    public void latir() { System.out.println(nome + " au au!"); }
-}
-public class Main {
-    public static void main(String[] args) {
-        Cachorro rex = new Cachorro("Rex");
-        rex.comer();
-        rex.latir();
+    @Override
+    public double calcularPagamento() {
+        return (salario / 40.0) * horasSemanais;  // proporcional às horas
+    }
+
+    @Override
+    public void exibirInfo() {
+        super.exibirInfo();
+        System.out.println("  Horas/semana: " + horasSemanais);
     }
 }`,
-    tryItPrompt: 'Adicione uma classe Gato extends Animal com método miar() e crie um Gato no main.',
+        codeExplanation: '**Linha 12** (`@Override`): Anotação que indica sobrescrita. Se você escrever `calcularPagemento()` (erro de digitação), o compilador avisa que esse método não existe no pai.\n\n**Linhas 13-15** (`calcularPagamento` do Gerente): Retorna salario + bonus. Substitui completamente a versão do pai.\n\n**Linha 20** (`super.exibirInfo()`): Chama a versão do PAI primeiro (que mostra nome, cpf, salario), e depois adiciona informações extras. Isso evita duplicar a lógica do pai.\n\n**Linhas 34-36** (`calcularPagamento` do Estagiário): Calcula proporcional. Se trabalha 20h/semana com salário de R$2000 (base 40h), recebe R$1000.',
+        tryItCode: `class Funcionario {
+    protected String nome;
+    protected double salario;
+
+    public Funcionario(String nome, double salario) {
+        this.nome = nome;
+        this.salario = salario;
+    }
+
+    public double calcularPagamento() { return salario; }
+
+    public void exibirInfo() {
+        System.out.println(nome + " | R$" + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario);
+        this.bonus = bonus;
+    }
+    @Override
+    public double calcularPagamento() { return salario + bonus; }
+}
+
+class Estagiario extends Funcionario {
+    private int horas;
+    public Estagiario(String nome, double salario, int horas) {
+        super(nome, salario);
+        this.horas = horas;
+    }
+    @Override
+    public double calcularPagamento() { return (salario / 40.0) * horas; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Funcionario f = new Funcionario("Ana", 3000);
+        Gerente g = new Gerente("Bruno", 5000, 2000);
+        Estagiario e = new Estagiario("Carlos", 2000, 20);
+
+        f.exibirInfo(); // R$3000
+        g.exibirInfo(); // R$7000 (salário + bônus)
+        e.exibirInfo(); // R$1000 (proporcional)
+    }
+}`,
+        tryItPrompt: 'Altere os valores de bônus e horas. Crie uma classe Diretor que ganha salário + bônus + participação nos lucros!',
+      },
+
+      // ────────── SEÇÃO 4: Quando NÃO Usar Herança ──────────
+      {
+        title: 'Quando Usar e Quando NÃO Usar Herança',
+        body: 'Herança é uma ferramenta poderosa mas perigosa quando usada errado. A regra é simples:\n\n**Use herança quando**: existe uma relação genuína "**é um**":\n- Cachorro **é um** Animal ✅\n- Gerente **é um** Funcionário ✅\n- Conta Corrente **é uma** Conta ✅\n\n**NÃO use herança quando**: a relação é "**tem um**":\n- Carro **tem um** Motor ❌ (Motor é um atributo de Carro, não uma superclasse)\n- Pessoa **tem um** Endereço ❌\n- Pedido **tem** Itens ❌\n\nPara "tem um", use **composição**: o objeto é um atributo da classe.\n\nPor que isso importa? Se Carro extends Motor, um Carro herdaria métodos como `injetarCombustivel()` e `girarPistoes()` — métodos que não fazem sentido para um Carro! Herança errada polui a interface da classe com métodos que não deveria ter.',
+        code: `// ═══ HERANÇA ERRADA ═══
+// Carro NÃO É UM Motor!
+class Motor {
+    void injetarCombustivel() { }
+    void girarPistoes() { }
+}
+class Carro extends Motor { // ERRADO!
+    // Agora Carro tem injetarCombustivel() e girarPistoes()!
+    // Faz sentido carro.girarPistoes()? NÃO!
+}
+
+// ═══ COMPOSIÇÃO CORRETA ═══
+// Carro TEM UM Motor!
+class Carro {
+    private Motor motor;  // composição: Motor é um atributo
+    private String marca;
+
+    public Carro(String marca, Motor motor) {
+        this.marca = marca;
+        this.motor = motor;
+    }
+
+    public void ligar() {
+        motor.injetarCombustivel(); // delega ao Motor
+        System.out.println(marca + " ligado!");
+    }
+}`,
+        codeExplanation: '**Linhas 7-10** (Herança errada): Se Carro extends Motor, qualquer código poderia chamar `carro.girarPistoes()`. Isso não faz sentido semântico — Carro não é um Motor!\n\n**Linhas 14-26** (Composição correta): Carro TEM um Motor como atributo. O método `ligar()` internamente usa o motor (`motor.injetarCombustivel()`), mas de fora, o usuário só vê `carro.ligar()`. O Motor fica "escondido" dentro do Carro.\n\n**Teste rápido**: Se a frase "X é um Y" soa estranha, NÃO use herança. "Carro é um Motor" → estranho. "Gerente é um Funcionário" → faz sentido.',
+        warning: 'Regra de ouro: "Prefira composição a herança". Herança cria acoplamento forte. Se o pai mudar, TODAS as filhas são afetadas. Composição é mais flexível.',
+      },
+    ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM herança: código duplicado em cada classe
+class Funcionario {
+    String nome; double salario;
+    void exibirInfo() { System.out.println(nome + " R$" + salario); }
+}
+class Gerente {
+    String nome; double salario; String depto;  // nome e salario DUPLICADOS!
+    void exibirInfo() { System.out.println(nome + " R$" + salario); } // DUPLICADO!
+}
+class Estagiario {
+    String nome; double salario; String faculdade;  // DUPLICADOS!
+    void exibirInfo() { System.out.println(nome + " R$" + salario); } // DUPLICADO!
+}
+// Mudou exibirInfo()? Muda em 3 lugares!`,
+    withPoo: `// COM herança: código comum centralizado
+class Funcionario {
+    protected String nome;
+    protected double salario;
+    public Funcionario(String nome, double sal) { this.nome = nome; this.salario = sal; }
+    void exibirInfo() { System.out.println(nome + " R$" + salario); }
+}
+class Gerente extends Funcionario {
+    String depto;
+    public Gerente(String n, double s, String d) { super(n, s); depto = d; }
+}
+class Estagiario extends Funcionario {
+    String faculdade;
+    public Estagiario(String n, double s, String f) { super(n, s); faculdade = f; }
+}
+// Mudou exibirInfo()? Muda SÓ em Funcionario!`,
+    comparisonExplanation: 'Sem herança, 3 classes repetem nome, salario e exibirInfo(). Com herança, o código comum fica no pai — cada filha adiciona apenas o que é seu.',
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Como declarar que Gerente herda de Funcionario em Java?',
+        snippetBefore: 'class Gerente ',
+        snippetAfter: ' Funcionario { ... }',
+        options: ['extends', 'inherits', 'implements', 'from'],
+        correctIndex: 0,
+        explanation: '"extends" é a palavra-chave Java para herança. Gerente extends Funcionario = "Gerente é um Funcionario".',
+      },
+      {
+        instruction: 'Como chamar o construtor da classe pai dentro da classe filha?',
+        snippetBefore: 'public Gerente(String nome, double salario) {\n    ',
+        snippetAfter: '(nome, salario); // inicializa parte herdada\n}',
+        options: ['super', 'parent', 'base', 'this'],
+        correctIndex: 0,
+        explanation: 'super() chama o construtor da classe pai. Deve ser a PRIMEIRA linha do construtor da filha.',
+      },
+      {
+        instruction: 'Qual modificador permite que subclasses acessem o atributo mas código externo não?',
+        snippetBefore: '',
+        snippetAfter: ' String nome; // acessível nas filhas, não fora',
+        options: ['protected', 'private', 'public', 'static'],
+        correctIndex: 0,
+        explanation: 'protected permite acesso dentro da classe E nas subclasses. private bloqueia até as filhas. public permite acesso de qualquer lugar.',
+      },
+    ],
+    summary: [
+      'Herança: classe filha herda atributos e métodos da pai com extends',
+      'Use quando existe relação "é um" genuína (Gerente é um Funcionário)',
+      'super() chama o construtor da classe pai — deve ser a PRIMEIRA linha',
+      'protected permite acesso nas subclasses (diferente de private)',
+      '@Override sobrescreve método do pai — compilador verifica a assinatura',
+      'super.metodo() chama a versão do PAI dentro de um método sobrescrito',
+      'NÃO use herança para "tem um" — use composição (atributo)',
+      'Prefira composição a herança: menos acoplamento, mais flexibilidade',
+    ],
+    tryItCode: `import java.util.ArrayList;
+
+class Funcionario {
+    protected String nome;
+    protected double salario;
+    public Funcionario(String nome, double salario) {
+        this.nome = nome; this.salario = salario;
+    }
+    public double calcularPagamento() { return salario; }
+    public void exibirInfo() {
+        System.out.println(nome + " | Pagamento: R$"
+            + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario); this.bonus = bonus;
+    }
+    @Override
+    public double calcularPagamento() { return salario + bonus; }
+}
+
+class Estagiario extends Funcionario {
+    private int horas;
+    public Estagiario(String nome, double salario, int horas) {
+        super(nome, salario); this.horas = horas;
+    }
+    @Override
+    public double calcularPagamento() { return (salario / 40.0) * horas; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+        equipe.add(new Funcionario("Ana", 3000));
+        equipe.add(new Gerente("Bruno", 5000, 2000));
+        equipe.add(new Estagiario("Carlos", 2000, 20));
+
+        double totalFolha = 0;
+        for (Funcionario f : equipe) {
+            f.exibirInfo();
+            totalFolha += f.calcularPagamento();
+        }
+        System.out.println("\\nTotal folha: R$" + String.format("%.2f", totalFolha));
+    }
+}`,
+    tryItPrompt: 'Adicione Diretor (salário + bônus + participação nos lucros) e veja a folha total atualizar. Note que a lista aceita QUALQUER Funcionario (polimorfismo)!',
     commonErrors: [
-      { title: 'Esquecer super() no construtor da filha', description: 'A primeira linha do construtor da subclasse deve chamar super(...).' },
-      { title: 'Herança para "tem um"', description: 'Carro tem Motor → use composição (atributo Motor), não extends Motor.' },
+      {
+        title: 'Esquecer super() no construtor da filha',
+        description: 'Se o pai não tem construtor sem parâmetros, a filha DEVE chamar super(...) explicitamente.',
+        code: `class Gerente extends Funcionario {
+    // ERRADO: sem super!
+    public Gerente(String nome) {
+        this.nome = nome; // ERRO: Funcionario não tem construtor vazio!
+    }
+    // CORRETO:
+    public Gerente(String nome, double salario) {
+        super(nome, salario); // primeira linha!
+    }
+}`,
+      },
+      {
+        title: 'Usar herança para "tem um"',
+        description: 'Carro tem Motor → use composição (Motor como atributo), não extends Motor.',
+        code: `// ERRADO: Carro extends Motor
+// Carro herda girarPistoes()... não faz sentido!
+
+// CORRETO: Carro tem Motor
+class Carro {
+    private Motor motor; // composição
+}`,
+      },
+      {
+        title: 'Esquecer @Override',
+        description: 'Sem @Override, se errar o nome do método, cria um método novo em vez de sobrescrever.',
+        code: `// SEM @Override: bug silencioso
+public double calcularPagemento() { // erro de digitação!
+    return salario + bonus; // método NOVO, não sobrescreve!
+}
+// COM @Override: compilador avisa
+@Override
+public double calcularPagemento() { // ERRO de compilação!
+    // "method does not override a method from its superclass"
+}`,
+      },
     ],
   },
 
