@@ -3306,121 +3306,595 @@ public class Main {
 
   'm3-encapsulation': {
     id: 'm3-encapsulation', moduleId: 3,
-    objectives: ['Entender por que encapsular dados', 'Usar private, getters e setters', 'Adicionar validações nos setters'],
+    objectives: [
+      'Entender por que encapsular dados (e o problema de não encapsular)',
+      'Usar o modificador private para proteger atributos',
+      'Criar getters (acesso de leitura) e setters (acesso de escrita com validação)',
+      'Saber quando NÃO criar getter/setter e usar métodos de negócio',
+      'Diferenciar encapsulamento real de encapsulamento "falso" (get/set sem validação)',
+      'Aplicar o padrão private + construtor + métodos de negócio',
+    ],
     sections: [
-      { title: 'Por que Encapsular?', body: 'Encapsulamento é esconder os dados internos do objeto, permitindo acesso apenas por métodos controlados. É como um caixa eletrônico: você não acessa o cofre diretamente, mas usa uma interface segura.',
-        warning: 'Sem encapsulamento, qualquer parte do código pode colocar valores inválidos nos atributos, como idade negativa ou preço zero.',
+      // ────────── SEÇÃO 1: O Problema SEM Encapsulamento ──────────
+      {
+        title: 'O Problema: Atributos Públicos São Perigosos',
+        body: 'Até agora, nossos atributos eram acessíveis de fora da classe. Qualquer código podia fazer `produto.estoque = -50` ou `conta.saldo = 999999`. Não havia proteção alguma.\n\nIsso é um desastre em sistemas reais:\n- Um bug em uma tela pode corromper os dados do banco\n- Um programador novo pode alterar o saldo sem validar\n- Não há como auditar quem alterou o quê\n\n**Encapsulamento** resolve isso: tornar os atributos **private** (invisíveis de fora) e permitir acesso APENAS por métodos controlados que validam antes de alterar.',
+        code: `// ═══ SEM ENCAPSULAMENTO ═══
+public class ContaInsegura {
+    public String titular;  // qualquer um acessa!
+    public double saldo;    // qualquer um altera!
+    public String cpf;      // dado sensível exposto!
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ContaInsegura conta = new ContaInsegura();
+        conta.titular = "Ana";
+        conta.saldo = 1000;
+
+        // Qualquer código pode fazer isso:
+        conta.saldo = -5000;    // Saldo negativo! Nenhum erro!
+        conta.titular = "";     // Nome vazio! Ninguém impediu!
+        conta.cpf = "abc";      // CPF inválido! Aceito!
+
+        System.out.println(conta.titular + " | Saldo: " + conta.saldo);
+        // Resultado:  | Saldo: -5000.0   ← CATÁSTROFE!
+    }
+}`,
+        codeExplanation: '**Linhas 3-5** (`public`): Atributos public são acessíveis de qualquer lugar do código. Não há proteção.\n\n**Linha 15** (`conta.saldo = -5000`): Saldo negativo! O Java não reclama porque `saldo` é um double público — aceita qualquer valor. Em um banco real, isso seria um bug gravíssimo.\n\n**Linha 16** (`conta.titular = ""`): Nome vazio. Novamente, sem proteção. Se o sistema enviar um email para o titular, ele terá um campo em branco.\n\n**Linha 17** (`conta.cpf = "abc"`): CPF completamente inválido. Dados sensíveis como CPF NUNCA deveriam ser alteráveis sem validação.\n\n**O problema**: qualquer parte do código pode corromper os dados. Não há um "porteiro" verificando os valores.',
+        warning: 'Em sistemas bancários reais, bugs como saldo negativo podem causar prejuízos milionários. Encapsulamento é a primeira linha de defesa contra esse tipo de erro.',
       },
-      { title: 'Getters e Setters com Validação', body: 'Getters retornam o valor. Setters definem o valor COM validação.',
+
+      // ────────── SEÇÃO 2: private + Getters e Setters ──────────
+      {
+        title: 'A Solução: private + Getters e Setters',
+        body: 'O encapsulamento funciona em 3 passos:\n\n1. **Atributos private**: ninguém de fora acessa diretamente\n2. **Getters** (métodos get): permitem LEITURA controlada\n3. **Setters** (métodos set): permitem ESCRITA com validação\n\nConvenção de nomes:\n- Getter: `getTitular()`, `getSaldo()`, `isAtivo()` (para boolean)\n- Setter: `setTitular(String titular)`, `setPreco(double preco)`\n\n**IMPORTANTE**: Nem todo atributo precisa de getter E setter!\n- Alguns atributos são **somente leitura** (só getter, sem setter) — ex: CPF, data de criação\n- Alguns atributos nem precisam de getter (são internos) — ex: contadores, flags internas\n- Alguns são melhor controlados por **métodos de negócio** (depositar/sacar) em vez de setSaldo',
         code: `public class ContaBancaria {
-    // Atributos PRIVADOS (encapsulados)
+    // ═══ ATRIBUTOS PRIVADOS ═══
     private String titular;
-    private double saldo;
-    private String cpf;
-    
-    public ContaBancaria(String titular, String cpf) {
+    private String cpf;       // somente leitura (sem setter!)
+    private double saldo;     // sem getter/setter! Usa depositar/sacar
+    private boolean ativa;
+
+    // ═══ CONSTRUTOR ═══
+    public ContaBancaria(String titular, String cpf, double saldoInicial) {
         this.titular = titular;
         this.cpf = cpf;
-        this.saldo = 0;
+        this.saldo = Math.max(0, saldoInicial);
+        this.ativa = true;
     }
-    
-    // Getter - apenas leitura
-    public double getSaldo() {
-        return this.saldo;
-    }
-    
-    public String getTitular() {
-        return this.titular;
-    }
-    
-    // Setter com VALIDAÇÃO
+
+    // ═══ GETTERS (leitura controlada) ═══
+    public String getTitular() { return this.titular; }
+    public String getCpf() { return this.cpf; }  // leitura, sem setCpf!
+    public double getSaldo() { return this.saldo; }
+    public boolean isAtiva() { return this.ativa; } // boolean usa "is"
+
+    // ═══ SETTER COM VALIDAÇÃO ═══
     public void setTitular(String titular) {
         if (titular != null && !titular.trim().isEmpty()) {
             this.titular = titular;
         } else {
-            System.out.println("Nome inválido!");
+            System.out.println("Erro: nome do titular inválido!");
         }
     }
-    
-    // Sem setter para saldo! Só pode alterar via métodos de negócio
+    // NÃO existe setCpf! CPF nunca muda.
+    // NÃO existe setSaldo! Saldo muda APENAS por depositar/sacar.
+
+    // ═══ MÉTODOS DE NEGÓCIO (melhor que setSaldo!) ═══
     public void depositar(double valor) {
+        if (!ativa) {
+            System.out.println("Conta inativa! Não é possível depositar.");
+            return;
+        }
         if (valor > 0) {
             this.saldo += valor;
+            System.out.println("Depósito de R$" + valor + " | Novo saldo: R$" + saldo);
+        } else {
+            System.out.println("Valor de depósito inválido!");
         }
     }
-    
+
     public boolean sacar(double valor) {
+        if (!ativa) {
+            System.out.println("Conta inativa!");
+            return false;
+        }
         if (valor > 0 && valor <= this.saldo) {
             this.saldo -= valor;
+            System.out.println("Saque de R$" + valor + " | Novo saldo: R$" + saldo);
+            return true;
+        }
+        System.out.println("Saque negado! Saldo: R$" + saldo + ", Pediu: R$" + valor);
+        return false;
+    }
+
+    public void desativar() {
+        this.ativa = false;
+        System.out.println("Conta de " + titular + " desativada.");
+    }
+}`,
+        codeExplanation: '**Linhas 3-6** (`private`): TODOS os atributos são private. Ninguém de fora pode fazer `conta.saldo = -5000` — o compilador nem permite!\n\n**Linha 17** (`getTitular()`): Getter simples que retorna o valor. O chamador pode LER mas não ALTERAR.\n\n**Linha 18** (`getCpf()`): CPF é somente leitura — tem getter mas NÃO tem setter. Uma vez definido no construtor, nunca mais muda.\n\n**Linha 20** (`isAtiva()`): Para atributos boolean, a convenção é usar `is` em vez de `get`: `isAtiva()`, `isVazio()`, `isPago()`.\n\n**Linhas 23-29** (`setTitular`): O setter VALIDA antes de alterar. Se o nome for null ou vazio, RECUSA a alteração.\n\n**Linhas 30-31**: Comentários que deixam claro: NÃO existe setCpf nem setSaldo. Isso é encapsulamento REAL — controlar QUAIS operações são permitidas.\n\n**Linhas 34-44** (`depositar`): Em vez de setSaldo(), usamos um método de negócio que: (1) verifica se a conta está ativa, (2) valida o valor, (3) altera o saldo, (4) mostra feedback. Muito mais seguro que um setSaldo simples!',
+        tip: 'A regra de ouro: NÃO crie getters e setters para tudo automaticamente. Pergunte-se: "esse dado PRECISA ser acessado de fora? PRECISA ser alterável? Se sim, com qual validação?"',
+      },
+
+      // ────────── SEÇÃO 3: Encapsulamento Falso vs Real ──────────
+      {
+        title: 'Encapsulamento "Falso" vs Encapsulamento Real',
+        body: 'Muitos programadores cometem o erro de criar getters e setters para TODOS os atributos automaticamente, sem validação. Isso é **encapsulamento falso** — os dados continuam desprotegidos.\n\nA diferença:\n- **Falso**: `setSaldo(double s) { this.saldo = s; }` → Aceita qualquer valor, inclusive negativo!\n- **Real**: Métodos de negócio (depositar/sacar) com validação, sem setSaldo\n\nSe o setter apenas faz `this.x = valor` sem validar, é o mesmo que ter o atributo público — com mais código e sem benefício.',
+        code: `// ═══ ENCAPSULAMENTO FALSO (não faça isso!) ═══
+class ContaFalsa {
+    private double saldo;
+
+    // Getter e Setter gerados automaticamente — SEM VALIDAÇÃO!
+    public double getSaldo() { return saldo; }
+    public void setSaldo(double saldo) { this.saldo = saldo; } // PERIGO!
+}
+// conta.setSaldo(-5000); → ACEITA! Mesma coisa que public!
+
+// ═══ ENCAPSULAMENTO REAL ═══
+class ContaReal {
+    private double saldo;
+
+    public double getSaldo() { return saldo; }
+    // NÃO tem setSaldo!
+
+    public void depositar(double valor) {
+        if (valor > 0) {
+            saldo += valor;
+            System.out.println("Depósito: R$" + valor);
+        }
+    }
+
+    public boolean sacar(double valor) {
+        if (valor > 0 && valor <= saldo) {
+            saldo -= valor;
             return true;
         }
         return false;
     }
+}
+// conta.depositar(-5000); → RECUSADO! Proteção real!`,
+        codeExplanation: '**Linhas 2-8** (Encapsulamento falso): `setSaldo` aceita QUALQUER valor. Fazer `conta.setSaldo(-5000)` funciona perfeitamente — nenhuma validação! O atributo é private mas o setter destrói a proteção.\n\n**Linhas 12-32** (Encapsulamento real): NÃO existe setSaldo. A única forma de alterar o saldo é via `depositar()` e `sacar()`, que validam os valores. É impossível ter saldo negativo.\n\n**A lição**: Encapsulamento não é "colocar private e gerar get/set". É CONTROLAR como os dados são acessados e modificados.',
+        warning: 'IDEs como IntelliJ e Eclipse têm opção "Generate Getters and Setters". Use com cuidado! Gerar para todos os atributos sem pensar é o erro mais comum de encapsulamento.',
+      },
+
+      // ────────── SEÇÃO 4: Quando Usar Get, Set, ou Nenhum ──────────
+      {
+        title: 'Guia: Quando Usar Getter, Setter, ou Nenhum',
+        body: 'Aqui está um guia prático para decidir como expor (ou não) cada atributo:\n\n**Somente Getter (leitura)** — dados que não devem mudar após criação:\n- CPF, RG, data de nascimento, ID do objeto\n- Resultados calculados (média, total)\n\n**Getter + Setter com validação** — dados que podem ser alterados com regras:\n- Nome (não pode ser vazio), Email (deve ter @)\n- Preço (não pode ser negativo)\n\n**Métodos de negócio (sem getter/setter)** — dados que mudam por operações específicas:\n- Saldo (depositar/sacar), Estoque (vender/repor)\n- Status (ativar/desativar), Senha (alterarSenha)\n\n**Nenhum acesso** — dados 100% internos:\n- Contadores internos, flags de controle, cache',
+        code: `public class Usuario {
+    // Somente getter (definidos no construtor, nunca mudam)
+    private final String id;
+    private final String dataCriacao;
+
+    // Getter + setter com validação
+    private String nome;
+    private String email;
+
+    // Métodos de negócio (sem get/set direto)
+    private String senhaHash;
+    private boolean ativo;
+    private int tentativasLogin; // nenhum acesso externo!
+
+    public Usuario(String id, String nome, String email) {
+        this.id = id;
+        this.dataCriacao = java.time.LocalDate.now().toString();
+        this.nome = nome;
+        this.email = email;
+        this.senhaHash = "";
+        this.ativo = true;
+        this.tentativasLogin = 0;
+    }
+
+    // ═══ SOMENTE GETTER ═══
+    public String getId() { return id; }
+    public String getDataCriacao() { return dataCriacao; }
+
+    // ═══ GETTER + SETTER COM VALIDAÇÃO ═══
+    public String getNome() { return nome; }
+    public void setNome(String nome) {
+        if (nome != null && nome.trim().length() >= 2) {
+            this.nome = nome;
+        }
+    }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) {
+        if (email != null && email.contains("@")) {
+            this.email = email;
+        }
+    }
+
+    // ═══ MÉTODOS DE NEGÓCIO ═══
+    public void alterarSenha(String senhaAtual, String novaSenha) {
+        // Não expõe a senha — valida e altera internamente
+        if (novaSenha != null && novaSenha.length() >= 6) {
+            this.senhaHash = novaSenha; // simplificado; real usaria hash
+            System.out.println("Senha alterada com sucesso!");
+        }
+    }
+
+    public void desativar() { this.ativo = false; }
+    public void ativar() { this.ativo = true; }
+    public boolean isAtivo() { return ativo; }
+    // tentativasLogin → NENHUM acesso externo!
 }`,
-        codeExplanation: 'Note que saldo não tem setter! O único jeito de alterar é via depositar() e sacar(), que fazem validação. Isso é encapsulamento de verdade — não é só colocar get/set, é PROTEGER os dados.',
-        tip: 'Não crie getters e setters para tudo automaticamente. Pense: esse atributo PRECISA ser acessado de fora? Precisa ser alterável?',
+        codeExplanation: '**Linhas 3-4** (`private final`): `final` significa que o valor é definido UMA vez (no construtor) e nunca mais muda. Ideal para ID e data de criação. Tem getter mas NUNCA terá setter.\n\n**Linhas 31-34** (`setNome`): Valida que o nome tem pelo menos 2 caracteres. Nomes como "" ou "A" são rejeitados.\n\n**Linhas 38-41** (`setEmail`): Valida que contém "@". Uma validação simples (em sistemas reais seria mais completa).\n\n**Linhas 45-50** (`alterarSenha`): Em vez de `setSenha()`, usamos um método que pede a senha atual para validar. A senha NUNCA é exposta — não tem `getSenha()`!\n\n**Linha 56**: `tentativasLogin` não tem NENHUM getter ou setter. É um dado 100% interno — ninguém de fora precisa saber.',
+        tip: 'A palavra-chave `final` em atributos significa "não pode ser alterado após inicialização". Combine com private para criar dados imutáveis e seguros.',
+      },
+
+      // ────────── SEÇÃO 5: Exercício Completo ──────────
+      {
+        title: 'Exercício Completo: Sistema de Produtos Encapsulado',
+        body: 'Vamos criar um sistema de loja com encapsulamento real: atributos protegidos, validação em construtores e métodos, e controle de acesso pensado.',
+        code: `import java.util.ArrayList;
+
+class Produto {
+    private final int id;
+    private String nome;
+    private double preco;
+    private int estoque;
+    private boolean ativo;
+    private static int proximoId = 1;
+
+    public Produto(String nome, double preco, int estoqueInicial) {
+        this.id = proximoId++;
+        this.nome = (nome != null && !nome.trim().isEmpty()) ? nome : "Sem nome";
+        this.preco = Math.max(0.01, preco);
+        this.estoque = Math.max(0, estoqueInicial);
+        this.ativo = true;
+    }
+
+    // Getters (leitura)
+    public int getId() { return id; }
+    public String getNome() { return nome; }
+    public double getPreco() { return preco; }
+    public int getEstoque() { return estoque; }
+    public boolean isAtivo() { return ativo; }
+
+    // Setter com validação
+    public void setNome(String nome) {
+        if (nome != null && nome.trim().length() >= 2) {
+            this.nome = nome;
+        } else {
+            System.out.println("Nome deve ter ao menos 2 caracteres!");
+        }
+    }
+
+    public void setPreco(double preco) {
+        if (preco > 0) {
+            this.preco = preco;
+        } else {
+            System.out.println("Preço deve ser positivo!");
+        }
+    }
+
+    // Métodos de negócio (em vez de setEstoque!)
+    public boolean vender(int qtd) {
+        if (!ativo) { System.out.println(nome + " está inativo!"); return false; }
+        if (qtd <= 0) { System.out.println("Quantidade inválida!"); return false; }
+        if (qtd > estoque) {
+            System.out.println("Estoque insuficiente de " + nome
+                + "! Tem: " + estoque);
+            return false;
+        }
+        estoque -= qtd;
+        System.out.println("Vendido: " + qtd + "x " + nome);
+        return true;
+    }
+
+    public void repor(int qtd) {
+        if (qtd > 0) {
+            estoque += qtd;
+            System.out.println("Reposto: " + qtd + "x " + nome + " | Total: " + estoque);
+        }
+    }
+
+    public void desativar() { ativo = false; }
+
+    public void exibirInfo() {
+        String status = ativo ? "Ativo" : "Inativo";
+        System.out.println("[" + id + "] " + nome + " - R$"
+            + String.format("%.2f", preco)
+            + " | Estoque: " + estoque + " | " + status);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Produto> loja = new ArrayList<>();
+        loja.add(new Produto("Camiseta", 49.90, 100));
+        loja.add(new Produto("Calça Jeans", 129.90, 50));
+        loja.add(new Produto("Tênis", 199.90, 30));
+
+        System.out.println("=== LOJA ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+
+        System.out.println("\\n=== OPERAÇÕES ===");
+        loja.get(0).vender(5);
+        loja.get(1).vender(100);   // falha!
+        loja.get(2).desativar();
+        loja.get(2).vender(1);     // falha! (inativo)
+
+        loja.get(0).setPreco(-10); // falha! (preço negativo)
+        loja.get(0).setPreco(59.90); // OK
+
+        System.out.println("\\n=== LOJA ATUALIZADA ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+    }
+}`,
+        codeExplanation: '**Linha 4** (`private final int id`): ID é final — definido uma vez no construtor e nunca muda. Tem getter mas não tem setter.\n\n**Linha 9** (`static int proximoId`): Contador da classe — cada novo produto recebe um ID sequencial automaticamente (1, 2, 3...).\n\n**Linhas 44-55** (`vender`): Método de negócio com 3 validações: (1) produto ativo?, (2) quantidade válida?, (3) tem estoque?. Muito mais seguro que `setEstoque(estoque - qtd)`.\n\n**Linhas 35-41** (`setPreco`): Setter COM validação — rejeita preços negativos. Note que NÃO existe `setEstoque` nem `setId`.\n\n**Linha 90** (`setPreco(-10)`): Rejeitado! A validação protege. Na linha seguinte, `setPreco(59.90)` funciona porque é positivo.',
+        tryItCode: `import java.util.ArrayList;
+
+class Produto {
+    private final int id;
+    private String nome;
+    private double preco;
+    private int estoque;
+    private boolean ativo;
+    private static int proximoId = 1;
+
+    public Produto(String nome, double preco, int estoqueInicial) {
+        this.id = proximoId++;
+        this.nome = (nome != null) ? nome : "Sem nome";
+        this.preco = Math.max(0.01, preco);
+        this.estoque = Math.max(0, estoqueInicial);
+        this.ativo = true;
+    }
+
+    public int getId() { return id; }
+    public String getNome() { return nome; }
+    public double getPreco() { return preco; }
+    public int getEstoque() { return estoque; }
+    public boolean isAtivo() { return ativo; }
+
+    public void setPreco(double preco) {
+        if (preco > 0) this.preco = preco;
+        else System.out.println("Preço inválido!");
+    }
+
+    public boolean vender(int qtd) {
+        if (!ativo) { System.out.println(nome + " inativo!"); return false; }
+        if (qtd > 0 && qtd <= estoque) {
+            estoque -= qtd;
+            System.out.println("Vendido: " + qtd + "x " + nome);
+            return true;
+        }
+        System.out.println("Venda negada para " + nome + "!");
+        return false;
+    }
+
+    public void repor(int qtd) {
+        if (qtd > 0) { estoque += qtd; System.out.println("Reposto: +" + qtd + " " + nome); }
+    }
+
+    public void desativar() { ativo = false; }
+
+    public void exibirInfo() {
+        System.out.println("[" + id + "] " + nome + " R$"
+            + String.format("%.2f", preco) + " | Est: " + estoque
+            + " | " + (ativo ? "Ativo" : "Inativo"));
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Produto> loja = new ArrayList<>();
+        loja.add(new Produto("Camiseta", 49.90, 100));
+        loja.add(new Produto("Calça", 129.90, 50));
+        loja.add(new Produto("Tênis", 199.90, 30));
+
+        System.out.println("=== LOJA ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+
+        System.out.println("\\n=== OPERAÇÕES ===");
+        loja.get(0).vender(5);
+        loja.get(1).vender(100);
+        loja.get(2).desativar();
+        loja.get(2).vender(1);
+        loja.get(0).setPreco(-10);
+        loja.get(0).setPreco(59.90);
+        loja.get(0).repor(20);
+
+        System.out.println("\\n=== ATUALIZADO ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+    }
+}`,
+        tryItPrompt: 'Teste todas as proteções: tente vender produto inativo, setar preço negativo, vender mais que o estoque. Adicione um método aplicarDesconto(percentual) com validação!',
       },
     ],
+
+    // ────────── Comparação COM/SEM ──────────
     withoutPoo: `// SEM encapsulamento
 public class ContaSemProtecao {
     public String titular;
     public double saldo;
-    
-    // Qualquer um pode fazer:
-    // conta.saldo = -1000;  // saldo negativo!
-    // conta.titular = "";    // nome vazio!
-    // conta.saldo = 999999;  // fraude!
+    public String cpf;
+
+    // Qualquer código pode fazer:
+    // conta.saldo = -5000;     → saldo negativo!
+    // conta.titular = "";      → nome vazio!
+    // conta.cpf = "invalido";  → CPF corrompido!
+    // NENHUMA proteção!
 }`,
     withPoo: `// COM encapsulamento
 public class ContaProtegida {
     private String titular;
     private double saldo;
-    
+    private final String cpf; // imutável após criação
+
+    public ContaProtegida(String titular, String cpf) {
+        this.titular = titular;
+        this.cpf = cpf;
+        this.saldo = 0;
+    }
+
     public void depositar(double valor) {
-        if (valor > 0) {
-            this.saldo += valor;
-            // Pode adicionar: log, notificação, auditoria...
+        if (valor > 0) { saldo += valor; }
+    }
+
+    public boolean sacar(double valor) {
+        if (valor > 0 && valor <= saldo) {
+            saldo -= valor; return true;
+        }
+        return false; // IMPOSSÍVEL ter saldo negativo!
+    }
+
+    public double getSaldo() { return saldo; }
+    // Sem setSaldo! Sem setCpf! Proteção real!
+}`,
+    comparisonExplanation: 'SEM encapsulamento: dados expostos, qualquer código corrompe. COM encapsulamento: atributos private, acesso controlado por métodos com validação. Saldo negativo é IMPOSSÍVEL.',
+
+    // ────────── Exercícios de Completar Código ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Qual modificador de acesso esconde o atributo e permite acesso só dentro da própria classe?',
+        snippetBefore: '',
+        snippetAfter: ' double saldo;\n// conta.saldo = -5000; → ERRO de compilação!',
+        options: ['private', 'public', 'protected', 'static'],
+        correctIndex: 0,
+        explanation: 'private torna o atributo acessível APENAS dentro da própria classe. Código externo não pode nem ler nem alterar diretamente.',
+      },
+      {
+        instruction: 'Para atributos boolean, a convenção do getter é usar:',
+        snippetBefore: 'private boolean ativo;\npublic boolean ',
+        snippetAfter: '() { return ativo; }',
+        options: ['isAtivo', 'getAtivo', 'hasAtivo', 'checkAtivo'],
+        correctIndex: 0,
+        explanation: 'Para boolean, a convenção Java é usar "is" em vez de "get": isAtivo(), isVazio(), isPago(). Para outros tipos, usa-se get.',
+      },
+      {
+        instruction: 'Qual é melhor para controlar o saldo: setSaldo() ou métodos de negócio?',
+        snippetBefore: '// Em vez de setSaldo(valor):\n// Use ',
+        snippetAfter: '(valor) e sacar(valor) com validação.',
+        options: ['depositar', 'setSaldo', 'atribuir', 'mudarSaldo'],
+        correctIndex: 0,
+        explanation: 'Métodos de negócio como depositar() e sacar() encapsulam regras reais (valor positivo, saldo suficiente). Um setSaldo genérico não protege nada.',
+      },
+    ],
+
+    // ────────── Erros Comuns ──────────
+    commonErrors: [
+      {
+        title: 'Criar get/set para TODOS os atributos sem pensar',
+        description: 'Gerar getters e setters automáticos para tudo derrota o propósito do encapsulamento. Pense se cada atributo realmente precisa ser exposto.',
+        code: `// ERRADO: encapsulamento falso!
+private double saldo;
+public void setSaldo(double saldo) {
+    this.saldo = saldo; // aceita QUALQUER valor! Sem proteção!
+}
+
+// CORRETO: método de negócio com validação
+private double saldo;
+public void depositar(double valor) {
+    if (valor > 0) this.saldo += valor; // VALIDADO!
+}`,
+      },
+      {
+        title: 'Setter sem validação',
+        description: 'Um setter que apenas faz this.x = x não protege nada — é o mesmo que ter o atributo público.',
+        code: `// INÚTIL: nenhuma proteção
+public void setIdade(int idade) {
+    this.idade = idade; // aceita -50, 999...
+}
+
+// CORRETO: com validação
+public void setIdade(int idade) {
+    if (idade >= 0 && idade <= 150) {
+        this.idade = idade;
+    }
+}`,
+      },
+      {
+        title: 'Esquecer que private bloqueia acesso de OUTRA classe',
+        description: 'Com private, conta.saldo de fora da classe dá erro de compilação. Use getSaldo().',
+        code: `// Na classe Main (FORA de ContaBancaria):
+ContaBancaria c = new ContaBancaria("Ana", "123");
+// c.saldo = 1000; → ERRO! saldo é private!
+// double s = c.saldo; → ERRO! saldo é private!
+
+// CORRETO:
+c.depositar(1000);
+double s = c.getSaldo(); // usa o getter`,
+      },
+    ],
+
+    // ────────── Resumo ──────────
+    summary: [
+      'Encapsulamento = atributos private + acesso controlado por métodos',
+      'private: acessível APENAS dentro da própria classe',
+      'Getter (get/is): permite leitura controlada do atributo',
+      'Setter (set): permite escrita COM VALIDAÇÃO — rejeitar valores inválidos',
+      'NÃO crie get/set para tudo! Pense: "esse dado precisa ser exposto? Com qual proteção?"',
+      'Métodos de negócio (depositar/sacar) são melhores que setters genéricos para dados sensíveis',
+      'final em atributos = definido uma vez, nunca mais muda (ex: id, cpf)',
+      'Encapsulamento falso = get/set sem validação = mesmo que public (inútil)',
+    ],
+
+    // ────────── Código final ──────────
+    tryItCode: `class Conta {
+    private String titular;
+    private double saldo;
+
+    public Conta(String titular, double saldoInicial) {
+        this.titular = (titular != null) ? titular : "Anônimo";
+        this.saldo = Math.max(0, saldoInicial);
+    }
+
+    public String getTitular() { return titular; }
+    public double getSaldo() { return saldo; }
+
+    public void depositar(double v) {
+        if (v > 0) {
+            saldo += v;
+            System.out.println("Depósito: +R$" + v + " | Saldo: R$" + saldo);
+        } else {
+            System.out.println("Valor inválido para depósito!");
         }
     }
-    
-    public boolean sacar(double valor) {
-        if (valor > 0 && valor <= this.saldo) {
-            this.saldo -= valor;
+
+    public boolean sacar(double v) {
+        if (v > 0 && v <= saldo) {
+            saldo -= v;
+            System.out.println("Saque: -R$" + v + " | Saldo: R$" + saldo);
             return true;
         }
-        return false; // protegido contra saldo negativo
-    }
-    
-    // Impossível colocar saldo negativo!
-    // Impossível alterar sem validação!
-}`,
-    comparisonExplanation: 'Sem encapsulamento, qualquer parte do código pode corromper os dados. Com encapsulamento, você controla TODO acesso aos dados, pode validar, logar, notificar — tudo em um único lugar.',
-    commonErrors: [
-      { title: 'Criar get/set para tudo sem pensar', description: 'Gerar getters e setters automáticos derrota o propósito. Pense se o atributo PRECISA ser exposto.' },
-      { title: 'Setter sem validação', description: 'Um setter que apenas faz this.x = x não protege nada. Adicione validação!' },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual modificador de acesso esconde o atributo de outras classes e permite acesso só por métodos da própria classe?', snippetBefore: 'private double saldo;\n    // ', snippetAfter: ' controla o acesso aos dados.', options: ['private', 'public', 'hidden', 'internal'], correctIndex: 0, explanation: 'private torna o membro acessível apenas dentro da própria classe.' },
-    ],
-    summary: ['Encapsulamento protege dados com private', 'Getters fornecem acesso de leitura controlado', 'Setters validam antes de alterar', 'Nem todo atributo precisa de get/set', 'Métodos de negócio (depositar, sacar) são melhor que setters genéricos'],
-    tryItCode: `class Conta {
-    private double saldo = 0;
-    public void depositar(double v) { if (v > 0) saldo += v; }
-    public boolean sacar(double v) {
-        if (v > 0 && v <= saldo) { saldo -= v; return true; }
+        System.out.println("Saque negado! Saldo: R$" + saldo);
         return false;
     }
-    public double getSaldo() { return saldo; }
+
+    public boolean transferir(Conta destino, double valor) {
+        if (this.sacar(valor)) {
+            destino.depositar(valor);
+            System.out.println("Transferência de " + titular + " → " + destino.getTitular());
+            return true;
+        }
+        return false;
+    }
 }
+
 public class Main {
     public static void main(String[] args) {
-        Conta c = new Conta();
-        c.depositar(500);
-        c.sacar(200);
-        System.out.println("Saldo: " + c.getSaldo());
+        Conta c1 = new Conta("Ana", 1000);
+        Conta c2 = new Conta("Bruno", 500);
+
+        System.out.println("=== ESTADO INICIAL ===");
+        System.out.println(c1.getTitular() + ": R$" + c1.getSaldo());
+        System.out.println(c2.getTitular() + ": R$" + c2.getSaldo());
+
+        System.out.println("\\n=== OPERAÇÕES ===");
+        c1.depositar(500);
+        c1.sacar(200);
+        c1.transferir(c2, 300);
+        c1.sacar(5000); // vai falhar!
+
+        System.out.println("\\n=== ESTADO FINAL ===");
+        System.out.println(c1.getTitular() + ": R$" + c1.getSaldo());
+        System.out.println(c2.getTitular() + ": R$" + c2.getSaldo());
     }
 }`,
-    tryItPrompt: 'Não existe setSaldo — altere só via depositar/sacar. Teste sacar mais que o saldo.',
+    tryItPrompt: 'Teste depositar/sacar/transferir. Tente acessar conta.saldo diretamente (vai dar erro!). Crie uma conta com saldo negativo no construtor e veja que o Math.max protege.',
   },
 
   'm3-static': {
