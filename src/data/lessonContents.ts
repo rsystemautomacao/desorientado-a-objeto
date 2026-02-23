@@ -2181,66 +2181,596 @@ public class Main {
 
   'm3-attributes': {
     id: 'm3-attributes', moduleId: 3,
-    objectives: ['Diferenciar atributos e métodos', 'Entender estado e comportamento', 'Escrever métodos que validam antes de alterar estado'],
-    sections: [
-      { title: 'Estado e Comportamento', body: '**Atributos** são os dados do objeto: nome, preço, estoque, etc. Eles definem o **estado** em um dado momento. **Métodos** são as ações: vender, calcularTotal, exibirInfo. Eles podem apenas ler o estado ou alterá-lo (com validação).\n\nBoa prática: em vez de permitir que qualquer um faça produto.estoque = -5, crie um método vender(quantidade) que só diminui o estoque se houver quantidade suficiente e que pode registrar a venda. Assim a lógica fica centralizada e os dados protegidos.',
-        code: `public class Produto {
-    // ESTADO (atributos)
-    String nome;
-    double preco;
-    int estoque;
-    
-    // COMPORTAMENTO (métodos)
-    void vender(int quantidade) {
-        if (quantidade <= estoque) {
-            estoque -= quantidade;
-            System.out.println(quantidade + "x " + nome + " vendido(s)!");
-        } else {
-            System.out.println("Estoque insuficiente!");
-        }
-    }
-    
-    double calcularTotal(int quantidade) {
-        return preco * quantidade;
-    }
-    
-    void exibirInfo() {
-        System.out.println(nome + " - R$" + preco + " | Estoque: " + estoque);
-    }
-}`,
-        codeExplanation: 'vender() altera o estado (estoque) só se a condição for atendida. calcularTotal() só lê. exibirInfo() mostra o estado atual.',
-      },
+    objectives: [
+      'Diferenciar atributos (estado) e métodos (comportamento)',
+      'Entender tipos de retorno: void, int, double, String, boolean',
+      'Criar métodos com parâmetros e retorno',
+      'Escrever métodos que validam antes de alterar estado',
+      'Usar métodos que chamam outros métodos da mesma classe',
+      'Entender valores padrão dos atributos em Java',
+      'Diferenciar métodos que LEEM estado vs métodos que ALTERAM estado',
     ],
-    summary: ['Atributos = estado do objeto (dados)', 'Métodos = comportamento (ações)', 'Métodos podem alterar o estado do objeto', 'Bons métodos fazem validações antes de alterar dados'],
-    tryItCode: `class Produto {
-    String nome;
-    double preco;
-    int estoque;
-    void vender(int qtd) {
-        if (qtd <= estoque) { estoque -= qtd; System.out.println(qtd + " vendido(s)"); }
-        else System.out.println("Estoque insuficiente");
-    }
-    void exibirInfo() { System.out.println(nome + " R$" + preco + " Estoque:" + estoque); }
+    sections: [
+      // ────────── SEÇÃO 1: Atributos = Estado ──────────
+      {
+        title: 'Atributos: O Estado do Objeto',
+        body: '**Atributos** são as variáveis declaradas dentro da classe (mas fora de métodos). Eles representam o **estado** do objeto — os dados que ele "carrega".\n\nExemplos:\n- Um Produto tem: `nome`, `preco`, `estoque` (seu estado)\n- Um Aluno tem: `nome`, `ra`, `nota1`, `nota2` (seu estado)\n\nQuando você cria um objeto com `new`, o Java atribui **valores padrão** aos atributos:\n- `int`, `double`, `float` → **0** (ou 0.0)\n- `boolean` → **false**\n- `String` e outros objetos → **null**\n\nIsso significa que se você fizer `new Produto()` sem definir o nome, ele será `null` (nenhum valor), o que pode causar erros!',
+        code: `public class Produto {
+    // ═══ ATRIBUTOS (estado) ═══
+    String nome;        // valor padrão: null
+    double preco;       // valor padrão: 0.0
+    int estoque;        // valor padrão: 0
+    boolean ativo;      // valor padrão: false
+    String categoria;   // valor padrão: null
 }
+
 public class Main {
     public static void main(String[] args) {
         Produto p = new Produto();
-        p.nome = "Notebook";
-        p.preco = 3500;
-        p.estoque = 10;
-        p.exibirInfo();
-        p.vender(3);
-        p.exibirInfo();
+
+        // Todos os atributos têm valores padrão!
+        System.out.println("Nome: " + p.nome);       // null
+        System.out.println("Preço: " + p.preco);      // 0.0
+        System.out.println("Estoque: " + p.estoque);  // 0
+        System.out.println("Ativo: " + p.ativo);      // false
+
+        // Agora atribuímos valores reais
+        p.nome = "Camiseta";
+        p.preco = 49.90;
+        p.estoque = 100;
+        p.ativo = true;
+        p.categoria = "Vestuário";
+
+        System.out.println("\\nApós atribuir:");
+        System.out.println("Nome: " + p.nome);        // Camiseta
+        System.out.println("Preço: " + p.preco);       // 49.9
     }
 }`,
-    tryItPrompt: 'Altere preço e estoque; tente vender mais do que tem em estoque.',
+        codeExplanation: '**Linhas 3-7** (Atributos): Cada um tem um tipo (`String`, `double`, `int`, `boolean`). O Java define valores padrão automaticamente quando o objeto é criado.\n\n**Linha 12** (`new Produto()`): Cria o objeto. Nesse momento, todos os atributos recebem seus valores padrão (null, 0, false).\n\n**Linhas 15-18**: Mostra os valores padrão. `p.nome` é `null` porque é String (objeto). `p.preco` é `0.0` porque é double. `p.ativo` é `false` porque é boolean.\n\n**Linhas 21-25**: Atribuímos valores reais. A partir daqui, o objeto tem dados úteis.\n\n**Por que isso importa?** Se você tentar usar `p.nome.length()` quando nome é null, dá `NullPointerException`! Sempre inicialize seus atributos.',
+        warning: 'Atributos do tipo String (e qualquer objeto) começam como null, NÃO como "". Chamar métodos em null causa NullPointerException — o erro mais comum em Java!',
+      },
+
+      // ────────── SEÇÃO 2: Métodos = Comportamento ──────────
+      {
+        title: 'Métodos: O Comportamento do Objeto',
+        body: '**Métodos** são as ações que o objeto pode executar. Eles definem o **comportamento** — o que o objeto "faz".\n\nUm método tem:\n- **Tipo de retorno**: o que ele devolve (`void` = nada, `int` = número inteiro, `double` = decimal, `String` = texto, `boolean` = verdadeiro/falso)\n- **Nome**: o que ele faz (convenção: verbo no infinitivo — `calcular`, `exibir`, `vender`)\n- **Parâmetros**: dados que ele precisa receber (entre parênteses)\n- **Corpo**: o código que executa (entre chaves)\n\nExistem dois tipos principais:\n1. **Métodos que LEEM** o estado (getters, cálculos) — não alteram nada\n2. **Métodos que ALTERAM** o estado (setters, ações) — mudam atributos',
+        code: `public class ContaBancaria {
+    String titular;
+    double saldo;
+    int totalOperacoes;
+
+    // ═══ MÉTODO VOID (não retorna nada) ═══
+    void depositar(double valor) {
+        if (valor > 0) {
+            saldo += valor;
+            totalOperacoes++;
+            System.out.println("Depósito de R$" + valor + " realizado!");
+        } else {
+            System.out.println("Valor inválido!");
+        }
+    }
+
+    // ═══ MÉTODO COM RETORNO boolean ═══
+    boolean sacar(double valor) {
+        if (valor > 0 && valor <= saldo) {
+            saldo -= valor;
+            totalOperacoes++;
+            return true;   // sacou com sucesso
+        }
+        return false;      // não conseguiu sacar
+    }
+
+    // ═══ MÉTODO COM RETORNO double ═══
+    double getSaldo() {
+        return saldo;
+    }
+
+    // ═══ MÉTODO COM RETORNO String ═══
+    String getResumo() {
+        return titular + " | Saldo: R$" + saldo
+            + " | Operações: " + totalOperacoes;
+    }
+
+    // ═══ MÉTODO QUE CHAMA OUTRO MÉTODO ═══
+    void transferir(ContaBancaria destino, double valor) {
+        if (this.sacar(valor)) {  // tenta sacar desta conta
+            destino.depositar(valor);  // deposita na outra
+            System.out.println("Transferência de R$" + valor
+                + " de " + this.titular + " para " + destino.titular);
+        } else {
+            System.out.println("Transferência falhou! Saldo insuficiente.");
+        }
+    }
+}`,
+        codeExplanation: '**Linhas 7-15** (`void depositar`): `void` significa que não retorna nada. Recebe `valor` como parâmetro. Valida se é positivo, depois altera `saldo` e incrementa `totalOperacoes`. É um método que ALTERA estado.\n\n**Linhas 18-25** (`boolean sacar`): Retorna `true` se sacou, `false` se não. O chamador pode usar isso: `if (conta.sacar(100)) { ... }`. Note que a validação é dupla: `valor > 0` (não negativo) E `valor <= saldo` (tem saldo).\n\n**Linhas 28-30** (`double getSaldo`): Método simples que apenas RETORNA o saldo. Não altera nada — é um "getter".\n\n**Linhas 33-36** (`String getResumo`): Monta e retorna uma String com informações. Também não altera estado.\n\n**Linhas 39-47** (`transferir`): Método mais complexo que **chama outros métodos**! Primeiro chama `this.sacar(valor)` (que retorna boolean), e se deu certo, chama `destino.depositar(valor)`. Um método pode chamar outros da mesma classe (`this.sacar`) ou de outro objeto (`destino.depositar`).',
+        tip: 'Use `void` quando o método faz algo mas não precisa "devolver" um resultado. Use um tipo de retorno (`boolean`, `double`, `String`) quando o chamador precisa saber o resultado.',
+      },
+
+      // ────────── SEÇÃO 3: Parâmetros e Retorno na Prática ──────────
+      {
+        title: 'Parâmetros e Retorno: Como os Métodos se Comunicam',
+        body: '**Parâmetros** são os dados que o método precisa receber para trabalhar. **Retorno** é o resultado que ele devolve.\n\nPense assim:\n- Parâmetros = **ingredientes** que você dá para a receita\n- Retorno = **o prato pronto** que a receita devolve\n- Void = a receita não devolve nada (tipo lavar a louça — faz a ação mas não "produz" nada)\n\nRegras importantes:\n- Um método pode ter **0, 1 ou vários parâmetros**\n- Um método pode retornar **apenas 1 valor** (ou void = nenhum)\n- O tipo do `return` DEVE ser compatível com o tipo declarado no método\n- Após o `return`, o método para imediatamente (código depois do return não executa)',
+        code: `public class Calculadora {
+    // Sem parâmetro, sem retorno
+    void exibirMenu() {
+        System.out.println("1. Somar");
+        System.out.println("2. Subtrair");
+    }
+
+    // Com parâmetros, com retorno
+    double somar(double a, double b) {
+        return a + b;  // retorna o resultado
+    }
+
+    // Com parâmetro, com retorno boolean
+    boolean ehPositivo(double numero) {
+        return numero > 0;  // retorna true ou false
+    }
+
+    // Vários parâmetros, com retorno
+    double calcularMedia(double n1, double n2, double n3) {
+        double soma = n1 + n2 + n3;
+        double media = soma / 3.0;
+        return media;
+    }
+
+    // Retorno String com lógica
+    String classificar(double media) {
+        if (media >= 9.0) return "Excelente";
+        if (media >= 7.0) return "Bom";
+        if (media >= 5.0) return "Regular";
+        return "Insuficiente";
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Calculadora calc = new Calculadora();
+
+        double resultado = calc.somar(10.5, 20.3);
+        System.out.println("Soma: " + resultado); // 30.8
+
+        boolean positivo = calc.ehPositivo(-5);
+        System.out.println("É positivo? " + positivo); // false
+
+        double media = calc.calcularMedia(8.0, 7.5, 9.0);
+        System.out.println("Média: " + media); // 8.166...
+        System.out.println("Classificação: " + calc.classificar(media));
+    }
+}`,
+        codeExplanation: '**Linhas 3-6** (`void exibirMenu()`): Sem parâmetros (parênteses vazios) e sem retorno (void). Apenas imprime na tela.\n\n**Linhas 9-11** (`double somar(double a, double b)`): Recebe DOIS parâmetros (a e b), ambos double. Retorna um double (a soma). Quem chama pode guardar o resultado: `double r = calc.somar(10, 20);`\n\n**Linhas 14-16** (`boolean ehPositivo`): Retorna `boolean` — o resultado da expressão `numero > 0` já é true ou false, então podemos retorná-la diretamente.\n\n**Linhas 19-23** (`calcularMedia`): Recebe 3 parâmetros. Cria variáveis locais (soma, media) para organizar o cálculo. Retorna media.\n\n**Linhas 26-31** (`classificar`): Múltiplos `return` com `if`. O PRIMEIRO return que executa encerra o método. Se media é 9.5, retorna "Excelente" e IGNORA todo o resto.\n\n**Linha 38** (`calc.somar(10.5, 20.3)`): O resultado é "capturado" na variável `resultado`. Se você não guardar o retorno (tipo `calc.somar(10, 20);` sem variável), o valor é perdido!',
+        tryItCode: `class Calculadora {
+    double somar(double a, double b) { return a + b; }
+    double subtrair(double a, double b) { return a - b; }
+    double multiplicar(double a, double b) { return a * b; }
+    double dividir(double a, double b) {
+        if (b == 0) {
+            System.out.println("Erro: divisão por zero!");
+            return 0;
+        }
+        return a / b;
+    }
+
+    double calcularMedia(double n1, double n2, double n3) {
+        return (n1 + n2 + n3) / 3.0;
+    }
+
+    String classificar(double media) {
+        if (media >= 9.0) return "Excelente";
+        if (media >= 7.0) return "Bom";
+        if (media >= 5.0) return "Regular";
+        return "Insuficiente";
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Calculadora c = new Calculadora();
+
+        System.out.println("10 + 5 = " + c.somar(10, 5));
+        System.out.println("10 - 5 = " + c.subtrair(10, 5));
+        System.out.println("10 * 5 = " + c.multiplicar(10, 5));
+        System.out.println("10 / 3 = " + c.dividir(10, 3));
+        System.out.println("10 / 0 = " + c.dividir(10, 0));
+
+        double media = c.calcularMedia(8.0, 7.5, 9.0);
+        System.out.println("\\nMédia: " + media);
+        System.out.println("Classificação: " + c.classificar(media));
+    }
+}`,
+        tryItPrompt: 'Adicione um método calcularPotencia(base, expoente) que calcule base elevado a expoente usando um loop for!',
+      },
+
+      // ────────── SEÇÃO 4: Métodos que Validam Estado ──────────
+      {
+        title: 'Métodos que Protegem o Estado',
+        body: 'A principal vantagem de ter métodos é que eles podem **validar** antes de alterar o estado. Em vez de deixar qualquer código fazer `produto.estoque = -50`, você cria um método que VERIFICA antes de permitir a alteração.\n\nEssa é a base do **encapsulamento** (que veremos com mais profundidade na próxima aula). Por enquanto, o conceito é: **nunca confie em quem está chamando** — valide dentro do método.\n\nPadrão de validação:\n1. Verificar se os parâmetros são válidos\n2. Verificar se a operação é possível\n3. Só então alterar o estado\n4. Retornar feedback (boolean, String, etc.)',
+        code: `public class Estoque {
+    String produto;
+    int quantidade;
+    int minimo;  // estoque mínimo antes de alertar
+
+    // Método que VALIDA antes de alterar
+    boolean retirar(int qtd) {
+        // 1. Parâmetro válido?
+        if (qtd <= 0) {
+            System.out.println("Quantidade deve ser positiva!");
+            return false;
+        }
+        // 2. Operação possível?
+        if (qtd > quantidade) {
+            System.out.println("Estoque insuficiente! Tem: "
+                + quantidade + ", Pediu: " + qtd);
+            return false;
+        }
+        // 3. Alterar estado
+        quantidade -= qtd;
+        System.out.println(qtd + "x " + produto + " retirado(s).");
+
+        // 4. Feedback extra: alerta de estoque baixo
+        if (quantidade <= minimo) {
+            System.out.println("⚠ ALERTA: " + produto
+                + " com estoque baixo! (" + quantidade + " restantes)");
+        }
+        return true;
+    }
+
+    boolean repor(int qtd) {
+        if (qtd <= 0) {
+            System.out.println("Quantidade deve ser positiva!");
+            return false;
+        }
+        quantidade += qtd;
+        System.out.println(qtd + "x " + produto + " reposto(s). Total: " + quantidade);
+        return true;
+    }
+
+    void exibirStatus() {
+        String status = quantidade <= minimo ? "BAIXO" : "OK";
+        System.out.println(produto + " | Qtd: " + quantidade
+            + " | Mín: " + minimo + " | Status: " + status);
+    }
+}`,
+        codeExplanation: '**Linhas 8-11**: PRIMEIRA validação — o parâmetro `qtd` deve ser positivo. Se alguém passar -5, o método bloqueia imediatamente e retorna false.\n\n**Linhas 13-17**: SEGUNDA validação — verifica se tem estoque suficiente. Mostra uma mensagem clara com os números reais.\n\n**Linha 19-20**: Só chega aqui se AMBAS as validações passaram. Agora sim altera o estado.\n\n**Linhas 23-26**: Feedback extra — após a retirada, verifica se o estoque caiu abaixo do mínimo e emite alerta. Isso é lógica de negócio dentro do método!\n\n**Linha 41** (operador ternário): `quantidade <= minimo ? "BAIXO" : "OK"` é um atalho para if/else em uma linha. Se a condição é true, retorna "BAIXO", senão "OK".',
+        tip: 'O padrão "validar → alterar → feedback" é usado em TODO sistema real. Acostume-se a sempre validar parâmetros antes de alterar estado.',
+      },
+
+      // ────────── SEÇÃO 5: Métodos que Chamam Métodos ──────────
+      {
+        title: 'Métodos que Chamam Outros Métodos',
+        body: 'Um método pode chamar outros métodos da mesma classe. Isso permite:\n- **Reutilizar lógica** sem copiar código\n- **Compor comportamentos complexos** a partir de partes simples\n- **Manter o código organizado** com métodos pequenos e focados\n\nRegra prática: se um método está ficando muito grande (mais de 20 linhas), provavelmente ele deveria ser dividido em métodos menores.',
+        code: `public class Pedido {
+    String cliente;
+    String[] itens;
+    double[] precos;
+    int totalItens;
+
+    // Método auxiliar: calcula subtotal
+    double calcularSubtotal() {
+        double subtotal = 0;
+        for (int i = 0; i < totalItens; i++) {
+            subtotal += precos[i];
+        }
+        return subtotal;
+    }
+
+    // Método auxiliar: calcula desconto
+    double calcularDesconto() {
+        double subtotal = calcularSubtotal(); // CHAMA outro método!
+        if (subtotal >= 500) return subtotal * 0.10;  // 10%
+        if (subtotal >= 200) return subtotal * 0.05;  // 5%
+        return 0; // sem desconto
+    }
+
+    // Método principal: usa os auxiliares
+    double calcularTotal() {
+        double subtotal = calcularSubtotal();
+        double desconto = calcularDesconto();
+        return subtotal - desconto;
+    }
+
+    // Método que monta relatório completo
+    void exibirResumo() {
+        System.out.println("=== PEDIDO de " + cliente + " ===");
+        for (int i = 0; i < totalItens; i++) {
+            System.out.println("  " + itens[i] + " - R$" + precos[i]);
+        }
+        System.out.println("Subtotal: R$" + calcularSubtotal());
+        System.out.println("Desconto: R$" + calcularDesconto());
+        System.out.println("TOTAL: R$" + calcularTotal());
+    }
+}`,
+        codeExplanation: '**Linhas 8-13** (`calcularSubtotal`): Método simples que soma todos os preços. Usa um `for` para percorrer o array.\n\n**Linhas 17-21** (`calcularDesconto`): Chama `calcularSubtotal()` para saber o valor e então aplica a regra de desconto. Note que NÃO precisou copiar a lógica de soma — reutilizou!\n\n**Linhas 25-28** (`calcularTotal`): Chama DOIS métodos e combina os resultados. Se a regra de desconto mudar, só muda em `calcularDesconto()` — o `calcularTotal()` não precisa ser alterado.\n\n**Linhas 31-39** (`exibirResumo`): Chama TRÊS métodos para montar o relatório. Cada método tem uma responsabilidade única e focada.\n\n**Vantagem**: Se amanhã o desconto mudar de 10% para 15%, você altera UMA linha em `calcularDesconto()` e TODOS os métodos que o usam (calcularTotal, exibirResumo) automaticamente usam a regra nova.',
+        warning: 'Cuidado com chamadas circulares! Se metodoA() chama metodoB() que chama metodoA(), o programa entra em loop infinito e dá StackOverflowError.',
+      },
+
+      // ────────── SEÇÃO 6: Exercício Completo ──────────
+      {
+        title: 'Exercício Completo: Sistema de Notas',
+        body: 'Vamos criar um sistema de notas que usa tudo o que aprendemos: atributos para estado, métodos com diferentes tipos de retorno, validações e métodos que chamam outros métodos.',
+        code: `import java.util.ArrayList;
+
+class Disciplina {
+    String nome;
+    double nota1;
+    double nota2;
+    double notaTrabalho;
+    double pesoProva;       // ex: 0.35 (35%)
+    double pesoTrabalho;    // ex: 0.30 (30%)
+
+    // Método com cálculo e retorno
+    double calcularMedia() {
+        return (nota1 * pesoProva) + (nota2 * pesoProva)
+            + (notaTrabalho * pesoTrabalho);
+    }
+
+    // Método com lógica condicional
+    String getSituacao() {
+        double media = calcularMedia();
+        if (media >= 7.0) return "Aprovado";
+        if (media >= 5.0) return "Recuperação";
+        return "Reprovado";
+    }
+
+    // Método boolean: passou ou não?
+    boolean aprovado() {
+        return calcularMedia() >= 7.0;
+    }
+
+    // Método void: exibe detalhes
+    void exibir() {
+        System.out.println(nome + " | N1: " + nota1 + " N2: " + nota2
+            + " Trab: " + notaTrabalho + " | Média: "
+            + String.format("%.1f", calcularMedia())
+            + " | " + getSituacao());
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Disciplina> boletim = new ArrayList<>();
+
+        Disciplina d1 = new Disciplina();
+        d1.nome = "Java POO";
+        d1.nota1 = 8.0; d1.nota2 = 7.5; d1.notaTrabalho = 9.0;
+        d1.pesoProva = 0.35; d1.pesoTrabalho = 0.30;
+        boletim.add(d1);
+
+        Disciplina d2 = new Disciplina();
+        d2.nome = "Banco de Dados";
+        d2.nota1 = 5.0; d2.nota2 = 4.0; d2.notaTrabalho = 6.0;
+        d2.pesoProva = 0.35; d2.pesoTrabalho = 0.30;
+        boletim.add(d2);
+
+        Disciplina d3 = new Disciplina();
+        d3.nome = "Redes";
+        d3.nota1 = 6.0; d3.nota2 = 6.5; d3.notaTrabalho = 7.0;
+        d3.pesoProva = 0.35; d3.pesoTrabalho = 0.30;
+        boletim.add(d3);
+
+        System.out.println("=== BOLETIM ===");
+        int aprovadas = 0;
+        for (Disciplina d : boletim) {
+            d.exibir();
+            if (d.aprovado()) aprovadas++;
+        }
+        System.out.println("\\nAprovado em " + aprovadas
+            + " de " + boletim.size() + " disciplinas.");
+    }
+}`,
+        codeExplanation: '**Linhas 12-15** (`calcularMedia`): Média ponderada — cada nota multiplicada pelo peso. `nota1 * 0.35 + nota2 * 0.35 + notaTrabalho * 0.30 = 100%`.\n\n**Linha 27** (`aprovado()`): Retorna boolean. Chama `calcularMedia()` e compara com 7.0. Útil para contagem: `if (d.aprovado()) aprovadas++`.\n\n**Linha 34** (`String.format("%.1f", calcularMedia())`): Formata o número com 1 casa decimal. `String.format` é como `printf` mas retorna uma String em vez de imprimir.\n\n**Linhas 63-66**: O for-each percorre todas as disciplinas. Para cada uma, exibe os detalhes e conta se foi aprovada usando o método `aprovado()` que retorna boolean.',
+        tryItCode: `import java.util.ArrayList;
+
+class Disciplina {
+    String nome;
+    double nota1;
+    double nota2;
+    double notaTrabalho;
+    double pesoProva;
+    double pesoTrabalho;
+
+    double calcularMedia() {
+        return (nota1 * pesoProva) + (nota2 * pesoProva) + (notaTrabalho * pesoTrabalho);
+    }
+
+    String getSituacao() {
+        double media = calcularMedia();
+        if (media >= 7.0) return "Aprovado";
+        if (media >= 5.0) return "Recuperação";
+        return "Reprovado";
+    }
+
+    boolean aprovado() { return calcularMedia() >= 7.0; }
+
+    void exibir() {
+        System.out.println(nome + " | Média: "
+            + String.format("%.1f", calcularMedia()) + " | " + getSituacao());
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Disciplina> boletim = new ArrayList<>();
+
+        Disciplina d1 = new Disciplina();
+        d1.nome = "Java POO"; d1.nota1 = 8.0; d1.nota2 = 7.5;
+        d1.notaTrabalho = 9.0; d1.pesoProva = 0.35; d1.pesoTrabalho = 0.30;
+        boletim.add(d1);
+
+        Disciplina d2 = new Disciplina();
+        d2.nome = "Banco de Dados"; d2.nota1 = 5.0; d2.nota2 = 4.0;
+        d2.notaTrabalho = 6.0; d2.pesoProva = 0.35; d2.pesoTrabalho = 0.30;
+        boletim.add(d2);
+
+        System.out.println("=== BOLETIM ===");
+        int aprovadas = 0;
+        for (Disciplina d : boletim) {
+            d.exibir();
+            if (d.aprovado()) aprovadas++;
+        }
+        System.out.println("\\nAprovado em " + aprovadas + " de " + boletim.size());
+    }
+}`,
+        tryItPrompt: 'Adicione mais disciplinas e altere as notas. Tente criar um método "precisaDeRecuperacao()" que retorna boolean!',
+      },
+    ],
+
+    // ────────── Exercícios de Completar Código ──────────
     codeFillExercises: [
-      { instruction: 'O que define o estado atual de um objeto em POO?', snippetBefore: 'Os ', snippetAfter: ' armazenam os dados (nome, preço, estoque) do objeto.', options: ['atributos', 'métodos', 'construtores', 'classes'], correctIndex: 0, explanation: 'Atributos são as variáveis que guardam o estado; métodos são as ações.' },
+      {
+        instruction: 'O que define o estado atual de um objeto em POO?',
+        snippetBefore: 'Os ',
+        snippetAfter: ' armazenam os dados (nome, preço, estoque) do objeto.',
+        options: ['atributos', 'métodos', 'construtores', 'classes'],
+        correctIndex: 0,
+        explanation: 'Atributos são as variáveis que guardam o estado; métodos são as ações/comportamentos.',
+      },
+      {
+        instruction: 'Qual tipo de retorno indica que o método não devolve nenhum valor?',
+        snippetBefore: '',
+        snippetAfter: ' exibirInfo() {\n    System.out.println(nome);\n}',
+        options: ['void', 'null', 'empty', 'none'],
+        correctIndex: 0,
+        explanation: 'void indica que o método apenas executa ações mas não retorna nenhum valor. Métodos void não usam return com valor.',
+      },
+      {
+        instruction: 'Qual valor padrão um atributo do tipo int recebe ao criar o objeto?',
+        snippetBefore: 'int estoque; // valor padrão: ',
+        snippetAfter: '',
+        options: ['0', 'null', '-1', 'undefined'],
+        correctIndex: 0,
+        explanation: 'Tipos numéricos primitivos (int, double, float) são inicializados com 0. Strings e objetos são inicializados com null.',
+      },
     ],
+
+    // ────────── Erros Comuns ──────────
     commonErrors: [
-      { title: 'Método que altera estado sem validar', description: 'Sempre verifique (ex.: quantidade <= estoque) antes de modificar atributos.' },
-      { title: 'Atributos públicos demais', description: 'Mais à frente você verá que private + getters/setters protege melhor.' },
+      {
+        title: 'Método que altera estado sem validar',
+        description: 'Sempre verifique os parâmetros e condições antes de alterar atributos.',
+        code: `// ERRADO: altera sem verificar
+void retirar(int qtd) {
+    estoque -= qtd; // e se qtd for negativo? Ou maior que estoque?
+}
+
+// CORRETO: valida antes
+boolean retirar(int qtd) {
+    if (qtd > 0 && qtd <= estoque) {
+        estoque -= qtd;
+        return true;
+    }
+    return false;
+}`,
+      },
+      {
+        title: 'Não guardar o retorno de um método',
+        description: 'Se um método retorna um valor e você não guarda, o resultado é perdido.',
+        code: `// ERRADO: resultado jogado fora!
+calc.somar(10, 20); // somou mas ninguém guardou
+
+// CORRETO: guardar em variável
+double resultado = calc.somar(10, 20);
+System.out.println(resultado); // 30.0`,
+      },
+      {
+        title: 'Tipo de retorno incompatível',
+        description: 'O valor do return DEVE ser compatível com o tipo declarado no método.',
+        code: `// ERRADO: método diz double, return dá String
+double calcular() {
+    return "abc"; // ERRO de compilação!
+}
+
+// CORRETO:
+double calcular() {
+    return 42.5; // OK: double retornando double
+}`,
+      },
+      {
+        title: 'Usar atributo null sem verificar',
+        description: 'Atributos String começam como null. Chamar .length() ou qualquer método em null dá NullPointerException.',
+        code: `Produto p = new Produto();
+// p.nome é null! (não foi atribuído)
+System.out.println(p.nome.length()); // NullPointerException!
+
+// SEGURO: verificar antes
+if (p.nome != null) {
+    System.out.println(p.nome.length());
+}`,
+      },
     ],
+
+    // ────────── Resumo ──────────
+    summary: [
+      'Atributos guardam o ESTADO do objeto (dados). Métodos definem o COMPORTAMENTO (ações)',
+      'Valores padrão: int/double → 0, boolean → false, String/objetos → null',
+      'Tipos de retorno: void (nada), int, double, String, boolean, etc.',
+      'Métodos void executam ações; métodos com retorno devolvem um resultado',
+      'SEMPRE valide parâmetros antes de alterar estado: if (qtd > 0 && qtd <= estoque)',
+      'Um método pode chamar outros métodos da mesma classe para reutilizar lógica',
+      'Se não guardar o retorno em uma variável, o resultado é perdido',
+      'NullPointerException: acontece quando você chama método em um atributo que é null',
+    ],
+
+    // ────────── Código final ──────────
+    tryItCode: `import java.util.ArrayList;
+
+class Produto {
+    String nome;
+    double preco;
+    int estoque;
+
+    boolean vender(int qtd) {
+        if (qtd <= 0) {
+            System.out.println("Quantidade inválida!");
+            return false;
+        }
+        if (qtd > estoque) {
+            System.out.println("Estoque insuficiente de " + nome
+                + "! Tem: " + estoque + ", Pediu: " + qtd);
+            return false;
+        }
+        estoque -= qtd;
+        System.out.println(qtd + "x " + nome + " vendido(s)!");
+        return true;
+    }
+
+    double calcularTotal(int qtd) {
+        return preco * qtd;
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " - R$" + preco + " | Estoque: " + estoque);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Produto> loja = new ArrayList<>();
+
+        Produto p1 = new Produto();
+        p1.nome = "Notebook"; p1.preco = 3500; p1.estoque = 10;
+        loja.add(p1);
+
+        Produto p2 = new Produto();
+        p2.nome = "Mouse"; p2.preco = 89.90; p2.estoque = 50;
+        loja.add(p2);
+
+        System.out.println("=== LOJA ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+
+        System.out.println("\\n=== VENDAS ===");
+        p1.vender(2);
+        System.out.println("Total: R$" + p1.calcularTotal(2));
+
+        p2.vender(100); // vai falhar!
+        p2.vender(5);
+        System.out.println("Total: R$" + p2.calcularTotal(5));
+
+        System.out.println("\\n=== ESTOQUE ATUALIZADO ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+    }
+}`,
+    tryItPrompt: 'Adicione mais produtos, teste vendas com quantidades inválidas (0, -1, maior que estoque). Crie um método aplicarDesconto(percentual) que reduza o preço!',
   },
 
   'm3-constructors': {
