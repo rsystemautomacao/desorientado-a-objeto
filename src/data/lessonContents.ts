@@ -1573,69 +1573,610 @@ public class Main {
 
   'm3-classes': {
     id: 'm3-classes', moduleId: 3,
-    objectives: ['Criar classes e objetos', 'Entender a diferença entre classe e objeto', 'Modelar entidades do mundo real'],
+    objectives: [
+      'Entender a diferença entre classe e objeto',
+      'Criar classes com atributos e métodos',
+      'Instanciar múltiplos objetos independentes com new',
+      'Compreender como a memória gerencia objetos',
+      'Modelar entidades do mundo real como classes',
+      'Usar ArrayList para gerenciar coleções de objetos',
+      'Organizar arquivos Java corretamente (1 classe pública por arquivo)',
+    ],
     sections: [
-      { title: 'Classe = Molde, Objeto = Instância', body: 'A **classe** é a definição: quais atributos e métodos existem. Ela não "existe" na memória como dados — é só o modelo. O **objeto** é a instância concreta criada com **new**: é ele que ocupa memória e guarda valores nos atributos.\n\nPense em "Receita de bolo" (classe) vs "o bolo que você assou" (objeto). Você pode assar vários bolos com a mesma receita; cada bolo é independente. Em Java, cada **new Carro()** cria um novo objeto: os atributos (marca, modelo, ano) são próprios daquele objeto. Alterar meuCarro.ano não altera outroCarro.ano.',
-        code: `// A CLASSE é o molde
+      // ────────── SEÇÃO 1: Classe vs Objeto ──────────
+      {
+        title: 'Classe = Molde, Objeto = Instância',
+        body: 'A **classe** é o projeto, o molde, a planta da casa. Ela define **quais atributos** (dados) e **quais métodos** (ações) um objeto terá. Mas a classe em si NÃO é um objeto — ela é só a descrição.\n\nO **objeto** é a instância concreta criada a partir da classe usando **new**. É o objeto que ocupa memória e guarda valores reais.\n\nAnalogia prática:\n- **Classe Carro** = formulário em branco ("marca: ___, modelo: ___, ano: ___")\n- **Objeto meuCarro** = formulário preenchido ("marca: Toyota, modelo: Corolla, ano: 2024")\n\nVocê pode preencher quantos formulários quiser com a mesma estrutura. Cada um é independente — alterar o modelo de meuCarro não muda outroCarro.',
+        code: `// ═══ A CLASSE é o MOLDE ═══
 public class Carro {
-    // Atributos (características)
+    // Atributos (características que todo carro tem)
     String marca;
     String modelo;
     int ano;
     String cor;
-    
-    // Método (comportamento)
+
+    // Métodos (ações que todo carro pode fazer)
     void ligar() {
-        System.out.println(modelo + " ligado!");
+        System.out.println(modelo + " ligado! Vrum vrum!");
     }
-    
+
+    void buzinar() {
+        System.out.println(modelo + ": BIII BIII!");
+    }
+
+    void info() {
+        System.out.println(marca + " " + modelo + " (" + ano + ") - " + cor);
+    }
+}`,
+        codeExplanation: '**Linha 2** (`public class Carro`): Define a classe Carro. A palavra `public` significa que outras classes podem usar essa classe. O nome da classe SEMPRE começa com letra maiúscula (PascalCase).\n\n**Linhas 4-7** (Atributos): São as variáveis da classe. Todo objeto Carro terá essas 4 características. Aqui estamos sem `private` ainda (veremos encapsulamento na próxima lição) — por enquanto, os atributos são acessíveis de fora.\n\n**Linhas 10-12** (`void ligar()`): Método que define um comportamento. `void` significa que não retorna nenhum valor. Quando chamado, ele usa `modelo` — que é o atributo daquele objeto específico.\n\n**Linha 19** (`info()`): Outro método que monta uma string com todos os dados do carro. Cada objeto vai mostrar seus próprios dados quando chamar `info()`.',
+        tip: 'Nomes de classes em Java SEMPRE começam com letra maiúscula: Carro, Produto, ContaBancaria. Nomes de variáveis e métodos começam com minúscula: meuCarro, calcularTotal.',
+      },
+
+      // ────────── SEÇÃO 2: Criando Objetos com new ──────────
+      {
+        title: 'Criando Objetos com new',
+        body: 'Para transformar uma classe em algo utilizável, você precisa **instanciar** um objeto com a palavra-chave **new**:\n\n```\nCarro meuCarro = new Carro();\n```\n\nEssa linha faz três coisas:\n1. **Declara** uma variável `meuCarro` do tipo `Carro`\n2. **Cria** (aloca) um novo objeto na memória com `new Carro()`\n3. **Conecta** a variável ao objeto (a variável "aponta" para o objeto na memória)\n\nDepois de criar o objeto, você acessa seus atributos e métodos usando o **ponto** (`.`):\n- `meuCarro.marca = "Toyota"` → atribui valor ao atributo\n- `meuCarro.ligar()` → chama o método',
+        code: `public class Main {
+    public static void main(String[] args) {
+        // Criando o PRIMEIRO objeto
+        Carro meuCarro = new Carro();
+        meuCarro.marca = "Toyota";
+        meuCarro.modelo = "Corolla";
+        meuCarro.ano = 2024;
+        meuCarro.cor = "Prata";
+
+        // Criando o SEGUNDO objeto (totalmente independente!)
+        Carro outroCarro = new Carro();
+        outroCarro.marca = "Honda";
+        outroCarro.modelo = "Civic";
+        outroCarro.ano = 2023;
+        outroCarro.cor = "Preto";
+
+        // Cada objeto tem seus PRÓPRIOS dados
+        meuCarro.info();    // Toyota Corolla (2024) - Prata
+        outroCarro.info();  // Honda Civic (2023) - Preto
+
+        meuCarro.ligar();   // Corolla ligado! Vrum vrum!
+        outroCarro.buzinar(); // Civic: BIII BIII!
+
+        // Alterar meuCarro NÃO afeta outroCarro
+        meuCarro.cor = "Vermelho";
+        meuCarro.info();    // Toyota Corolla (2024) - Vermelho
+        outroCarro.info();  // Honda Civic (2023) - Preto (não mudou!)
+    }
+}`,
+        codeExplanation: '**Linha 4** (`Carro meuCarro = new Carro()`): Lado esquerdo declara a variável. Lado direito cria o objeto na memória. O `=` conecta os dois. A partir daqui, `meuCarro` é um Carro real com atributos próprios.\n\n**Linhas 5-8**: Preenchemos os atributos usando o ponto (`.`). Como os atributos não são `private`, podemos acessá-los diretamente (por enquanto — na aula de encapsulamento isso muda).\n\n**Linha 11** (`new Carro()`): Cria um SEGUNDO objeto, completamente separado na memória. `meuCarro` e `outroCarro` são dois "formulários" diferentes preenchidos com dados diferentes.\n\n**Linhas 18-19**: Quando `meuCarro.info()` é chamado, o Java executa o método `info()` usando os atributos DE `meuCarro`. Quando `outroCarro.info()` é chamado, usa os atributos DE `outroCarro`.\n\n**Linhas 25-27**: Mudar `meuCarro.cor` para "Vermelho" NÃO afeta `outroCarro.cor`. São objetos independentes na memória!',
+        tryItCode: `class Carro {
+    String marca;
+    String modelo;
+    int ano;
+    String cor;
+
+    void ligar() {
+        System.out.println(modelo + " ligado! Vrum vrum!");
+    }
+
+    void buzinar() {
+        System.out.println(modelo + ": BIII BIII!");
+    }
+
     void info() {
         System.out.println(marca + " " + modelo + " (" + ano + ") - " + cor);
     }
 }
 
-// Criando OBJETOS (instâncias)
-Carro meuCarro = new Carro();    // objeto 1
-meuCarro.marca = "Toyota";
-meuCarro.modelo = "Corolla";
-meuCarro.ano = 2024;
-meuCarro.cor = "Prata";
-meuCarro.ligar(); // "Corolla ligado!"
-
-Carro outroCarro = new Carro();  // objeto 2 (independente)
-outroCarro.marca = "Honda";
-outroCarro.modelo = "Civic";`,
-        codeExplanation: 'A classe Carro define a estrutura. Cada new Carro() cria um objeto independente na memória com seus próprios valores.',
-      },
-      { title: 'Onde definir a classe', body: 'Em Java, cada arquivo .java costuma ter uma classe pública com o mesmo nome do arquivo (ex.: Carro.java → public class Carro). Você pode ter outras classes no mesmo arquivo (não públicas). O método main que roda o programa fica em uma dessas classes e é o ponto de entrada.',
-      },
-    ],
-    summary: ['Classe é o molde/template, Objeto é a instância', 'Use new para criar objetos', 'Cada objeto tem seus próprios dados', 'Modele classes baseado em entidades do mundo real'],
-    tryItCode: `class Carro {
-    String marca;
-    String modelo;
-    int ano;
-    void ligar() { System.out.println(modelo + " ligado!"); }
-    void info() { System.out.println(marca + " " + modelo + " (" + ano + ")"); }
-}
 public class Main {
     public static void main(String[] args) {
         Carro c1 = new Carro();
         c1.marca = "Toyota";
         c1.modelo = "Corolla";
         c1.ano = 2024;
-        c1.ligar();
+        c1.cor = "Prata";
+
+        Carro c2 = new Carro();
+        c2.marca = "Honda";
+        c2.modelo = "Civic";
+        c2.ano = 2023;
+        c2.cor = "Preto";
+
         c1.info();
+        c2.info();
+
+        c1.ligar();
+        c2.buzinar();
     }
 }`,
-    tryItPrompt: 'Crie um segundo Carro (c2), atribua outros valores e chame ligar() e info().',
+        tryItPrompt: 'Crie um terceiro carro (c3), preencha seus dados e chame info(). Depois altere a cor de c1 e veja que c2 e c3 não mudam!',
+      },
+
+      // ────────── SEÇÃO 3: Como a Memória Funciona ──────────
+      {
+        title: 'Como o Java Gerencia Objetos na Memória',
+        body: 'Quando você faz `Carro meuCarro = new Carro()`, duas coisas acontecem na memória:\n\n1. **O objeto** é criado no **Heap** (a área de memória onde objetos vivem). Ele contém os atributos (marca, modelo, ano, cor) com valores iniciais (`null` para Strings, `0` para int).\n\n2. **A variável** `meuCarro` é criada na **Stack** (pilha). Ela NÃO contém o objeto — ela contém uma **referência** (como um endereço) que aponta para o objeto no Heap.\n\nIsso é importante porque:\n- Se você faz `Carro copia = meuCarro;`, a variável `copia` aponta para O MESMO objeto. Alterar `copia.cor` também altera `meuCarro.cor`!\n- Para ter objetos independentes, você precisa de `new` separados.',
+        code: `public class Main {
+    public static void main(String[] args) {
+        // new cria um objeto NOVO no heap
+        Carro original = new Carro();
+        original.marca = "Toyota";
+        original.modelo = "Corolla";
+        original.cor = "Prata";
+
+        // CUIDADO: isso NÃO cria uma cópia!
+        Carro referencia = original; // aponta pro MESMO objeto!
+
+        referencia.cor = "Vermelho"; // alterou pelo 'referencia'...
+        System.out.println(original.cor); // "Vermelho"! Mudou o original!
+
+        // Para ter um objeto SEPARADO, precisa de new
+        Carro copia = new Carro();
+        copia.marca = original.marca;  // copia os VALORES
+        copia.modelo = original.modelo;
+        copia.cor = "Azul";
+
+        System.out.println(original.cor);  // "Vermelho" (não mudou)
+        System.out.println(copia.cor);     // "Azul" (independente)
+    }
+}`,
+        codeExplanation: '**Linha 4** (`new Carro()`): Cria o objeto no Heap. A variável `original` guarda o "endereço" desse objeto.\n\n**Linha 10** (`Carro referencia = original`): NÃO usa `new`! Apenas copia o endereço. Agora `original` e `referencia` apontam para o MESMO objeto na memória.\n\n**Linhas 12-13**: Como `referencia` aponta para o mesmo objeto que `original`, alterar a cor por `referencia` muda o objeto que `original` também acessa. Parece que "mudou o original", mas na verdade ambos acessam o mesmo objeto.\n\n**Linha 16** (`new Carro()`): Agora sim, cria um objeto NOVO e separado. `copia` aponta para um objeto diferente no Heap.\n\n**Linhas 17-18**: Copia manualmente os valores dos atributos. Os valores são copiados, não a referência.\n\n**Linhas 21-22**: `original` e `copia` são independentes — alterar um não afeta o outro.',
+        warning: '`Carro copia = original;` NÃO cria uma cópia! Cria uma segunda variável que aponta para o MESMO objeto. Para criar um objeto realmente independente, você precisa de `new`.',
+      },
+
+      // ────────── SEÇÃO 4: Modelando Entidades do Mundo Real ──────────
+      {
+        title: 'Modelando Entidades do Mundo Real',
+        body: 'A grande força da POO é modelar o software como o mundo real. O processo é:\n\n1. **Identifique a entidade**: Qual "coisa" do problema precisa ser representada? (Aluno, Produto, Funcionário, Pedido)\n2. **Defina os atributos**: Quais dados essa entidade tem? (nome, matrícula, nota)\n3. **Defina os métodos**: Quais ações essa entidade faz? (calcularMedia, exibirBoletim)\n\nDica: os **substantivos** do problema viram **classes** e os **verbos** viram **métodos**.\n\n**Exemplo prático**: "O sistema precisa cadastrar **alunos** com **nome**, **RA** e duas **notas**. O aluno pode **calcular a média** e **verificar se passou**."\n- Substantivo: Aluno → classe\n- Dados: nome, ra, nota1, nota2 → atributos\n- Verbos: calcular média, verificar situação → métodos',
+        code: `public class Aluno {
+    String nome;
+    String ra;       // Registro Acadêmico
+    double nota1;
+    double nota2;
+
+    // Calcular média das duas notas
+    double calcularMedia() {
+        return (nota1 + nota2) / 2.0;
+    }
+
+    // Verificar situação baseado na média
+    String getSituacao() {
+        double media = calcularMedia();
+        if (media >= 7.0) return "Aprovado";
+        if (media >= 5.0) return "Recuperação";
+        return "Reprovado";
+    }
+
+    // Exibir boletim completo
+    void exibirBoletim() {
+        System.out.println("=== BOLETIM ===");
+        System.out.println("Aluno: " + nome + " (RA: " + ra + ")");
+        System.out.println("Nota 1: " + nota1);
+        System.out.println("Nota 2: " + nota2);
+        System.out.println("Média: " + calcularMedia());
+        System.out.println("Situação: " + getSituacao());
+    }
+}`,
+        codeExplanation: '**Linhas 2-5** (Atributos): Cada Aluno tem nome, RA e duas notas. Esses dados definem o estado do aluno.\n\n**Linhas 8-10** (`calcularMedia()`): Retorna `double` (a média). Usa `(nota1 + nota2) / 2.0` — o `2.0` (com ponto) garante divisão decimal. Se usasse `/ 2` (inteiro), poderia perder casas decimais.\n\n**Linhas 13-17** (`getSituacao()`): Chama `calcularMedia()` internamente (um método pode chamar outro método da mesma classe!). Usa `if` encadeado para retornar a situação.\n\n**Linhas 21-28** (`exibirBoletim()`): Monta um relatório completo. Note que chama `calcularMedia()` e `getSituacao()` — a lógica está centralizada, se a regra mudar, muda em UM lugar só.',
+        tip: 'Para identificar classes e atributos, grife os substantivos do enunciado do problema. Para métodos, grife os verbos. Isso funciona em 90% dos casos!',
+      },
+
+      // ────────── SEÇÃO 5: Vários Objetos com ArrayList ──────────
+      {
+        title: 'Gerenciando Vários Objetos com ArrayList',
+        body: 'Em sistemas reais, você não cria objetos um a um. Se o sistema tem 30 alunos, você usa uma **lista** para armazená-los.\n\nO **ArrayList** é a lista dinâmica do Java:\n- Cresce automaticamente (diferente de arrays com tamanho fixo)\n- Aceita qualquer tipo de objeto: `ArrayList<Aluno>`, `ArrayList<Carro>`, etc.\n- Tem métodos prontos: `add()`, `get()`, `size()`, `remove()`\n\nCombinando ArrayList com `for`, você pode cadastrar, buscar e listar objetos facilmente.',
+        code: `import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        // Criar a lista de alunos
+        ArrayList<Aluno> turma = new ArrayList<>();
+
+        // Cadastrar alunos
+        Aluno a1 = new Aluno();
+        a1.nome = "Maria";
+        a1.ra = "2024001";
+        a1.nota1 = 8.5;
+        a1.nota2 = 9.0;
+        turma.add(a1); // adiciona na lista
+
+        Aluno a2 = new Aluno();
+        a2.nome = "João";
+        a2.ra = "2024002";
+        a2.nota1 = 5.0;
+        a2.nota2 = 4.5;
+        turma.add(a2);
+
+        Aluno a3 = new Aluno();
+        a3.nome = "Ana";
+        a3.ra = "2024003";
+        a3.nota1 = 6.0;
+        a3.nota2 = 6.5;
+        turma.add(a3);
+
+        // Listar todos os alunos
+        System.out.println("Total de alunos: " + turma.size());
+        for (Aluno aluno : turma) {
+            aluno.exibirBoletim();
+            System.out.println(); // linha em branco
+        }
+
+        // Acessar aluno específico pelo índice
+        System.out.println("Primeiro aluno: " + turma.get(0).nome);
+    }
+}`,
+        codeExplanation: '**Linha 1** (`import java.util.ArrayList`): Precisa importar para usar. ArrayList fica no pacote `java.util`.\n\n**Linha 6** (`ArrayList<Aluno> turma = new ArrayList<>()`): Cria uma lista vazia que aceita APENAS objetos Aluno. O `<Aluno>` é o tipo genérico — garante que você não coloque um Carro na lista de alunos por acidente.\n\n**Linha 14** (`turma.add(a1)`): Adiciona o objeto `a1` ao final da lista. A lista cresce automaticamente — não precisa definir tamanho.\n\n**Linha 31** (`turma.size()`): Retorna quantos elementos tem na lista. Como adicionamos 3 alunos, retorna 3.\n\n**Linhas 32-35** (`for (Aluno aluno : turma)`): O for-each percorre todos os alunos da lista. A cada volta, `aluno` recebe o próximo objeto da lista. Muito mais limpo que `for (int i = 0; i < turma.size(); i++)`.\n\n**Linha 38** (`turma.get(0).nome`): `get(0)` retorna o primeiro elemento (índice começa em 0). Como o retorno é um Aluno, podemos acessar `.nome` direto.',
+        tryItCode: `import java.util.ArrayList;
+
+class Aluno {
+    String nome;
+    String ra;
+    double nota1;
+    double nota2;
+
+    double calcularMedia() {
+        return (nota1 + nota2) / 2.0;
+    }
+
+    String getSituacao() {
+        double media = calcularMedia();
+        if (media >= 7.0) return "Aprovado";
+        if (media >= 5.0) return "Recuperação";
+        return "Reprovado";
+    }
+
+    void exibirBoletim() {
+        System.out.println("Aluno: " + nome + " (RA: " + ra + ")");
+        System.out.println("Notas: " + nota1 + " e " + nota2);
+        System.out.println("Média: " + calcularMedia() + " - " + getSituacao());
+        System.out.println("---");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Aluno> turma = new ArrayList<>();
+
+        Aluno a1 = new Aluno();
+        a1.nome = "Maria"; a1.ra = "2024001";
+        a1.nota1 = 8.5; a1.nota2 = 9.0;
+        turma.add(a1);
+
+        Aluno a2 = new Aluno();
+        a2.nome = "João"; a2.ra = "2024002";
+        a2.nota1 = 5.0; a2.nota2 = 4.5;
+        turma.add(a2);
+
+        Aluno a3 = new Aluno();
+        a3.nome = "Ana"; a3.ra = "2024003";
+        a3.nota1 = 6.0; a3.nota2 = 6.5;
+        turma.add(a3);
+
+        System.out.println("=== BOLETIM DA TURMA ===\\n");
+        for (Aluno aluno : turma) {
+            aluno.exibirBoletim();
+        }
+
+        System.out.println("Total de alunos: " + turma.size());
+    }
+}`,
+        tryItPrompt: 'Adicione um quarto e quinto aluno à turma com notas diferentes. Depois tente encontrar quem tem a maior média usando um for!',
+      },
+
+      // ────────── SEÇÃO 6: Organizando Arquivos Java ──────────
+      {
+        title: 'Regras de Organização de Arquivos Java',
+        body: 'Em Java, existem regras importantes sobre como organizar as classes em arquivos:\n\n**Regra 1**: Cada arquivo `.java` pode ter **apenas UMA classe `public`**, e o nome do arquivo DEVE ser igual ao nome da classe pública.\n- `Carro.java` → `public class Carro { ... }`\n- `Main.java` → `public class Main { ... }`\n\n**Regra 2**: Você pode ter classes não-públicas (sem `public`) no mesmo arquivo. Útil para classes auxiliares pequenas.\n\n**Regra 3**: O método `main` é o ponto de entrada do programa. Geralmente fica em uma classe separada (como `Main.java` ou `App.java`).\n\n**Na prática (projetos reais)**:\n- Cada classe fica em seu próprio arquivo\n- Arquivos ficam organizados em **pacotes** (pastas)\n- Exemplo: `src/model/Carro.java`, `src/model/Aluno.java`, `src/Main.java`\n\n**No editor online** (como neste curso):\n- Tudo fica em um arquivo só, pois é mais prático para exercícios\n- A classe `Main` (com o `public static void main`) deve ser a pública\n- As outras classes ficam sem `public` antes do `class`',
+        code: `// ═══ Em projetos reais: cada classe em seu arquivo ═══
+
+// Arquivo: Carro.java
+public class Carro {
+    String marca;
+    String modelo;
+    // ...
+}
+
+// Arquivo: Main.java
+public class Main {
+    public static void main(String[] args) {
+        Carro c = new Carro();
+        // ...
+    }
+}
+
+// ═══ No editor online deste curso: tudo junto ═══
+
+// Classe auxiliar SEM public
+class Carro {
+    String marca;
+    String modelo;
+    void info() {
+        System.out.println(marca + " " + modelo);
+    }
+}
+
+// Classe principal COM public (nome = Main)
+public class Main {
+    public static void main(String[] args) {
+        Carro c = new Carro();
+        c.marca = "Toyota";
+        c.modelo = "Corolla";
+        c.info();
+    }
+}`,
+        codeExplanation: '**Parte 1 (projeto real)**: Em um projeto Java de verdade, `Carro.java` e `Main.java` são arquivos separados. Cada um tem sua classe `public`. O IDE (como IntelliJ, Eclipse) gerencia isso automaticamente.\n\n**Parte 2 (editor online)**: Como o editor só tem um arquivo, a classe `Carro` fica SEM `public` (linha 21) e a classe `Main` fica COM `public` (linha 29). O Java exige que o arquivo tenha o nome da classe pública — por isso o editor usa `Main`.\n\n**Por que isso importa?** Se você colocar `public` nas duas classes no editor online, dá erro de compilação! Só pode ter UMA classe public por arquivo.',
+        warning: 'Se você vir o erro "class X is public, should be declared in a file named X.java", significa que tem mais de uma classe public no mesmo arquivo, ou o nome do arquivo não bate com a classe.',
+      },
+
+      // ────────── SEÇÃO 7: Exercício Completo ──────────
+      {
+        title: 'Exercício Completo: Sistema de Biblioteca',
+        body: 'Vamos juntar tudo em um exercício prático: um mini sistema de biblioteca.\n\nO problema: "A biblioteca precisa cadastrar **livros** com **título**, **autor** e **quantidade disponível**. Deve ser possível **emprestar** e **devolver** livros, além de **listar** o acervo."\n\nIdentificando:\n- **Substantivo** → Livro = classe\n- **Dados** → título, autor, quantidadeDisponivel = atributos\n- **Verbos** → emprestar, devolver, exibirInfo = métodos',
+        code: `import java.util.ArrayList;
+
+class Livro {
+    String titulo;
+    String autor;
+    int quantidadeDisponivel;
+
+    boolean emprestar() {
+        if (quantidadeDisponivel > 0) {
+            quantidadeDisponivel--;
+            System.out.println("'" + titulo + "' emprestado com sucesso!");
+            return true;
+        }
+        System.out.println("'" + titulo + "' não disponível no momento.");
+        return false;
+    }
+
+    void devolver() {
+        quantidadeDisponivel++;
+        System.out.println("'" + titulo + "' devolvido. Obrigado!");
+    }
+
+    void exibirInfo() {
+        System.out.println(titulo + " - " + autor
+            + " | Disponíveis: " + quantidadeDisponivel);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Livro> acervo = new ArrayList<>();
+
+        Livro l1 = new Livro();
+        l1.titulo = "Java Como Programar";
+        l1.autor = "Deitel & Deitel";
+        l1.quantidadeDisponivel = 3;
+        acervo.add(l1);
+
+        Livro l2 = new Livro();
+        l2.titulo = "Clean Code";
+        l2.autor = "Robert C. Martin";
+        l2.quantidadeDisponivel = 1;
+        acervo.add(l2);
+
+        System.out.println("=== ACERVO ===");
+        for (Livro livro : acervo) {
+            livro.exibirInfo();
+        }
+
+        System.out.println("\\n=== EMPRÉSTIMOS ===");
+        l2.emprestar(); // OK (tinha 1)
+        l2.emprestar(); // Falha (agora tem 0)
+
+        System.out.println("\\n=== DEVOLUÇÃO ===");
+        l2.devolver();
+
+        System.out.println("\\n=== ACERVO ATUALIZADO ===");
+        for (Livro livro : acervo) {
+            livro.exibirInfo();
+        }
+    }
+}`,
+        codeExplanation: '**Linhas 8-16** (`emprestar()`): Verifica se tem exemplar disponível (quantidadeDisponivel > 0). Se sim, decrementa e retorna `true`. Se não, avisa e retorna `false`. A validação impede que a quantidade fique negativa.\n\n**Linhas 18-21** (`devolver()`): Incrementa a quantidade. Em um sistema real, teríamos validações extras (quem emprestou? quando?), mas para esta aula o conceito é o que importa.\n\n**Linhas 51-52**: O primeiro `emprestar()` funciona (tinha 1 exemplar). O segundo falha porque agora tem 0. A validação dentro do método protege os dados!\n\n**Linha 55** (`devolver()`): Após devolver, a quantidade volta a 1.',
+        tryItCode: `import java.util.ArrayList;
+
+class Livro {
+    String titulo;
+    String autor;
+    int quantidadeDisponivel;
+
+    boolean emprestar() {
+        if (quantidadeDisponivel > 0) {
+            quantidadeDisponivel--;
+            System.out.println("'" + titulo + "' emprestado!");
+            return true;
+        }
+        System.out.println("'" + titulo + "' indisponível!");
+        return false;
+    }
+
+    void devolver() {
+        quantidadeDisponivel++;
+        System.out.println("'" + titulo + "' devolvido!");
+    }
+
+    void exibirInfo() {
+        System.out.println(titulo + " (" + autor + ") - Qtd: " + quantidadeDisponivel);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Livro> acervo = new ArrayList<>();
+
+        Livro l1 = new Livro();
+        l1.titulo = "Java Como Programar";
+        l1.autor = "Deitel";
+        l1.quantidadeDisponivel = 3;
+        acervo.add(l1);
+
+        Livro l2 = new Livro();
+        l2.titulo = "Clean Code";
+        l2.autor = "Uncle Bob";
+        l2.quantidadeDisponivel = 1;
+        acervo.add(l2);
+
+        System.out.println("=== ACERVO INICIAL ===");
+        for (Livro l : acervo) { l.exibirInfo(); }
+
+        System.out.println("\\n=== OPERAÇÕES ===");
+        l1.emprestar();
+        l2.emprestar();
+        l2.emprestar(); // vai falhar!
+        l2.devolver();
+
+        System.out.println("\\n=== ACERVO FINAL ===");
+        for (Livro l : acervo) { l.exibirInfo(); }
+    }
+}`,
+        tryItPrompt: 'Adicione mais livros ao acervo. Tente emprestar e devolver várias vezes. Adicione um método "temDisponivel()" que retorna true/false!',
+      },
+    ],
+
+    // ────────── Comparação COM/SEM POO (não se aplica fortemente aqui, omitir) ──────────
+
+    // ────────── Exercícios de Completar Código ──────────
     codeFillExercises: [
-      { instruction: 'Como criar uma nova instância (objeto) de uma classe em Java?', snippetBefore: 'Carro c = ', snippetAfter: ' Carro();', options: ['new', 'create', 'make', 'instance'], correctIndex: 0, explanation: 'A palavra-chave new instancia um objeto e chama o construtor da classe.' },
+      {
+        instruction: 'Como criar uma nova instância (objeto) de uma classe em Java?',
+        snippetBefore: 'Carro c = ',
+        snippetAfter: ' Carro();',
+        options: ['new', 'create', 'make', 'instance'],
+        correctIndex: 0,
+        explanation: 'A palavra-chave "new" aloca memória para o objeto no Heap e chama o construtor da classe.',
+      },
+      {
+        instruction: 'Se fizermos `Carro copia = original;` (sem new), o que acontece?',
+        snippetBefore: '// Carro original = new Carro();\n// Carro copia = original;\n// copia e original apontam para o ',
+        snippetAfter: ' objeto na memória.',
+        options: ['mesmo', 'diferente', 'novo', 'nenhum'],
+        correctIndex: 0,
+        explanation: 'Sem "new", a variável copia recebe a REFERÊNCIA (endereço) do mesmo objeto. Alterar copia afeta original e vice-versa!',
+      },
+      {
+        instruction: 'Qual método do ArrayList adiciona um elemento ao final da lista?',
+        snippetBefore: 'ArrayList<Aluno> turma = new ArrayList<>();\nAluno a = new Aluno();\nturma.',
+        snippetAfter: '(a);',
+        options: ['add', 'push', 'insert', 'append'],
+        correctIndex: 0,
+        explanation: 'O método add() adiciona o elemento ao final do ArrayList. Em Java é add(), não push (JavaScript) nem append (Python).',
+      },
     ],
+
+    // ────────── Erros Comuns ──────────
     commonErrors: [
-      { title: 'Esquecer o new', description: 'Carro c = Carro(); está errado. Use Carro c = new Carro();' },
-      { title: 'Confundir classe e objeto', description: 'A classe é a definição; o objeto é a instância criada com new.' },
+      {
+        title: 'Esquecer o new ao criar objeto',
+        description: 'Sem new, a variável fica como null e dá NullPointerException ao tentar usar.',
+        code: `// ERRADO:
+Carro c;           // só declarou, NÃO criou objeto
+c.marca = "Toyota"; // NullPointerException!
+
+// CORRETO:
+Carro c = new Carro(); // agora sim existe um objeto
+c.marca = "Toyota";    // funciona!`,
+      },
+      {
+        title: 'Duas classes public no mesmo arquivo',
+        description: 'Cada arquivo .java pode ter apenas UMA classe public. No editor online, só Main deve ser public.',
+        code: `// ERRADO (no mesmo arquivo):
+public class Carro { }
+public class Main { } // Erro: só pode ter 1 public!
+
+// CORRETO:
+class Carro { }        // sem public
+public class Main { }  // só essa é public`,
+      },
+      {
+        title: 'Achar que atribuição copia o objeto',
+        description: '`Carro b = a;` não cria uma cópia — ambas as variáveis apontam para o MESMO objeto. Para um objeto independente, use new.',
+        code: `Carro a = new Carro();
+a.cor = "Azul";
+
+Carro b = a;       // NÃO é cópia! É referência!
+b.cor = "Vermelho";
+
+System.out.println(a.cor); // "Vermelho"! (mesmo objeto)`,
+      },
+      {
+        title: 'Confundir atributos de instância com variáveis locais',
+        description: 'Atributos pertencem ao objeto (existem enquanto ele existir). Variáveis locais existem só dentro do método.',
+        code: `class Exemplo {
+    int atributo = 10;  // existe enquanto o objeto existir
+
+    void metodo() {
+        int local = 20;  // existe SÓ dentro deste método
+        System.out.println(atributo); // OK
+    }
+    // 'local' não existe mais aqui fora!
+}`,
+      },
     ],
+
+    // ────────── Resumo ──────────
+    summary: [
+      'Classe é o molde (estrutura); Objeto é a instância real criada com new',
+      'Cada objeto ocupa espaço próprio na memória (Heap) e é independente',
+      'Variáveis de objeto guardam REFERÊNCIAS (endereços), não o objeto em si',
+      '`Carro b = a;` (sem new) faz b apontar para o MESMO objeto que a',
+      'Use ArrayList<Tipo> para guardar coleções de objetos dinâmicamente',
+      'for-each (`for (Tipo x : lista)`) é a forma mais limpa de percorrer listas',
+      'Substantivos do problema = classes; Verbos = métodos',
+      'Cada arquivo .java tem no máximo UMA classe public (nome do arquivo = nome da classe)',
+    ],
+
+    // ────────── Código do "Experimente Aqui" final ──────────
+    tryItCode: `import java.util.ArrayList;
+
+class Funcionario {
+    String nome;
+    String cargo;
+    double salario;
+
+    void exibirInfo() {
+        System.out.println(nome + " | " + cargo + " | R$" + salario);
+    }
+
+    void aumentarSalario(double percentual) {
+        if (percentual > 0 && percentual <= 100) {
+            double aumento = salario * (percentual / 100.0);
+            salario += aumento;
+            System.out.println(nome + " recebeu aumento de " + percentual
+                + "% (+R$" + aumento + ")");
+        } else {
+            System.out.println("Percentual inválido!");
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+
+        Funcionario f1 = new Funcionario();
+        f1.nome = "Carlos"; f1.cargo = "Desenvolvedor"; f1.salario = 5000;
+        equipe.add(f1);
+
+        Funcionario f2 = new Funcionario();
+        f2.nome = "Beatriz"; f2.cargo = "Designer"; f2.salario = 4500;
+        equipe.add(f2);
+
+        Funcionario f3 = new Funcionario();
+        f3.nome = "Diego"; f3.cargo = "Gerente"; f3.salario = 8000;
+        equipe.add(f3);
+
+        System.out.println("=== EQUIPE ANTES DO AUMENTO ===");
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+
+        System.out.println("\\n=== APLICANDO AUMENTO DE 10% ===");
+        for (Funcionario f : equipe) {
+            f.aumentarSalario(10);
+        }
+
+        System.out.println("\\n=== EQUIPE APÓS AUMENTO ===");
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+    }
+}`,
+    tryItPrompt: 'Adicione mais funcionários, aplique aumentos diferentes para cada um. Crie um método promover(novoCargo) que mude o cargo do funcionário!',
   },
 
   'm3-attributes': {
