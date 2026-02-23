@@ -2775,61 +2775,533 @@ public class Main {
 
   'm3-constructors': {
     id: 'm3-constructors', moduleId: 3,
-    objectives: ['Criar construtores para inicializar objetos', 'Entender construtor padrão e personalizado', 'Usar sobrecarga de construtores'],
+    objectives: [
+      'Entender o que é um construtor e quando ele é chamado',
+      'Criar construtores com parâmetros para inicializar objetos',
+      'Usar this para diferenciar atributo de parâmetro',
+      'Aplicar sobrecarga de construtores (constructor overloading)',
+      'Chamar um construtor a partir de outro com this()',
+      'Validar dados dentro do construtor',
+      'Entender o construtor padrão e quando ele desaparece',
+    ],
     sections: [
-      { title: 'O que é um Construtor?', body: 'O **construtor** é um método especial executado no momento do **new**. Ele tem o mesmo nome da classe e não tem tipo de retorno (nem void). Serve para garantir que o objeto nasça já com valores válidos: em vez de criar Pessoa p = new Pessoa(); e depois p.nome = "Ana"; p.idade = 25;, você faz new Pessoa("Ana", 25) e a classe já recebe e atribui os valores.\n\nSe você não definir nenhum construtor, o Java fornece um **construtor padrão** (sem parâmetros). No momento em que você cria um construtor com parâmetros, o padrão deixa de existir — então se precisar de new Pessoa() sem argumentos, terá de definir explicitamente um construtor vazio.',
-        code: `public class Pessoa {
+      // ────────── SEÇÃO 1: O que é Construtor ──────────
+      {
+        title: 'O que é um Construtor?',
+        body: 'O **construtor** é um método especial que roda automaticamente quando você usa **new**. Ele serve para **inicializar** o objeto — garantir que ele nasça já com valores válidos.\n\nSem construtor, você precisaria criar o objeto e depois atribuir cada campo manualmente:\n```\nProduto p = new Produto();\np.nome = "Camiseta";  // pode esquecer!\np.preco = 49.90;      // pode esquecer!\np.estoque = 100;      // pode esquecer!\n```\n\nCom construtor, tudo é obrigatório de uma vez:\n```\nProduto p = new Produto("Camiseta", 49.90, 100); // completo!\n```\n\nRegras do construtor:\n- **Mesmo nome da classe** (exatamente)\n- **Sem tipo de retorno** (nem void!)\n- Pode ter **parâmetros** (ou não)\n- É chamado **automaticamente** pelo new',
+        code: `public class Produto {
     String nome;
-    int idade;
-    
-    // Construtor personalizado
-    public Pessoa(String nome, int idade) {
-        this.nome = nome;    // this diferencia o atributo do parâmetro
-        this.idade = idade;
+    double preco;
+    int estoque;
+
+    // ═══ CONSTRUTOR ═══
+    // Mesmo nome da classe, sem tipo de retorno
+    public Produto(String nome, double preco, int estoque) {
+        this.nome = nome;       // this.nome = atributo da classe
+        this.preco = preco;     // nome = parâmetro recebido
+        this.estoque = estoque;
     }
-    
-    // Sobrecarga de construtor
-    public Pessoa(String nome) {
-        this.nome = nome;
-        this.idade = 0; // valor padrão
+
+    void exibirInfo() {
+        System.out.println(nome + " - R$" + preco + " | Estoque: " + estoque);
     }
 }
 
 // Uso:
-Pessoa p1 = new Pessoa("Ana", 25);   // usa primeiro construtor
-Pessoa p2 = new Pessoa("Bruno");      // usa segundo construtor`,
-        codeExplanation: 'this.nome refere-se ao atributo da classe; nome sozinho é o parâmetro. Sobrecarga: dois construtores com listas de parâmetros diferentes.',
+Produto p1 = new Produto("Camiseta", 49.90, 100);
+// O construtor roda AUTOMATICAMENTE e preenche os 3 atributos!
+
+Produto p2 = new Produto("Calça", 129.90, 50);
+// Outro objeto, outro construtor executado
+
+p1.exibirInfo(); // Camiseta - R$49.9 | Estoque: 100
+p2.exibirInfo(); // Calça - R$129.9 | Estoque: 50`,
+        codeExplanation: '**Linha 8** (`public Produto(String nome, double preco, int estoque)`): O construtor tem o MESMO nome da classe (`Produto`) e NÃO tem tipo de retorno (nem `void`!). Se colocar `void Produto(...)`, vira um método comum, não um construtor.\n\n**Linha 9** (`this.nome = nome`): A palavra `this` se refere ao objeto que está sendo criado. `this.nome` é o atributo da classe; `nome` (sem this) é o parâmetro recebido. Sem `this`, o Java não sabe qual é qual quando têm o mesmo nome.\n\n**Linha 20** (`new Produto("Camiseta", 49.90, 100)`): O `new` cria o objeto e AUTOMATICAMENTE chama o construtor, passando os 3 argumentos. Não precisa chamar o construtor separadamente — ele é embutido no `new`.\n\n**Por que usar construtor?** Sem ele, você pode criar um Produto sem nome e sem preço (tudo null/0). Com construtor, é IMPOSSÍVEL criar um Produto incompleto — os dados são obrigatórios.',
+        tip: 'Use this quando o parâmetro tem o MESMO nome do atributo. Se os nomes forem diferentes (ex: parâmetro "n" e atributo "nome"), this é opcional (mas recomendado para clareza).',
       },
-    ],
-    summary: ['Construtor inicializa o objeto ao usar new', 'Tem o mesmo nome da classe e não tem tipo de retorno', 'this.atributo diferencia do parâmetro', 'Sobrecarga permite múltiplos construtores'],
-    tryItCode: `class Pessoa {
+
+      // ────────── SEÇÃO 2: Construtor Padrão ──────────
+      {
+        title: 'O Construtor Padrão (e Quando Ele Desaparece)',
+        body: 'Se você NÃO define nenhum construtor, o Java fornece automaticamente um **construtor padrão** (sem parâmetros):\n\n```\npublic class Carro {\n    String marca;\n}\n// Java cria internamente: public Carro() { }\n// Você pode fazer: Carro c = new Carro();\n```\n\n**MAS ATENÇÃO**: No momento em que você define QUALQUER construtor com parâmetros, o construtor padrão **DESAPARECE**!\n\n```\npublic class Carro {\n    String marca;\n    public Carro(String marca) { this.marca = marca; }\n}\n// Carro c = new Carro(); → ERRO! O padrão sumiu!\n// Carro c = new Carro("Toyota"); → OK!\n```\n\nSe precisar dos DOIS (com e sem parâmetros), defina ambos explicitamente.',
+        code: `public class Funcionario {
     String nome;
-    int idade;
-    public Pessoa(String nome, int idade) {
+    String cargo;
+    double salario;
+
+    // Construtor COM parâmetros
+    public Funcionario(String nome, String cargo, double salario) {
         this.nome = nome;
-        this.idade = idade;
+        this.cargo = cargo;
+        this.salario = salario;
     }
-    public Pessoa(String nome) {
-        this.nome = nome;
-        this.idade = 0;
+
+    // Construtor SEM parâmetros (precisa definir manualmente!)
+    // Se NÃO colocar isso, new Funcionario() dá ERRO!
+    public Funcionario() {
+        this.nome = "Não informado";
+        this.cargo = "Não definido";
+        this.salario = 0;
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " | " + cargo + " | R$" + salario);
     }
 }
-public class Main {
-    public static void main(String[] args) {
-        Pessoa p1 = new Pessoa("Ana", 25);
-        Pessoa p2 = new Pessoa("Bruno");
-        System.out.println(p1.nome + " " + p1.idade);
-        System.out.println(p2.nome + " " + p2.idade);
+
+// Agora ambos funcionam:
+Funcionario f1 = new Funcionario("Ana", "Dev", 5000);   // com parâmetros
+Funcionario f2 = new Funcionario();                       // sem parâmetros
+f1.exibirInfo(); // Ana | Dev | R$5000.0
+f2.exibirInfo(); // Não informado | Não definido | R$0.0`,
+        codeExplanation: '**Linhas 7-11** (Construtor completo): Recebe todos os dados e preenche os atributos. Quando usado, o objeto nasce completo.\n\n**Linhas 15-19** (Construtor vazio): Como já definimos um construtor com parâmetros (linhas 7-11), o construtor padrão sumiu! Precisamos defini-lo explicitamente se quisermos usar `new Funcionario()`. Aqui usamos valores padrão ("Não informado", etc.).\n\n**Linhas 27-28**: Ambas as formas de criar funcionam porque temos DOIS construtores. O Java escolhe qual usar baseado no número e tipo dos argumentos.',
+        warning: 'Erro mais comum: criar um construtor com parâmetros e esquecer que o construtor padrão sumiu. Se alguém tentar new Classe() sem argumentos, dá erro de compilação!',
+      },
+
+      // ────────── SEÇÃO 3: Sobrecarga de Construtores ──────────
+      {
+        title: 'Sobrecarga de Construtores (Constructor Overloading)',
+        body: '**Sobrecarga** significa ter **vários construtores na mesma classe**, cada um com uma lista diferente de parâmetros. O Java escolhe qual chamar baseado nos argumentos passados.\n\nIsso é útil quando o objeto pode ser criado de formas diferentes:\n- Com todos os dados\n- Com apenas os dados obrigatórios (os opcionais recebem valores padrão)\n- Sem parâmetros (tudo com valores padrão)\n\nRegra: os construtores DEVEM ter listas de parâmetros diferentes (tipo ou quantidade diferente). Não pode ter dois construtores com exatamente os mesmos tipos de parâmetros.',
+        code: `public class Contato {
+    String nome;
+    String telefone;
+    String email;
+    String endereco;
+
+    // Construtor 1: todos os campos
+    public Contato(String nome, String telefone, String email, String endereco) {
+        this.nome = nome;
+        this.telefone = telefone;
+        this.email = email;
+        this.endereco = endereco;
+    }
+
+    // Construtor 2: sem endereço (opcional)
+    public Contato(String nome, String telefone, String email) {
+        this.nome = nome;
+        this.telefone = telefone;
+        this.email = email;
+        this.endereco = "Não informado";
+    }
+
+    // Construtor 3: só nome e telefone (mínimo)
+    public Contato(String nome, String telefone) {
+        this.nome = nome;
+        this.telefone = telefone;
+        this.email = "Não informado";
+        this.endereco = "Não informado";
+    }
+
+    void exibirContato() {
+        System.out.println(nome + " | Tel: " + telefone
+            + " | Email: " + email + " | End: " + endereco);
+    }
+}
+
+// O Java escolhe pelo número de argumentos:
+Contato c1 = new Contato("Ana", "11-9999", "ana@email.com", "Rua A, 123");
+Contato c2 = new Contato("Bruno", "11-8888", "bruno@email.com");
+Contato c3 = new Contato("Carlos", "11-7777");`,
+        codeExplanation: '**Construtor 1 (linhas 8-13)**: Recebe 4 Strings → usado quando temos TODOS os dados. `new Contato("Ana", "11-9999", "ana@email.com", "Rua A")`\n\n**Construtor 2 (linhas 16-21)**: Recebe 3 Strings → quando não temos o endereço. Define endereço como "Não informado" automaticamente.\n\n**Construtor 3 (linhas 24-29)**: Recebe 2 Strings → o mínimo necessário. Define email e endereço como "Não informado".\n\n**Linhas 38-40**: O Java vê quantos argumentos foram passados e escolhe o construtor correto:\n- 4 argumentos → Construtor 1\n- 3 argumentos → Construtor 2\n- 2 argumentos → Construtor 3\n\n**Problema**: Temos código repetido! `this.nome = nome; this.telefone = telefone;` aparece em TODOS. A próxima seção resolve isso.',
+        tip: 'A sobrecarga funciona com qualquer método, não só construtores. Dois métodos podem ter o mesmo nome se tiverem parâmetros diferentes.',
+      },
+
+      // ────────── SEÇÃO 4: Encadeamento com this() ──────────
+      {
+        title: 'Eliminando Código Repetido com this()',
+        body: 'No exemplo anterior, as linhas `this.nome = nome; this.telefone = telefone;` se repetem em TODOS os construtores. Isso viola o princípio **DRY** (Don\'t Repeat Yourself).\n\nA solução é usar **this()** — que chama OUTRO construtor da mesma classe. Funciona assim:\n- O construtor mais completo faz a atribuição real\n- Os outros construtores chamam `this(...)` passando os argumentos + valores padrão\n\nRegra: `this()` DEVE ser a **primeira linha** do construtor.',
+        code: `public class Contato {
+    String nome;
+    String telefone;
+    String email;
+    String endereco;
+
+    // Construtor PRINCIPAL (faz a atribuição real)
+    public Contato(String nome, String telefone, String email, String endereco) {
+        this.nome = nome;
+        this.telefone = telefone;
+        this.email = email;
+        this.endereco = endereco;
+    }
+
+    // Chama o construtor principal com valor padrão para endereço
+    public Contato(String nome, String telefone, String email) {
+        this(nome, telefone, email, "Não informado"); // chama construtor de 4 args!
+    }
+
+    // Chama o de 3 args, que chama o de 4 args
+    public Contato(String nome, String telefone) {
+        this(nome, telefone, "Não informado"); // chama construtor de 3 args!
+    }
+
+    void exibirContato() {
+        System.out.println(nome + " | Tel: " + telefone
+            + " | Email: " + email + " | End: " + endereco);
     }
 }`,
-    tryItPrompt: 'Crie um terceiro construtor que receba só idade (e use nome padrão).',
+        codeExplanation: '**Linhas 8-13** (Construtor principal): É o ÚNICO que faz `this.campo = valor`. Toda a lógica de atribuição está em UM lugar só.\n\n**Linha 17** (`this(nome, telefone, email, "Não informado")`): Em vez de repetir as atribuições, CHAMA o construtor de 4 argumentos, passando "Não informado" como endereço. É como se fizesse `new Contato(nome, telefone, email, "Não informado")` internamente.\n\n**Linha 22** (`this(nome, telefone, "Não informado")`): Chama o construtor de 3 argumentos, que por sua vez chama o de 4. É uma cadeia: 2 args → 3 args → 4 args.\n\n**Vantagem**: Se amanhã precisar adicionar um campo novo, muda APENAS o construtor principal. Os outros automaticamente seguem.\n\n**Regra**: `this()` DEVE ser a PRIMEIRA instrução do construtor. Se tentar colocar qualquer código antes, dá erro de compilação.',
+        tip: 'O padrão "construtor principal + construtores auxiliares com this()" é muito usado em projetos reais. Reduz duplicação e centraliza a inicialização.',
+      },
+
+      // ────────── SEÇÃO 5: Validação no Construtor ──────────
+      {
+        title: 'Validando Dados no Construtor',
+        body: 'O construtor é o lugar ideal para **validar** os dados antes de criar o objeto. Se os dados são inválidos, o objeto NÃO deveria existir com valores errados.\n\nExemplos de validação:\n- Nome não pode ser vazio ou null\n- Preço não pode ser negativo\n- Idade não pode ser negativa\n- Email deve conter @\n\nSe a validação falha, você pode:\n1. Usar um **valor padrão** seguro\n2. Lançar uma **exceção** (assunto de aula futura)\n3. Ajustar o valor para um mínimo aceitável',
+        code: `public class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    public Produto(String nome, double preco, int estoque) {
+        // Validar nome
+        if (nome == null || nome.trim().isEmpty()) {
+            this.nome = "Sem nome";
+            System.out.println("Aviso: nome inválido, usando padrão.");
+        } else {
+            this.nome = nome;
+        }
+
+        // Validar preço (não pode ser negativo)
+        if (preco < 0) {
+            this.preco = 0;
+            System.out.println("Aviso: preço negativo ajustado para 0.");
+        } else {
+            this.preco = preco;
+        }
+
+        // Validar estoque (não pode ser negativo)
+        this.estoque = Math.max(0, estoque); // se for negativo, usa 0
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " - R$" + preco + " | Estoque: " + estoque);
+    }
+}
+
+// Testes de validação:
+Produto p1 = new Produto("Camiseta", 49.90, 100);  // tudo OK
+Produto p2 = new Produto("", -10, -5);              // tudo inválido!
+Produto p3 = new Produto(null, 29.90, 50);          // nome null
+
+p1.exibirInfo(); // Camiseta - R$49.9 | Estoque: 100
+p2.exibirInfo(); // Sem nome - R$0.0 | Estoque: 0
+p3.exibirInfo(); // Sem nome - R$29.9 | Estoque: 50`,
+        codeExplanation: '**Linhas 8-13** (Validar nome): Verifica se é null OU se é uma string vazia (após trim() que remove espaços). Se inválido, usa "Sem nome" como padrão.\n\n**Linha 8** (`nome.trim().isEmpty()`): `trim()` remove espaços do início e fim ("  " vira ""). `isEmpty()` verifica se ficou vazio. Assim, "  " (só espaços) também é inválido.\n\n**Linhas 16-21** (Validar preço): Se o preço for negativo, ajusta para 0. Em um sistema real, poderia lançar exceção em vez de ajustar silenciosamente.\n\n**Linha 24** (`Math.max(0, estoque)`): `Math.max(a, b)` retorna o maior entre a e b. Se estoque for -5, `Math.max(0, -5)` retorna 0. É uma forma compacta de "se for negativo, use 0".\n\n**Linha 35** (`new Produto("", -10, -5)`): Tudo inválido! O construtor corrige cada campo automaticamente.',
+        tryItCode: `class Produto {
+    private String nome;
+    private double preco;
+    private int estoque;
+
+    public Produto(String nome, double preco, int estoque) {
+        if (nome == null || nome.trim().isEmpty()) {
+            this.nome = "Sem nome";
+            System.out.println("Aviso: nome inválido!");
+        } else {
+            this.nome = nome;
+        }
+
+        this.preco = Math.max(0, preco);
+        this.estoque = Math.max(0, estoque);
+
+        if (preco < 0) System.out.println("Aviso: preço ajustado para 0!");
+        if (estoque < 0) System.out.println("Aviso: estoque ajustado para 0!");
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " - R$" + preco + " | Estoque: " + estoque);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("=== Criando produtos ===\\n");
+
+        Produto p1 = new Produto("Camiseta", 49.90, 100);
+        Produto p2 = new Produto("", -10, -5);
+        Produto p3 = new Produto(null, 29.90, 50);
+
+        System.out.println("\\n=== Produtos criados ===");
+        p1.exibirInfo();
+        p2.exibirInfo();
+        p3.exibirInfo();
+    }
+}`,
+        tryItPrompt: 'Tente criar produtos com dados inválidos (nome vazio, preço negativo, null). Adicione validação para que o preço máximo seja R$10000!',
+      },
+
+      // ────────── SEÇÃO 6: Exercício Completo ──────────
+      {
+        title: 'Exercício Completo: Sistema com Construtores',
+        body: 'Vamos criar um sistema completo de gerenciamento de funcionários usando tudo o que aprendemos sobre construtores: construtor principal, sobrecarga, this(), e validação.',
+        code: `import java.util.ArrayList;
+
+class Funcionario {
+    private String nome;
+    private String cargo;
+    private double salario;
+    private String departamento;
+
+    // Construtor principal (completo)
+    public Funcionario(String nome, String cargo, double salario, String depto) {
+        this.nome = (nome != null && !nome.trim().isEmpty()) ? nome : "Não informado";
+        this.cargo = (cargo != null && !cargo.trim().isEmpty()) ? cargo : "Não definido";
+        this.salario = Math.max(0, salario);
+        this.departamento = (depto != null) ? depto : "Geral";
+    }
+
+    // Sobrecarga: sem departamento
+    public Funcionario(String nome, String cargo, double salario) {
+        this(nome, cargo, salario, "Geral"); // usa this() !
+    }
+
+    // Sobrecarga: só nome e cargo (salário inicial = 0)
+    public Funcionario(String nome, String cargo) {
+        this(nome, cargo, 0); // encadeia com o de 3 args
+    }
+
+    void aumentarSalario(double percentual) {
+        if (percentual > 0 && percentual <= 100) {
+            salario += salario * (percentual / 100.0);
+        }
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " | " + cargo + " | "
+            + departamento + " | R$" + String.format("%.2f", salario));
+    }
+
+    String getNome() { return nome; }
+    double getSalario() { return salario; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+
+        // Usando diferentes construtores
+        equipe.add(new Funcionario("Ana", "Desenvolvedora", 6000, "TI"));
+        equipe.add(new Funcionario("Bruno", "Designer", 5000));
+        equipe.add(new Funcionario("Carlos", "Estagiário"));
+
+        System.out.println("=== EQUIPE INICIAL ===");
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+
+        System.out.println("\\n=== AUMENTO DE 10% ===");
+        for (Funcionario f : equipe) {
+            f.aumentarSalario(10);
+        }
+
+        System.out.println("\\n=== EQUIPE ATUALIZADA ===");
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+    }
+}`,
+        codeExplanation: '**Linhas 10-15** (Construtor principal): Recebe todos os 4 campos. Usa operador ternário `? :` para validar cada um de forma compacta. Se nome for null ou vazio, usa "Não informado".\n\n**Linha 11** (Operador ternário): `(condição) ? valorSeTrue : valorSeFalse`. Equivale a um if/else em uma linha.\n\n**Linha 19** (`this(nome, cargo, salario, "Geral")`): O construtor de 3 args chama o de 4 args, passando "Geral" como departamento padrão.\n\n**Linha 24** (`this(nome, cargo, 0)`): O de 2 args chama o de 3 args (com salário 0), que chama o de 4 args. Cadeia: 2→3→4.\n\n**Linhas 47-49**: Cada `new` usa um construtor diferente: 4 args, 3 args, 2 args. Todos acabam passando pelo construtor principal.',
+        tryItCode: `import java.util.ArrayList;
+
+class Funcionario {
+    private String nome;
+    private String cargo;
+    private double salario;
+    private String departamento;
+
+    public Funcionario(String nome, String cargo, double salario, String depto) {
+        this.nome = (nome != null && !nome.trim().isEmpty()) ? nome : "Não informado";
+        this.cargo = (cargo != null) ? cargo : "Não definido";
+        this.salario = Math.max(0, salario);
+        this.departamento = (depto != null) ? depto : "Geral";
+    }
+
+    public Funcionario(String nome, String cargo, double salario) {
+        this(nome, cargo, salario, "Geral");
+    }
+
+    public Funcionario(String nome, String cargo) {
+        this(nome, cargo, 0);
+    }
+
+    void aumentarSalario(double percentual) {
+        if (percentual > 0 && percentual <= 100) {
+            salario += salario * (percentual / 100.0);
+        }
+    }
+
+    void exibirInfo() {
+        System.out.println(nome + " | " + cargo + " | " + departamento
+            + " | R$" + String.format("%.2f", salario));
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+
+        equipe.add(new Funcionario("Ana", "Dev", 6000, "TI"));
+        equipe.add(new Funcionario("Bruno", "Designer", 5000));
+        equipe.add(new Funcionario("Carlos", "Estagiário"));
+
+        System.out.println("=== EQUIPE ===");
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+
+        System.out.println("\\n=== APÓS AUMENTO DE 15% ===");
+        for (Funcionario f : equipe) { f.aumentarSalario(15); }
+        for (Funcionario f : equipe) { f.exibirInfo(); }
+    }
+}`,
+        tryItPrompt: 'Adicione mais funcionários usando diferentes construtores. Crie um construtor que receba só o nome (com cargo "Trainee" e salário R$1500 padrão)!',
+      },
+    ],
+
+    // ────────── Exercícios de Completar Código ──────────
     codeFillExercises: [
-      { instruction: 'Como referenciar o atributo da classe quando o parâmetro tem o mesmo nome?', snippetBefore: 'public Pessoa(String nome) {\n    ', snippetAfter: '.nome = nome;\n}', options: ['this', 'self', 'super', 'obj'], correctIndex: 0, explanation: 'this refere-se ao objeto atual e diferencia atributo de parâmetro.' },
+      {
+        instruction: 'Como referenciar o atributo da classe quando o parâmetro tem o mesmo nome?',
+        snippetBefore: 'public Pessoa(String nome) {\n    ',
+        snippetAfter: '.nome = nome;\n}',
+        options: ['this', 'self', 'super', 'obj'],
+        correctIndex: 0,
+        explanation: '"this" se refere ao objeto atual. this.nome é o atributo da classe; nome (sem this) é o parâmetro. Sem this, o Java atribuiria o parâmetro a ele mesmo!',
+      },
+      {
+        instruction: 'Para chamar outro construtor da mesma classe, usamos:',
+        snippetBefore: 'public Contato(String nome, String tel) {\n    ',
+        snippetAfter: '(nome, tel, "Não informado"); // chama construtor de 3 args\n}',
+        options: ['this', 'super', 'new', 'constructor'],
+        correctIndex: 0,
+        explanation: 'this() chama outro construtor da MESMA classe. super() chama o construtor da classe PAI (herança). this() deve ser a primeira linha do construtor.',
+      },
+      {
+        instruction: 'O que acontece se você definir um construtor com parâmetros mas NÃO definir um construtor vazio?',
+        snippetBefore: 'class Carro {\n    public Carro(String marca) { ... }\n}\n// Carro c = new Carro(); // ',
+        snippetAfter: '',
+        options: ['Erro de compilação!', 'Funciona normalmente', 'Usa null como padrão', 'Cria com valores 0'],
+        correctIndex: 0,
+        explanation: 'Quando você define qualquer construtor, o construtor padrão (sem parâmetros) desaparece. Para usar new Carro() sem argumentos, precisa definir explicitamente um construtor vazio.',
+      },
     ],
+
+    // ────────── Erros Comuns ──────────
     commonErrors: [
-      { title: 'Colocar tipo de retorno no construtor', description: 'Construtor não tem void nem nenhum tipo; só o nome da classe.' },
-      { title: 'Esquecer que o padrão some', description: 'Se definir Pessoa(String n), new Pessoa() sem argumentos deixa de compilar.' },
+      {
+        title: 'Colocar tipo de retorno no construtor',
+        description: 'Construtor não tem void nem nenhum tipo de retorno. Se colocar, vira um método comum!',
+        code: `// ERRADO: isso NÃO é construtor, é um método!
+void Produto(String nome) {  // void torna isso um método
+    this.nome = nome;
+}
+// new Produto("X") → não chama esse "construtor"!
+
+// CORRETO: sem tipo de retorno
+public Produto(String nome) {
+    this.nome = nome;
+}`,
+      },
+      {
+        title: 'Esquecer que o construtor padrão desaparece',
+        description: 'Ao definir um construtor com parâmetros, new Classe() sem argumentos para de funcionar.',
+        code: `class Pessoa {
+    String nome;
+    public Pessoa(String nome) { this.nome = nome; }
+}
+// Pessoa p = new Pessoa(); // ERRO! Não existe construtor sem args!
+// Pessoa p = new Pessoa("Ana"); // OK!
+
+// Solução: definir construtor vazio explicitamente
+// public Pessoa() { this.nome = "Desconhecido"; }`,
+      },
+      {
+        title: 'this() não é a primeira linha',
+        description: 'Ao chamar outro construtor com this(), essa chamada DEVE ser a primeira instrução.',
+        code: `// ERRADO:
+public Contato(String nome) {
+    System.out.println("Criando..."); // ERRO! Tem código antes do this()
+    this(nome, "Sem telefone");
+}
+
+// CORRETO:
+public Contato(String nome) {
+    this(nome, "Sem telefone"); // primeira linha!
+    System.out.println("Criando..."); // depois do this() pode
+}`,
+      },
+      {
+        title: 'Não usar this e perder a atribuição',
+        description: 'Sem this, o parâmetro é atribuído a si mesmo e o atributo da classe fica null/0.',
+        code: `// ERRADO:
+public Produto(String nome) {
+    nome = nome; // atribui o parâmetro a ele mesmo! Atributo continua null!
+}
+
+// CORRETO:
+public Produto(String nome) {
+    this.nome = nome; // this.nome = atributo, nome = parâmetro
+}`,
+      },
     ],
+
+    // ────────── Resumo ──────────
+    summary: [
+      'Construtor é chamado automaticamente pelo new — inicializa o objeto',
+      'Mesmo nome da classe, SEM tipo de retorno (nem void)',
+      'this.atributo diferencia o atributo da classe do parâmetro com mesmo nome',
+      'Sem this, a atribuição "nome = nome" não funciona (parâmetro atribui a si mesmo)',
+      'Se definir qualquer construtor com parâmetros, o construtor padrão (vazio) desaparece',
+      'Sobrecarga: vários construtores com listas de parâmetros diferentes',
+      'this() chama outro construtor da mesma classe — DEVE ser a primeira linha',
+      'Valide dados no construtor para garantir que o objeto nasce em estado válido',
+    ],
+
+    // ────────── Código final ──────────
+    tryItCode: `import java.util.ArrayList;
+
+class Aluno {
+    private String nome;
+    private String ra;
+    private double nota1;
+    private double nota2;
+
+    // Construtor principal
+    public Aluno(String nome, String ra, double nota1, double nota2) {
+        this.nome = (nome != null) ? nome : "Sem nome";
+        this.ra = (ra != null) ? ra : "0000";
+        this.nota1 = Math.max(0, Math.min(10, nota1)); // entre 0 e 10
+        this.nota2 = Math.max(0, Math.min(10, nota2)); // entre 0 e 10
+    }
+
+    // Sobrecarga: sem notas (aluno novo)
+    public Aluno(String nome, String ra) {
+        this(nome, ra, 0, 0);
+    }
+
+    double calcularMedia() { return (nota1 + nota2) / 2.0; }
+
+    String getSituacao() {
+        double m = calcularMedia();
+        if (m >= 7) return "Aprovado";
+        if (m >= 5) return "Recuperação";
+        return "Reprovado";
+    }
+
+    void exibir() {
+        System.out.println(nome + " (RA: " + ra + ") | N1: " + nota1
+            + " N2: " + nota2 + " | Média: "
+            + String.format("%.1f", calcularMedia()) + " | " + getSituacao());
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Aluno> turma = new ArrayList<>();
+
+        turma.add(new Aluno("Maria", "2024001", 8.5, 9.0));
+        turma.add(new Aluno("João", "2024002", 5.0, 4.5));
+        turma.add(new Aluno("Ana", "2024003")); // sem notas
+        turma.add(new Aluno("Pedro", "2024004", 15, -3)); // notas inválidas!
+
+        System.out.println("=== BOLETIM DA TURMA ===\\n");
+        for (Aluno a : turma) { a.exibir(); }
+    }
+}`,
+    tryItPrompt: 'Veja como a validação ajusta notas inválidas (15 vira 10, -3 vira 0). Crie um construtor que receba só o nome, com RA gerado automaticamente!',
   },
 
   'm3-encapsulation': {
