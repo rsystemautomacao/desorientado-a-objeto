@@ -3899,117 +3899,684 @@ public class Main {
 
   'm3-static': {
     id: 'm3-static', moduleId: 3,
-    objectives: ['Entender quando usar static', 'Diferenciar membros de instância e de classe', 'Saber por que métodos static não acessam this'],
+    objectives: [
+      'Entender a diferença entre membros de instância e membros static',
+      'Usar atributos static para contadores e constantes da classe',
+      'Criar métodos static utilitários',
+      'Saber por que métodos static não acessam this',
+      'Usar static final para constantes',
+      'Entender o public static void main',
+    ],
     sections: [
-      { title: 'static — Pertence à Classe, não ao Objeto', body: 'Atributos e métodos **normais** (sem static) pertencem a cada **objeto**: cada Funcionario tem seu próprio nome e salário. Atributos e métodos **static** pertencem à **classe** e são compartilhados por todos os objetos — por exemplo, um contador totalFuncionarios que aumenta a cada new Funcionario(), ou uma constante SALARIO_MINIMO.\n\nMétodos static **não podem** acessar atributos de instância (não-static), porque não existe "qual objeto" — não há this. Use static para utilitários (Math.sqrt), constantes e contadores de classe.',
+      // ────────── SEÇÃO 1: Instância vs Static ──────────
+      {
+        title: 'Instância vs Static: Qual a Diferença?',
+        body: 'Até agora, todos os atributos e métodos que criamos eram **de instância** — cada objeto tinha sua própria cópia. Quando você faz `f1.nome = "Ana"` e `f2.nome = "Bruno"`, cada um guarda seu próprio nome.\n\nMas e se você precisar de algo **compartilhado por TODOS os objetos**? Por exemplo:\n- Quantos funcionários foram criados no total?\n- Qual o salário mínimo da empresa (igual para todos)?\n- Um gerador de IDs sequenciais?\n\nPara isso existe o **static**: um atributo ou método que pertence à **classe**, não a cada objeto. Existe UMA cópia só, compartilhada por todos.',
         code: `public class Funcionario {
-    // Atributo de instância (cada objeto tem o seu)
+    // ═══ ATRIBUTOS DE INSTÂNCIA (cada objeto tem o seu) ═══
     private String nome;
     private double salario;
-    
-    // Atributo STATIC (compartilhado por todos)
-    private static int totalFuncionarios = 0;
-    private static final double SALARIO_MINIMO = 1412.00;
-    
+
+    // ═══ ATRIBUTOS STATIC (UM só para a classe toda) ═══
+    private static int totalFuncionarios = 0;  // contador compartilhado
+    private static final double SALARIO_MINIMO = 1412.00; // constante
+    private static int proximoId = 1; // gerador de ID
+
+    private int id; // id de instância (cada um tem o seu)
+
     public Funcionario(String nome, double salario) {
+        this.id = proximoId++;        // pega o próximo ID e incrementa
         this.nome = nome;
         this.salario = Math.max(salario, SALARIO_MINIMO);
-        totalFuncionarios++; // incrementa para TODOS
+        totalFuncionarios++;          // incrementa para TODOS
     }
-    
-    // Método static
+
+    // ═══ MÉTODO STATIC (pertence à classe) ═══
     public static int getTotalFuncionarios() {
         return totalFuncionarios;
     }
+
+    public static double getSalarioMinimo() {
+        return SALARIO_MINIMO;
+    }
+
+    // Método de instância (pertence ao objeto)
+    public void exibirInfo() {
+        System.out.println("[" + id + "] " + nome + " | R$" + salario);
+    }
+}`,
+        codeExplanation: '**Linha 7** (`static int totalFuncionarios`): Existe UMA cópia para a classe inteira. Quando f1 incrementa, f2 enxerga o novo valor.\n\n**Linha 8** (`static final double SALARIO_MINIMO`): `static` = da classe, `final` = não pode ser alterado. Combinação perfeita para constantes. Convenção: MAIÚSCULAS_COM_UNDERSCORE.\n\n**Linha 9** (`static int proximoId`): Começa em 1. Cada `new Funcionario(...)` pega o valor atual (1, 2, 3...) e incrementa para o próximo.\n\n**Linha 14** (`this.id = proximoId++`): O `++` APÓS a variável significa "use o valor atual, DEPOIS incremente". Então o primeiro objeto pega id=1 e proximoId vira 2.\n\n**Linha 17** (`totalFuncionarios++`): Toda vez que um objeto é criado, o contador da classe aumenta. Se criar 3 funcionários, totalFuncionarios será 3.\n\n**Linhas 21-23** (`static getTotalFuncionarios()`): Método static — chamado pela CLASSE: `Funcionario.getTotalFuncionarios()`, não por um objeto.',
+        tip: 'Acesse membros static pela CLASSE: `Funcionario.getTotalFuncionarios()`. Tecnicamente funciona com objeto (`f1.getTotalFuncionarios()`), mas é confuso e má prática.',
+      },
+
+      // ────────── SEÇÃO 2: Por que static não acessa this ──────────
+      {
+        title: 'Por que Métodos Static NÃO Acessam this?',
+        body: 'Essa é uma das confusões mais comuns em Java. O `this` se refere ao **objeto atual** — "o objeto que chamou este método". Mas métodos static não são chamados por um objeto! São chamados pela classe.\n\nQuando você faz `Funcionario.getTotalFuncionarios()`, não existe "um funcionário" específico chamando — é a CLASSE. Então `this` não faz sentido.\n\n**Regra**:\n- Método de instância (sem static): pode acessar tudo (instância E static)\n- Método static: só pode acessar membros STATIC da classe',
+        code: `public class Exemplo {
+    private String nome;        // de instância
+    private static int total;   // static
+
+    // MÉTODO DE INSTÂNCIA: acessa TUDO
+    public void metodoNormal() {
+        System.out.println(this.nome); // OK! Tem this
+        System.out.println(total);     // OK! Static é acessível de qualquer lugar
+    }
+
+    // MÉTODO STATIC: só acessa STATIC
+    public static void metodoStatic() {
+        System.out.println(total);     // OK! Ambos são static
+        // System.out.println(nome);   // ERRO! nome é de instância
+        // System.out.println(this.nome); // ERRO! this não existe em static
+    }
+
+    // ENTENDENDO O main
+    public static void main(String[] args) {
+        // main é static! Por isso não pode acessar atributos de instância:
+        // System.out.println(nome); // ERRO!
+
+        // Precisa criar um objeto primeiro:
+        Exemplo obj = new Exemplo();
+        obj.nome = "Teste";
+        System.out.println(obj.nome); // OK! Acessa pelo objeto
+    }
+}`,
+        codeExplanation: '**Linhas 6-9** (Método normal): Pode acessar `this.nome` (instância) e `total` (static). Método de instância tem acesso a tudo.\n\n**Linhas 12-16** (Método static): `total` funciona porque ambos são static. `nome` e `this` dão erro — não existe objeto nesse contexto.\n\n**Linhas 19-25** (`main`): `public static void main` é static! Por isso, dentro do main, você não pode acessar atributos de instância diretamente. Precisa criar um objeto primeiro (`new Exemplo()`) e acessar por ele.\n\n**Por que main é static?** Porque o programa precisa começar de algum lugar ANTES de criar qualquer objeto. O `main` roda sem nenhum objeto existir, por isso é static.',
+        warning: 'O main é static — essa é a razão pela qual você sempre precisa fazer `new` para usar objetos dentro do main! Não pode acessar atributos de instância diretamente.',
+      },
+
+      // ────────── SEÇÃO 3: Constantes e Utilitários ──────────
+      {
+        title: 'Usos Práticos: Constantes e Métodos Utilitários',
+        body: 'Os dois usos mais comuns de static são:\n\n1. **Constantes** (`static final`): valores fixos que não mudam\n2. **Métodos utilitários**: fazem cálculos sem precisar de um objeto\n\nVocê já usa static sem saber! A classe `Math` do Java é cheia de métodos static:\n- `Math.sqrt(25)` → raiz quadrada\n- `Math.max(5, 10)` → maior valor\n- `Math.PI` → constante pi\n\nEsses métodos não precisam de `new Math()` porque são static — pertencem à classe.',
+        code: `// Classe utilitária com métodos static
+public class MathUtil {
+    // Constantes (static final)
+    public static final double PI = 3.14159265;
+    public static final double TAXA_IMPOSTO = 0.15; // 15%
+
+    // Métodos utilitários (static)
+    public static double calcularAreaCirculo(double raio) {
+        return PI * raio * raio;
+    }
+
+    public static double calcularImposto(double valor) {
+        return valor * TAXA_IMPOSTO;
+    }
+
+    public static double celsiusParaFahrenheit(double celsius) {
+        return (celsius * 9.0 / 5.0) + 32;
+    }
+
+    public static boolean ehPar(int numero) {
+        return numero % 2 == 0;
+    }
 }
 
-// Uso:
-Funcionario f1 = new Funcionario("Ana", 3000);
-Funcionario f2 = new Funcionario("Bruno", 4000);
-System.out.println(Funcionario.getTotalFuncionarios()); // 2`,
-        codeExplanation: 'totalFuncionarios e getTotalFuncionarios() são da classe; nome e salario são de cada instância. Acesse static pela classe: Funcionario.getTotalFuncionarios().',
-        warning: 'Métodos static NÃO podem acessar atributos de instância (não-static). Eles não sabem qual objeto usar!',
-      },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual palavra-chave indica que um membro pertence à classe e não a cada objeto?', snippetBefore: 'private ', snippetAfter: ' int totalFuncionarios = 0;', options: ['static', 'class', 'shared', 'common'], correctIndex: 0, explanation: 'static faz o membro ser compartilhado por todos os objetos da classe.' },
-    ],
-    summary: ['static pertence à classe, não ao objeto', 'Use para contadores, constantes e utilitários', 'Métodos static não acessam this', 'Acesse via NomeClasse.metodo()'],
-    tryItCode: `class Funcionario {
-    String nome;
-    static int total = 0;
-    public Funcionario(String nome) { this.nome = nome; total++; }
-    static int getTotal() { return total; }
+// Uso — sem new! Pela classe diretamente:
+double area = MathUtil.calcularAreaCirculo(5);
+double imposto = MathUtil.calcularImposto(1000);
+double fahrenheit = MathUtil.celsiusParaFahrenheit(30);
+boolean par = MathUtil.ehPar(7);`,
+        codeExplanation: '**Linhas 4-5** (`static final`): Constantes da classe. `PI` e `TAXA_IMPOSTO` são iguais para todos — não faz sentido cada objeto ter seu próprio PI.\n\n**Linhas 8-10** (`static calcularAreaCirculo`): Não precisa de nenhum objeto — só recebe o raio e retorna a área. Faz sentido ser static porque não depende de estado de nenhum objeto.\n\n**Linhas 25-28** (Uso): Chamamos pela CLASSE: `MathUtil.calcularAreaCirculo(5)`. Não precisa de `new MathUtil()`. Isso é o padrão "classe utilitária" — comum em projetos Java.',
+        tip: 'A convenção Java para constantes é MAIÚSCULAS_COM_UNDERSCORE: PI, SALARIO_MINIMO, MAX_TENTATIVAS, TAXA_IMPOSTO.',
+        tryItCode: `class MathUtil {
+    public static final double PI = 3.14159265;
+
+    public static double areaCirculo(double raio) {
+        return PI * raio * raio;
+    }
+
+    public static double areaRetangulo(double largura, double altura) {
+        return largura * altura;
+    }
+
+    public static double celsiusParaFahrenheit(double c) {
+        return (c * 9.0 / 5.0) + 32;
+    }
+
+    public static boolean ehPar(int n) { return n % 2 == 0; }
+    public static boolean ehImpar(int n) { return n % 2 != 0; }
+
+    public static int fatorial(int n) {
+        int resultado = 1;
+        for (int i = 2; i <= n; i++) resultado *= i;
+        return resultado;
+    }
 }
+
 public class Main {
     public static void main(String[] args) {
-        new Funcionario("Ana");
-        new Funcionario("Bruno");
+        System.out.println("Área círculo (r=5): " + MathUtil.areaCirculo(5));
+        System.out.println("Área retângulo (3x4): " + MathUtil.areaRetangulo(3, 4));
+        System.out.println("30°C em °F: " + MathUtil.celsiusParaFahrenheit(30));
+        System.out.println("7 é par? " + MathUtil.ehPar(7));
+        System.out.println("5! = " + MathUtil.fatorial(5));
+    }
+}`,
+        tryItPrompt: 'Adicione mais métodos utilitários: fahrenheitParaCelsius, potencia(base, exp), ehPrimo(n). Tudo static!',
+      },
+
+      // ────────── SEÇÃO 4: Exercício Completo ──────────
+      {
+        title: 'Exercício Completo: Contador e ID Automático',
+        body: 'Vamos ver um uso prático de static: um sistema onde cada produto recebe um ID automático e temos um contador de produtos criados.',
+        code: `import java.util.ArrayList;
+
+class Produto {
+    // Static: da classe
+    private static int proximoId = 1;
+    private static int totalProdutos = 0;
+
+    // Instância: de cada objeto
+    private final int id;
+    private String nome;
+    private double preco;
+
+    public Produto(String nome, double preco) {
+        this.id = proximoId++;     // ID automático!
+        this.nome = nome;
+        this.preco = preco;
+        totalProdutos++;
+    }
+
+    // Métodos static (da classe)
+    public static int getTotalProdutos() { return totalProdutos; }
+    public static int getProximoId() { return proximoId; }
+
+    // Métodos de instância (do objeto)
+    public void exibirInfo() {
+        System.out.println("[ID " + id + "] " + nome + " - R$" + preco);
+    }
+
+    public int getId() { return id; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Produtos antes: " + Produto.getTotalProdutos());
+
+        ArrayList<Produto> loja = new ArrayList<>();
+        loja.add(new Produto("Camiseta", 49.90));
+        loja.add(new Produto("Calça", 129.90));
+        loja.add(new Produto("Tênis", 199.90));
+
+        System.out.println("\\nProdutos depois: " + Produto.getTotalProdutos());
+        System.out.println("Próximo ID será: " + Produto.getProximoId());
+
+        System.out.println("\\n=== PRODUTOS ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+    }
+}`,
+        codeExplanation: '**Linhas 5-6** (Static): `proximoId` começa em 1 e incrementa a cada novo produto. `totalProdutos` conta quantos foram criados.\n\n**Linha 14** (`this.id = proximoId++`): Primeiro objeto: id=1, proximoId vira 2. Segundo: id=2, proximoId vira 3. E assim por diante.\n\n**Linha 34** (`Produto.getTotalProdutos()`): Antes de criar qualquer produto, retorna 0. Chamado pela CLASSE.\n\n**Linha 41**: Após criar 3 produtos, retorna 3. O contador é compartilhado — cada `new Produto(...)` incrementa.',
+        tryItCode: `import java.util.ArrayList;
+
+class Produto {
+    private static int proximoId = 1;
+    private static int totalProdutos = 0;
+    private final int id;
+    private String nome;
+    private double preco;
+
+    public Produto(String nome, double preco) {
+        this.id = proximoId++;
+        this.nome = nome;
+        this.preco = preco;
+        totalProdutos++;
+    }
+
+    public static int getTotalProdutos() { return totalProdutos; }
+
+    public void exibirInfo() {
+        System.out.println("[ID " + id + "] " + nome + " - R$" + preco);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Total antes: " + Produto.getTotalProdutos());
+
+        ArrayList<Produto> loja = new ArrayList<>();
+        loja.add(new Produto("Camiseta", 49.90));
+        loja.add(new Produto("Calça", 129.90));
+        loja.add(new Produto("Tênis", 199.90));
+
+        System.out.println("Total depois: " + Produto.getTotalProdutos());
+        System.out.println("\\n=== PRODUTOS ===");
+        for (Produto p : loja) { p.exibirInfo(); }
+    }
+}`,
+        tryItPrompt: 'Adicione mais produtos e veja os IDs sendo gerados automaticamente. Adicione um atributo static "totalEstoque" que soma o estoque de todos os produtos!',
+      },
+    ],
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Qual palavra-chave indica que um membro pertence à classe e não a cada objeto?',
+        snippetBefore: 'private ',
+        snippetAfter: ' int totalFuncionarios = 0;',
+        options: ['static', 'class', 'shared', 'final'],
+        correctIndex: 0,
+        explanation: 'static faz o membro ser compartilhado por todos os objetos. Existe UMA cópia só para a classe inteira.',
+      },
+      {
+        instruction: 'Para criar uma constante em Java, usamos:',
+        snippetBefore: 'private ',
+        snippetAfter: ' double SALARIO_MINIMO = 1412.00;',
+        options: ['static final', 'const', 'final static', 'constant'],
+        correctIndex: 0,
+        explanation: 'static final = da classe (compartilhado) + não pode ser alterado. Em Java não existe "const" — usamos "static final" para constantes.',
+      },
+      {
+        instruction: 'Como chamar um método static corretamente?',
+        snippetBefore: 'int total = ',
+        snippetAfter: '.getTotalFuncionarios();',
+        options: ['Funcionario', 'this', 'new Funcionario()', 'super'],
+        correctIndex: 0,
+        explanation: 'Métodos static são chamados pela CLASSE: NomeClasse.metodo(). Não precisam de um objeto.',
+      },
+    ],
+    summary: [
+      'Membros static pertencem à CLASSE e são compartilhados por todos os objetos',
+      'Membros de instância (sem static) são próprios de cada objeto',
+      'Métodos static NÃO podem acessar this nem membros de instância',
+      'Métodos de instância podem acessar tudo (instância + static)',
+      'static final = constante (valor fixo): SALARIO_MINIMO, PI, MAX_TENTATIVAS',
+      'Acesse static pela CLASSE: Funcionario.getTotalFuncionarios()',
+      'main é static — por isso precisa de new para usar objetos',
+      'Use static para: contadores, constantes, IDs automáticos, métodos utilitários',
+    ],
+    tryItCode: `class Funcionario {
+    private static int total = 0;
+    private static int proximoId = 1;
+    private static final double SALARIO_MINIMO = 1412.00;
+
+    private int id;
+    private String nome;
+    private double salario;
+
+    public Funcionario(String nome, double salario) {
+        this.id = proximoId++;
+        this.nome = nome;
+        this.salario = Math.max(salario, SALARIO_MINIMO);
+        total++;
+    }
+
+    public static int getTotal() { return total; }
+    public static double getSalarioMinimo() { return SALARIO_MINIMO; }
+
+    public void exibirInfo() {
+        System.out.println("[" + id + "] " + nome + " | R$" + salario);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Salário mínimo: R$" + Funcionario.getSalarioMinimo());
+
+        new Funcionario("Ana", 5000);
+        new Funcionario("Bruno", 1000); // vai usar SALARIO_MINIMO
+        new Funcionario("Carlos", 3500);
+
         System.out.println("Total: " + Funcionario.getTotal());
     }
 }`,
-    tryItPrompt: 'Crie mais funcionários e veja o contador total subir.',
+    tryItPrompt: 'Veja que Bruno recebeu salário mínimo (1412) mesmo pedindo 1000. Crie mais funcionários e acompanhe o total e os IDs.',
     commonErrors: [
-      { title: 'Acessar atributo de instância em método static', description: 'Dentro de static não existe this; não dá para acessar nome, por exemplo.' },
-      { title: 'Abusar de static', description: 'Use static só para o que é realmente da classe (contador, constante, util).' },
+      {
+        title: 'Acessar atributo de instância em método static',
+        description: 'Dentro de static não existe this. Não dá para acessar nome, salario etc.',
+        code: `public static void metodoStatic() {
+    // System.out.println(nome); // ERRO!
+    // System.out.println(this.nome); // ERRO!
+    System.out.println(totalFuncionarios); // OK (static)
+}`,
+      },
+      {
+        title: 'Chamar método static pelo objeto',
+        description: 'Funciona, mas é confuso. Sempre chame pela classe.',
+        code: `Funcionario f = new Funcionario("Ana", 5000);
+// f.getTotalFuncionarios(); // funciona mas é MÁ PRÁTICA
+Funcionario.getTotalFuncionarios(); // CORRETO: pela classe`,
+      },
+      {
+        title: 'Abusar de static',
+        description: 'Se tudo for static, você perde as vantagens da POO. Use static só para o que é realmente da classe.',
+      },
     ],
   },
 
   'm3-this': {
     id: 'm3-this', moduleId: 3,
-    objectives: ['Entender a referência this', 'Usar this para desambiguar variáveis', 'Conhecer method chaining retornando this'],
+    objectives: [
+      'Entender o que é a referência this',
+      'Usar this para desambiguar atributos de parâmetros',
+      'Usar this() para chamar outro construtor da mesma classe',
+      'Passar this como argumento para outro método',
+      'Conhecer method chaining (encadeamento) retornando this',
+      'Saber que this não existe em contexto static',
+    ],
     sections: [
-      { title: 'this — Referência ao Objeto Atual', body: 'Dentro de um método de instância, **this** refere-se ao objeto que recebeu a chamada. O uso mais comum é quando o parâmetro tem o mesmo nome do atributo: sem this, nome seria só o parâmetro; com this.nome você deixa claro que está atribuindo ao atributo da classe.\n\n**Method chaining** (encadeamento de métodos) é quando um método retorna **this**, permitindo chamar outro método em sequência: objeto.setNome("A").setIdade(20). Isso só funciona se cada método retornar o próprio objeto.',
-        code: `public class Aluno {
+      // ────────── SEÇÃO 1: O que é this ──────────
+      {
+        title: 'O que é this? A Referência ao Objeto Atual',
+        body: '**this** é uma referência automática ao **objeto que está executando o método**. Quando você faz `meuCarro.ligar()`, dentro do método `ligar()`, o `this` aponta para `meuCarro`.\n\nO uso mais comum é quando o **parâmetro tem o mesmo nome do atributo**:\n- `this.nome` → atributo da classe\n- `nome` (sem this) → parâmetro do método\n\nSem this, Java não sabe qual é qual — e o parâmetro "ganha" (por ser mais local). Resultado: o atributo fica null e o programador fica confuso.',
+        code: `public class Produto {
     private String nome;
-    private int idade;
-    
-    // 'this' diferencia atributo do parâmetro
-    public Aluno(String nome, int idade) {
-        this.nome = nome;   // this.nome = atributo, nome = parâmetro
-        this.idade = idade;
+    private double preco;
+
+    // ═══ COM this: funciona correto! ═══
+    public Produto(String nome, double preco) {
+        this.nome = nome;     // this.nome = atributo | nome = parâmetro
+        this.preco = preco;   // this.preco = atributo | preco = parâmetro
     }
-    
-    // this pode ser usado para encadear métodos
-    public Aluno setNome(String nome) {
-        this.nome = nome;
-        return this; // retorna o próprio objeto
+
+    // ═══ SEM this: BUG! ═══
+    // public Produto(String nome, double preco) {
+    //     nome = nome;     // parâmetro = parâmetro (atributo fica null!)
+    //     preco = preco;   // parâmetro = parâmetro (atributo fica 0.0!)
+    // }
+
+    public void setPreco(double preco) {
+        if (preco > 0) {
+            this.preco = preco;  // this diferencia atributo do parâmetro
+        }
     }
-    
-    public Aluno setIdade(int idade) {
-        this.idade = idade;
+
+    // this também funciona para chamar métodos do próprio objeto
+    public void exibirInfo() {
+        // Dentro do método, this se refere ao objeto que chamou
+        System.out.println("Produto: " + this.nome + " | R$" + this.preco);
+        // "this." é opcional quando não há ambiguidade:
+        System.out.println("Produto: " + nome + " | R$" + preco);
+        // Ambas as linhas fazem o mesmo! Mas this é mais explícito.
+    }
+}`,
+        codeExplanation: '**Linhas 6-9** (Com this): `this.nome` se refere ao atributo da classe. `nome` (sem this) é o parâmetro recebido. A atribuição funciona corretamente.\n\n**Linhas 12-15** (Sem this): `nome = nome` atribui o parâmetro a si mesmo! O atributo `this.nome` continua null. Este é um dos bugs mais difíceis de encontrar.\n\n**Linhas 17-21** (Setter): Mesmo padrão — `this.preco` é o atributo, `preco` é o parâmetro.\n\n**Linhas 24-29** (Em métodos): Quando NÃO há ambiguidade (não tem parâmetro com mesmo nome), `this.` é opcional. `this.nome` e `nome` são iguais. Mas muitos programadores preferem usar `this.` sempre por clareza.',
+        warning: 'Sem this, `nome = nome` dentro do construtor é um bug silencioso! O Java não dá erro — simplesmente atribui o parâmetro a ele mesmo e o atributo fica null.',
+      },
+
+      // ────────── SEÇÃO 2: this() para chamar construtores ──────────
+      {
+        title: 'this() para Chamar Outro Construtor',
+        body: 'Além de referência ao objeto, `this()` (com parênteses) serve para **chamar outro construtor da mesma classe**. Já vimos isso na aula de construtores, mas vale reforçar:\n\n- `this.nome` → acessa o **atributo** nome\n- `this()` → chama **outro construtor** da mesma classe\n- `this(args)` → chama outro construtor passando argumentos\n\nRegra: `this()` DEVE ser a primeira linha do construtor.',
+        code: `public class Contato {
+    private String nome;
+    private String telefone;
+    private String email;
+
+    // Construtor principal
+    public Contato(String nome, String telefone, String email) {
+        this.nome = nome;         // this.nome = atributo
+        this.telefone = telefone;
+        this.email = email;
+    }
+
+    // this() chama o construtor de 3 argumentos
+    public Contato(String nome, String telefone) {
+        this(nome, telefone, "não informado"); // chama construtor acima!
+    }
+
+    // Encadeia: 1 arg → 2 args → 3 args
+    public Contato(String nome) {
+        this(nome, "não informado"); // chama construtor de 2 args
+    }
+
+    public void exibir() {
+        System.out.println(nome + " | " + telefone + " | " + email);
+    }
+}`,
+        codeExplanation: '**Linha 8** (`this.nome = nome`): `this.` acessa o atributo (referência ao objeto).\n\n**Linha 15** (`this(nome, telefone, "não informado")`): `this()` chama outro CONSTRUTOR da mesma classe. Passa os argumentos recebidos mais "não informado" como email padrão.\n\n**Linha 20** (`this(nome, "não informado")`): Encadeia — chama o de 2 args, que chama o de 3 args.\n\n**Resumo**: `this.campo` = atributo, `this()` = construtor, `this` sozinho = o objeto.',
+        tip: 'Lembre-se: this.x = ATRIBUTO, this() = CONSTRUTOR, return this = O OBJETO. Três usos diferentes da mesma palavra.',
+      },
+
+      // ────────── SEÇÃO 3: Method Chaining ──────────
+      {
+        title: 'Method Chaining: Encadeando Métodos com return this',
+        body: '**Method chaining** (encadeamento de métodos) é um padrão onde cada método retorna **this** (o próprio objeto), permitindo chamar vários métodos em sequência.\n\nEm vez de:\n```\naluno.setNome("Ana");\naluno.setIdade(20);\naluno.setCurso("Java");\n```\n\nVocê faz:\n```\naluno.setNome("Ana").setIdade(20).setCurso("Java");\n```\n\nIsso funciona porque `setNome("Ana")` retorna `this` (o próprio aluno), e sobre esse retorno chamamos `.setIdade(20)`, que também retorna `this`, e assim por diante.',
+        code: `public class Config {
+    private String titulo;
+    private int largura;
+    private int altura;
+    private boolean telaCheia;
+    private String tema;
+
+    // Cada setter retorna 'this' para permitir encadeamento
+    public Config setTitulo(String titulo) {
+        this.titulo = titulo;
+        return this;  // retorna O OBJETO ATUAL
+    }
+
+    public Config setLargura(int largura) {
+        this.largura = largura;
         return this;
+    }
+
+    public Config setAltura(int altura) {
+        this.altura = altura;
+        return this;
+    }
+
+    public Config setTelaCheia(boolean telaCheia) {
+        this.telaCheia = telaCheia;
+        return this;
+    }
+
+    public Config setTema(String tema) {
+        this.tema = tema;
+        return this;
+    }
+
+    public void exibir() {
+        System.out.println("Título: " + titulo);
+        System.out.println("Resolução: " + largura + "x" + altura);
+        System.out.println("Tela cheia: " + telaCheia);
+        System.out.println("Tema: " + tema);
     }
 }
 
-// Method chaining (encadeamento)
-Aluno a = new Aluno("Ana", 20);
-a.setNome("Ana Maria").setIdade(21); // elegante!`,
-        codeExplanation: 'No construtor, this.nome = nome atribui o parâmetro ao atributo. setNome retorna this para permitir encadear .setIdade(21).',
-      },
-    ],
-    summary: ['this referencia o objeto atual', 'Usado para desambiguar atributos de parâmetros', 'Permite method chaining retornando this'],
-    tryItCode: `class Aluno {
-    String nome;
-    int idade;
-    public Aluno(String nome, int idade) {
-        this.nome = nome;
-        this.idade = idade;
+// Uso com method chaining — elegante e legível!
+Config config = new Config()
+    .setTitulo("Meu Jogo")
+    .setLargura(1920)
+    .setAltura(1080)
+    .setTelaCheia(true)
+    .setTema("escuro");
+
+config.exibir();`,
+        codeExplanation: '**Linhas 9-12** (`return this`): O método retorna `this` — o próprio objeto Config. O tipo de retorno é `Config` (não void!).\n\n**Linhas 44-49**: Cada `.setXxx()` retorna o mesmo objeto, permitindo chamar o próximo. É como se fosse:\n- `config.setTitulo("Meu Jogo")` → retorna `config`\n- `config.setLargura(1920)` → retorna `config`\n- `config.setAltura(1080)` → retorna `config`\n- ...\n\nIsso é muito usado em bibliotecas Java como StringBuilder, Streams, e builders.',
+        tryItCode: `class Pedido {
+    private String cliente;
+    private String produto;
+    private int quantidade;
+    private double desconto;
+
+    public Pedido setCliente(String cliente) {
+        this.cliente = cliente;
+        return this;
+    }
+    public Pedido setProduto(String produto) {
+        this.produto = produto;
+        return this;
+    }
+    public Pedido setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
+        return this;
+    }
+    public Pedido setDesconto(double desconto) {
+        this.desconto = desconto;
+        return this;
+    }
+
+    public void exibir() {
+        System.out.println("Pedido de " + cliente + ": "
+            + quantidade + "x " + produto
+            + " (desconto: " + (desconto * 100) + "%)");
     }
 }
+
 public class Main {
     public static void main(String[] args) {
-        Aluno a = new Aluno("Ana", 20);
-        System.out.println(a.nome + " " + a.idade);
+        // Method chaining!
+        Pedido p = new Pedido()
+            .setCliente("Maria")
+            .setProduto("Notebook")
+            .setQuantidade(2)
+            .setDesconto(0.10);
+
+        p.exibir();
+
+        // Outro pedido
+        new Pedido()
+            .setCliente("João")
+            .setProduto("Mouse")
+            .setQuantidade(1)
+            .setDesconto(0)
+            .exibir();
     }
 }`,
-    tryItPrompt: 'Troque o nome do parâmetro para n e use this.nome = n; veja que this continua necessário para o atributo.',
-    codeFillExercises: [
-      { instruction: 'Para encadear chamadas como obj.setA(1).setB(2), o método deve retornar o quê?', snippetBefore: 'public Aluno setNome(String nome) {\n    this.nome = nome;\n    return ', snippetAfter: ';\n}', options: ['this', 'self', 'obj', 'nome'], correctIndex: 0, explanation: 'Retornar this permite method chaining (encadear chamadas).' },
+        tryItPrompt: 'Crie mais pedidos usando method chaining. Adicione um método calcularTotal(precoUnitario) que retorne this e mostre o preço com desconto!',
+      },
+
+      // ────────── SEÇÃO 4: Passando this como Argumento ──────────
+      {
+        title: 'Passando this como Argumento',
+        body: 'Você pode passar `this` como argumento para outro método, quando precisa enviar "o objeto atual" para algum lugar. Isso é útil em padrões como:\n- Registrar o objeto em uma lista\n- Passar o objeto para outro método processar\n- Padrão Observer (notificações)',
+        code: `import java.util.ArrayList;
+
+class Gerenciador {
+    private ArrayList<Funcionario> lista = new ArrayList<>();
+
+    public void registrar(Funcionario f) {
+        lista.add(f);
+        System.out.println(f.getNome() + " registrado no gerenciador.");
+    }
+
+    public void listarTodos() {
+        for (Funcionario f : lista) {
+            System.out.println("  - " + f.getNome());
+        }
+    }
+}
+
+class Funcionario {
+    private String nome;
+    private Gerenciador gerenciador;
+
+    public Funcionario(String nome, Gerenciador gerenciador) {
+        this.nome = nome;
+        this.gerenciador = gerenciador;
+        gerenciador.registrar(this); // passa "eu mesmo" para o gerenciador!
+    }
+
+    public String getNome() { return nome; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Gerenciador g = new Gerenciador();
+
+        new Funcionario("Ana", g);    // se auto-registra!
+        new Funcionario("Bruno", g);  // se auto-registra!
+        new Funcionario("Carlos", g); // se auto-registra!
+
+        System.out.println("\\nFuncionários registrados:");
+        g.listarTodos();
+    }
+}`,
+        codeExplanation: '**Linha 25** (`gerenciador.registrar(this)`): O Funcionário passa "a si mesmo" (this) para o gerenciador. O `this` aqui é o objeto Funcionário que está sendo construído.\n\n**Linha 6** (`registrar(Funcionario f)`): Recebe o objeto e adiciona na lista. O `f` que chega é o `this` que foi passado.\n\n**Linhas 35-37**: Cada `new Funcionario(...)` se auto-registra no gerenciador durante a construção.',
+      },
     ],
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Para encadear chamadas como obj.setA(1).setB(2), o método deve retornar:',
+        snippetBefore: 'public Config setTitulo(String t) {\n    this.titulo = t;\n    return ',
+        snippetAfter: ';\n}',
+        options: ['this', 'self', 'void', 'null'],
+        correctIndex: 0,
+        explanation: 'return this retorna o próprio objeto, permitindo encadear a próxima chamada de método.',
+      },
+      {
+        instruction: 'Dentro do construtor, como diferenciamos o atributo do parâmetro com mesmo nome?',
+        snippetBefore: 'public Produto(String nome) {\n    ',
+        snippetAfter: '.nome = nome; // atributo = parâmetro\n}',
+        options: ['this', 'self', 'super', 'class'],
+        correctIndex: 0,
+        explanation: 'this.nome é o atributo da classe. nome (sem this) é o parâmetro. Sem this, nome = nome atribui o parâmetro a si mesmo.',
+      },
+    ],
+    summary: [
+      'this é a referência ao objeto que está executando o método',
+      'this.nome = atributo da classe; nome = parâmetro do método',
+      'Sem this quando há ambiguidade, o parâmetro é atribuído a si mesmo (bug!)',
+      'this() chama outro CONSTRUTOR da mesma classe (deve ser 1ª linha)',
+      'return this permite method chaining (encadear métodos)',
+      'this pode ser passado como argumento: registrar(this)',
+      'this NÃO existe em métodos static',
+    ],
+    tryItCode: `class Builder {
+    private String nome;
+    private int idade;
+    private String curso;
+
+    public Builder setNome(String nome) { this.nome = nome; return this; }
+    public Builder setIdade(int idade) { this.idade = idade; return this; }
+    public Builder setCurso(String curso) { this.curso = curso; return this; }
+
+    public void exibir() {
+        System.out.println(nome + " | " + idade + " anos | " + curso);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        new Builder()
+            .setNome("Maria")
+            .setIdade(22)
+            .setCurso("Eng. Software")
+            .exibir();
+
+        new Builder()
+            .setNome("Pedro")
+            .setIdade(19)
+            .setCurso("Ciência da Comp.")
+            .exibir();
+    }
+}`,
+    tryItPrompt: 'Crie mais builders usando encadeamento. Adicione validação nos setters (ex: idade > 0) e continue retornando this!',
     commonErrors: [
-      { title: 'Usar this em método static', description: 'Em static não existe "objeto atual", então this não pode ser usado.' },
-      { title: 'Confundir parâmetro e atributo', description: 'Se o parâmetro se chama nome, use this.nome para o atributo.' },
+      {
+        title: 'Esquecer this e perder a atribuição',
+        description: 'nome = nome atribui o parâmetro a si mesmo. O atributo da classe fica null ou 0.',
+        code: `// BUG:
+public Produto(String nome) {
+    nome = nome; // atributo fica null!
+}
+// CORRETO:
+public Produto(String nome) {
+    this.nome = nome; // agora sim!
+}`,
+      },
+      {
+        title: 'Usar this em método static',
+        description: 'Em contexto static não existe objeto atual. this gera erro de compilação.',
+        code: `public static void metodo() {
+    // System.out.println(this.nome); // ERRO!
+    // this não existe em static!
+}`,
+      },
+      {
+        title: 'Retornar this com tipo void',
+        description: 'Para method chaining, o tipo de retorno deve ser a CLASSE, não void.',
+        code: `// ERRADO (não encadeia):
+public void setNome(String n) { this.nome = n; }
+
+// CORRETO (encadeia):
+public Config setNome(String n) { this.nome = n; return this; }`,
+      },
     ],
   },
 
