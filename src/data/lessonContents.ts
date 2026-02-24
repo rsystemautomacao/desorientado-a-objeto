@@ -4973,72 +4973,310 @@ public double calcularPagemento() { // ERRO de compilação!
 
   'm3-polymorphism': {
     id: 'm3-polymorphism', moduleId: 3,
-    objectives: ['Entender polimorfismo na prática', 'Usar sobrescrita de métodos (@Override)', 'Entender referência do tipo pai'],
+    objectives: [
+      'Entender o conceito de polimorfismo ("muitas formas")',
+      'Usar referência do tipo pai para apontar para objetos filhos',
+      'Entender binding dinâmico (qual método é chamado em runtime)',
+      'Usar polimorfismo em listas e loops para tratar objetos diferentes de forma uniforme',
+      'Aplicar @Override para sobrescrever métodos do pai',
+      'Criar métodos que aceitam o tipo pai como parâmetro',
+    ],
     sections: [
-      { title: 'O que é Polimorfismo?', body: '**Polimorfismo** ("muitas formas") é quando a mesma mensagem (chamada de método) resulta em comportamentos diferentes conforme o tipo real do objeto. Na prática: você declara uma variável do tipo da **superclasse** (Animal) mas ela pode apontar para um objeto de uma **subclasse** (Cachorro ou Gato). Quando chama animal.emitirSom(), o Java não usa o método de Animal — usa o método do **objeto real** (Cachorro ou Gato). Isso é decidido em **tempo de execução** (binding dinâmico). Use **@Override** na subclasse para deixar claro que está sobrescrevendo o método do pai e para o compilador avisar se a assinatura não bater.',
-        code: `public class Animal {
+      // ────────── SEÇÃO 1: O que é Polimorfismo ──────────
+      {
+        title: 'O que é Polimorfismo?',
+        body: '**Polimorfismo** significa "muitas formas". Na prática, é quando a **mesma chamada de método** resulta em **comportamentos diferentes** dependendo do tipo real do objeto.\n\nImagine: você tem uma lista de funcionários (Gerente, Estagiário, Vendedor). Todos são "Funcionario", mas cada um calcula pagamento de um jeito diferente. Com polimorfismo, você faz:\n\n```\nfor (Funcionario f : lista) {\n    f.calcularPagamento(); // cada tipo calcula do seu jeito!\n}\n```\n\nO Java, em tempo de execução, olha o **tipo real do objeto** (não o tipo da variável) e chama a versão correta do método. Isso se chama **binding dinâmico**.',
+        code: `class Animal {
+    String nome;
+    public Animal(String nome) { this.nome = nome; }
+
     public void emitirSom() {
-        System.out.println("...");
+        System.out.println(nome + ": ...");
     }
 }
 
-public class Cachorro extends Animal {
-    @Override
-    public void emitirSom() {
-        System.out.println("Au au!");
-    }
-}
-
-public class Gato extends Animal {
-    @Override
-    public void emitirSom() {
-        System.out.println("Miau!");
-    }
-}
-
-// POLIMORFISMO EM AÇÃO:
-Animal animal1 = new Cachorro(); // referência de Animal, objeto de Cachorro
-Animal animal2 = new Gato();
-
-animal1.emitirSom(); // "Au au!" — executa o do Cachorro!
-animal2.emitirSom(); // "Miau!" — executa o do Gato!
-
-// Funciona com arrays/listas:
-Animal[] animais = { new Cachorro(), new Gato(), new Cachorro() };
-for (Animal a : animais) {
-    a.emitirSom(); // cada um faz o seu som!
-}`,
-        codeExplanation: 'A variável é do tipo Animal, mas o objeto real é Cachorro ou Gato. O Java sabe qual método chamar em tempo de execução. Isso é polimorfismo!',
-        tip: '@Override é opcional mas fortemente recomendado. Ele garante que você está realmente sobrescrevendo um método do pai (e não criando um novo por erro de digitação).',
-      },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual anotação indica que o método da subclasse sobrescreve o método do pai?', snippetBefore: '', snippetAfter: '\n    public void emitirSom() { ... }', options: ['@Override', '@Overrides', '@OverrideMethod', '@OverrideParent'], correctIndex: 0, explanation: '@Override deixa claro que é sobrescrita e o compilador verifica a assinatura.' },
-    ],
-    summary: ['Polimorfismo: mesmo método, comportamentos diferentes', '@Override indica sobrescrita do método do pai', 'Referência do tipo pai pode apontar para objeto do tipo filho', 'O Java decide qual método chamar em tempo de execução'],
-    tryItCode: `class Animal {
-    public void emitirSom() { System.out.println("..."); }
-}
 class Cachorro extends Animal {
+    public Cachorro(String nome) { super(nome); }
+
     @Override
-    public void emitirSom() { System.out.println("Au au!"); }
+    public void emitirSom() {
+        System.out.println(nome + ": Au au!");
+    }
 }
+
 class Gato extends Animal {
+    public Gato(String nome) { super(nome); }
+
     @Override
-    public void emitirSom() { System.out.println("Miau!"); }
+    public void emitirSom() {
+        System.out.println(nome + ": Miau!");
+    }
 }
+
+class Passaro extends Animal {
+    public Passaro(String nome) { super(nome); }
+
+    @Override
+    public void emitirSom() {
+        System.out.println(nome + ": Piu piu!");
+    }
+}
+
+// ═══ POLIMORFISMO EM AÇÃO ═══
+Animal a1 = new Cachorro("Rex");   // variável Animal, objeto Cachorro
+Animal a2 = new Gato("Mimi");     // variável Animal, objeto Gato
+Animal a3 = new Passaro("Tweety"); // variável Animal, objeto Passaro
+
+a1.emitirSom(); // Rex: Au au!    (chama versão do Cachorro)
+a2.emitirSom(); // Mimi: Miau!    (chama versão do Gato)
+a3.emitirSom(); // Tweety: Piu piu! (chama versão do Passaro)`,
+        codeExplanation: '**Linhas 38-40**: As variáveis são do tipo `Animal`, mas os objetos reais são Cachorro, Gato e Passaro. Isso é possível porque Cachorro/Gato/Passaro "é um" Animal.\n\n**Linhas 42-44**: Quando chamamos `emitirSom()`, o Java NÃO usa o método de Animal. Ele olha o **tipo real do objeto** na memória e chama a versão correspondente. `a1` é um Cachorro → chama `Cachorro.emitirSom()`.\n\n**@Override** (linhas 13, 22, 31): Cada subclasse redefine o método do pai. O `@Override` garante que a assinatura está correta.\n\n**Por que isso é útil?** Você trata TODOS como Animal, mas cada um se comporta à sua maneira. Não precisa de `if (tipo == "cachorro")` — o polimorfismo faz isso automaticamente!',
+      },
+
+      // ────────── SEÇÃO 2: Polimorfismo com Listas ──────────
+      {
+        title: 'Polimorfismo com Listas: O Poder Real',
+        body: 'O verdadeiro poder do polimorfismo aparece com **listas**. Você cria uma `ArrayList<Funcionario>` e coloca Gerentes, Estagiários e Vendedores — todos em uma lista só!\n\nDepois, percorre a lista chamando `calcularPagamento()`. Cada objeto sabe como calcular o seu. Sem polimorfismo, você precisaria de `if/else` para cada tipo — código feio e difícil de manter.\n\nRegra: **sempre que puder, use o tipo mais genérico (pai) em parâmetros e listas**. Isso permite aceitar qualquer subtipo.',
+        code: `import java.util.ArrayList;
+
+class Funcionario {
+    protected String nome;
+    protected double salarioBase;
+    public Funcionario(String nome, double salario) {
+        this.nome = nome; this.salarioBase = salario;
+    }
+    public double calcularPagamento() { return salarioBase; }
+    public String getTipo() { return "Funcionário"; }
+    public void exibir() {
+        System.out.println(getTipo() + ": " + nome + " | R$"
+            + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario); this.bonus = bonus;
+    }
+    @Override public double calcularPagamento() { return salarioBase + bonus; }
+    @Override public String getTipo() { return "Gerente"; }
+}
+
+class Vendedor extends Funcionario {
+    private double comissao;
+    private double totalVendas;
+    public Vendedor(String nome, double salario, double comissao, double vendas) {
+        super(nome, salario); this.comissao = comissao; this.totalVendas = vendas;
+    }
+    @Override public double calcularPagamento() {
+        return salarioBase + (totalVendas * comissao);
+    }
+    @Override public String getTipo() { return "Vendedor"; }
+}
+
+class Estagiario extends Funcionario {
+    private int horas;
+    public Estagiario(String nome, double salario, int horas) {
+        super(nome, salario); this.horas = horas;
+    }
+    @Override public double calcularPagamento() {
+        return (salarioBase / 40.0) * horas;
+    }
+    @Override public String getTipo() { return "Estagiário"; }
+}
+
+// ═══ POLIMORFISMO COM LISTA ═══
 public class Main {
     public static void main(String[] args) {
-        Animal a1 = new Cachorro();
-        Animal a2 = new Gato();
-        a1.emitirSom();
-        a2.emitirSom();
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+
+        equipe.add(new Gerente("Ana", 8000, 3000));
+        equipe.add(new Vendedor("Bruno", 2000, 0.05, 50000));
+        equipe.add(new Estagiario("Carlos", 2000, 20));
+        equipe.add(new Funcionario("Diana", 3500));
+
+        double totalFolha = 0;
+        for (Funcionario f : equipe) {
+            f.exibir();  // cada um exibe do seu jeito
+            totalFolha += f.calcularPagamento();
+        }
+        System.out.println("\\nTotal folha: R$" + String.format("%.2f", totalFolha));
     }
 }`,
-    tryItPrompt: 'A variável é Animal, mas o objeto é Cachorro ou Gato; cada um executa seu emitirSom().',
+        codeExplanation: '**Linha 53** (`ArrayList<Funcionario>`): A lista aceita QUALQUER Funcionario — incluindo Gerente, Vendedor e Estagiario (porque todos "são" Funcionario).\n\n**Linhas 55-58**: Misturamos 4 tipos diferentes na mesma lista. Sem polimorfismo, precisaríamos de uma lista para cada tipo!\n\n**Linhas 61-64**: O for-each trata todos como `Funcionario`, mas cada um executa SUA versão de `calcularPagamento()` e `exibir()`:\n- Ana (Gerente): 8000 + 3000 = R$11000\n- Bruno (Vendedor): 2000 + (50000 * 0.05) = R$4500\n- Carlos (Estagiário): (2000/40) * 20 = R$1000\n- Diana (Funcionário): R$3500\n\nTudo isso sem NENHUM `if/else` para verificar o tipo!',
+        tip: 'Use o tipo mais genérico (pai) em parâmetros de método e declarações de lista: `void processar(Funcionario f)` aceita QUALQUER subtipo.',
+        tryItCode: `import java.util.ArrayList;
+
+class Funcionario {
+    protected String nome;
+    protected double salarioBase;
+    public Funcionario(String nome, double salario) {
+        this.nome = nome; this.salarioBase = salario;
+    }
+    public double calcularPagamento() { return salarioBase; }
+    public void exibir() {
+        System.out.println(nome + ": R$" + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    double bonus;
+    public Gerente(String n, double s, double b) { super(n, s); bonus = b; }
+    @Override public double calcularPagamento() { return salarioBase + bonus; }
+}
+
+class Vendedor extends Funcionario {
+    double comissao, vendas;
+    public Vendedor(String n, double s, double c, double v) {
+        super(n, s); comissao = c; vendas = v;
+    }
+    @Override public double calcularPagamento() { return salarioBase + vendas * comissao; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+        equipe.add(new Gerente("Ana", 8000, 3000));
+        equipe.add(new Vendedor("Bruno", 2000, 0.05, 50000));
+        equipe.add(new Funcionario("Carlos", 3500));
+
+        double total = 0;
+        for (Funcionario f : equipe) {
+            f.exibir();
+            total += f.calcularPagamento();
+        }
+        System.out.println("\\nFolha total: R$" + String.format("%.2f", total));
+    }
+}`,
+        tryItPrompt: 'Adicione mais tipos (Estagiário, Diretor). Altere valores e veja a folha mudar. O loop não precisa mudar!',
+      },
+
+      // ────────── SEÇÃO 3: Método que Aceita Tipo Pai ──────────
+      {
+        title: 'Métodos que Aceitam o Tipo Pai como Parâmetro',
+        body: 'Outro uso poderoso do polimorfismo: criar métodos que recebem o **tipo pai** como parâmetro. Assim, o método funciona com QUALQUER subtipo, sem saber qual é.\n\nExemplo: um método `processarPagamento(Funcionario f)` funciona com Gerente, Vendedor, Estagiário — qualquer um que seja Funcionario.',
+        code: `class FolhaPagamento {
+    // Recebe QUALQUER Funcionario (polimorfismo)
+    static void processarPagamento(Funcionario f) {
+        double pagamento = f.calcularPagamento();
+        System.out.println("Processando pagamento de " + f.nome
+            + ": R$" + String.format("%.2f", pagamento));
+    }
+
+    // Recebe LISTA de qualquer Funcionario
+    static double calcularFolhaTotal(ArrayList<Funcionario> equipe) {
+        double total = 0;
+        for (Funcionario f : equipe) {
+            total += f.calcularPagamento();
+        }
+        return total;
+    }
+}
+
+// Uso:
+Gerente g = new Gerente("Ana", 8000, 3000);
+Vendedor v = new Vendedor("Bruno", 2000, 0.05, 50000);
+
+FolhaPagamento.processarPagamento(g); // funciona com Gerente!
+FolhaPagamento.processarPagamento(v); // funciona com Vendedor!`,
+        codeExplanation: '**Linha 3** (`Funcionario f`): O parâmetro aceita QUALQUER Funcionario. Quando recebe um Gerente, `f.calcularPagamento()` chama a versão do Gerente.\n\n**Linhas 22-23**: Passamos um Gerente e um Vendedor para o mesmo método. Ele não precisa saber qual tipo é — usa polimorfismo!\n\n**Vantagem**: Se amanhã criarmos `class Diretor extends Funcionario`, o método `processarPagamento` funciona automaticamente com Diretor, SEM alterar nada!',
+        warning: 'Se precisar verificar o tipo específico, use `instanceof`: `if (f instanceof Gerente)`. Mas se está usando muito instanceof, provavelmente o polimorfismo não está sendo usado corretamente.',
+      },
+    ],
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Qual anotação indica que o método da subclasse sobrescreve o método do pai?',
+        snippetBefore: '',
+        snippetAfter: '\npublic void emitirSom() { System.out.println("Au au!"); }',
+        options: ['@Override', '@Overrides', '@Override()', '@OverrideMethod'],
+        correctIndex: 0,
+        explanation: '@Override indica sobrescrita e faz o compilador verificar se o método existe no pai.',
+      },
+      {
+        instruction: 'Se Animal a = new Cachorro(), qual versão de emitirSom() é chamada?',
+        snippetBefore: 'Animal a = new Cachorro();\na.emitirSom(); // chama a versão do ',
+        snippetAfter: '',
+        options: ['Cachorro (tipo real)', 'Animal (tipo da variável)', 'Ambos', 'Nenhum'],
+        correctIndex: 0,
+        explanation: 'O Java usa binding dinâmico: olha o tipo REAL do objeto (Cachorro) e chama a versão correspondente, não a do tipo da variável (Animal).',
+      },
+    ],
+    summary: [
+      'Polimorfismo: mesma chamada de método, comportamentos diferentes conforme o tipo real',
+      'Referência do tipo pai pode apontar para objeto do tipo filho: Animal a = new Cachorro()',
+      'O Java decide qual método chamar em TEMPO DE EXECUÇÃO (binding dinâmico)',
+      '@Override garante que você está realmente sobrescrevendo um método do pai',
+      'Use listas do tipo pai para misturar subtipos: ArrayList<Funcionario>',
+      'Métodos que aceitam o tipo pai funcionam com QUALQUER subtipo automaticamente',
+      'Evite instanceof excessivo — polimorfismo bem usado elimina if/else por tipo',
+    ],
+    tryItCode: `import java.util.ArrayList;
+
+class Forma {
+    String tipo;
+    public Forma(String tipo) { this.tipo = tipo; }
+    public double calcularArea() { return 0; }
+    public void exibir() {
+        System.out.println(tipo + ": Área = " + String.format("%.2f", calcularArea()));
+    }
+}
+
+class Circulo extends Forma {
+    double raio;
+    public Circulo(double raio) { super("Círculo"); this.raio = raio; }
+    @Override public double calcularArea() { return Math.PI * raio * raio; }
+}
+
+class Retangulo extends Forma {
+    double largura, altura;
+    public Retangulo(double l, double a) { super("Retângulo"); largura = l; altura = a; }
+    @Override public double calcularArea() { return largura * altura; }
+}
+
+class Triangulo extends Forma {
+    double base, altura;
+    public Triangulo(double b, double a) { super("Triângulo"); base = b; altura = a; }
+    @Override public double calcularArea() { return (base * altura) / 2; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Forma> formas = new ArrayList<>();
+        formas.add(new Circulo(5));
+        formas.add(new Retangulo(4, 6));
+        formas.add(new Triangulo(3, 8));
+
+        double areaTotal = 0;
+        for (Forma f : formas) {
+            f.exibir();
+            areaTotal += f.calcularArea();
+        }
+        System.out.println("\\nÁrea total: " + String.format("%.2f", areaTotal));
+    }
+}`,
+    tryItPrompt: 'Adicione Quadrado (lado * lado) e Losango (d1 * d2 / 2). A lista e o loop não precisam mudar!',
     commonErrors: [
-      { title: 'Esquecer @Override e errar a assinatura', description: 'Com @Override o compilador avisa se o método do pai não existir ou a assinatura for diferente.' },
-      { title: 'Atributos e polimorfismo', description: 'Atributos não são polimórficos; o que conta é o tipo da referência. Só métodos são resolvidos pelo objeto real.' },
+      {
+        title: 'Esquecer @Override e errar a assinatura',
+        description: 'Sem @Override, se errar o nome do método (calcularárea em vez de calcularArea), cria um método NOVO e a versão do pai continua sendo chamada.',
+        code: `// BUG: sem @Override, erro silencioso
+public double calcularárea() { return l * a; } // novo método, não sobrescreve!
+
+// CORRETO: com @Override, compilador avisa
+@Override
+public double calcularArea() { return l * a; }`,
+      },
+      {
+        title: 'Tentar chamar método específico da filha com referência do pai',
+        description: 'Se a variável é do tipo pai, só métodos do pai são visíveis. Para chamar métodos específicos da filha, precisa de cast.',
+        code: `Animal a = new Cachorro("Rex");
+a.emitirSom(); // OK (método de Animal)
+// a.latir();   // ERRO! Animal não tem latir!
+// Precisa de cast:
+((Cachorro) a).latir(); // OK, mas cuidado!`,
+      },
     ],
   },
 
