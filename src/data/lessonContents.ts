@@ -4973,168 +4973,682 @@ public double calcularPagemento() { // ERRO de compilação!
 
   'm3-polymorphism': {
     id: 'm3-polymorphism', moduleId: 3,
-    objectives: ['Entender polimorfismo na prática', 'Usar sobrescrita de métodos (@Override)', 'Entender referência do tipo pai'],
+    objectives: [
+      'Entender o que é polimorfismo e o problema que ele resolve',
+      'Usar referência do tipo pai para apontar para objetos filhos',
+      'Entender binding dinâmico (o Java decide em tempo de execução)',
+      'Usar polimorfismo com listas para tratar objetos diferentes de forma uniforme',
+      'Saber quando usar instanceof e casting (e quando evitar)',
+    ],
     sections: [
-      { title: 'O que é Polimorfismo?', body: '**Polimorfismo** ("muitas formas") é quando a mesma mensagem (chamada de método) resulta em comportamentos diferentes conforme o tipo real do objeto. Na prática: você declara uma variável do tipo da **superclasse** (Animal) mas ela pode apontar para um objeto de uma **subclasse** (Cachorro ou Gato). Quando chama animal.emitirSom(), o Java não usa o método de Animal — usa o método do **objeto real** (Cachorro ou Gato). Isso é decidido em **tempo de execução** (binding dinâmico). Use **@Override** na subclasse para deixar claro que está sobrescrevendo o método do pai e para o compilador avisar se a assinatura não bater.',
-        code: `public class Animal {
-    public void emitirSom() {
-        System.out.println("...");
+      // ────────── SEÇÃO 1: O Problema Sem Polimorfismo ──────────
+      {
+        title: 'O Problema: Tratar Cada Tipo Com if/else',
+        body: 'Continuando do exemplo de herança: você tem Funcionario, Gerente e Estagiario. Agora precisa calcular a folha de pagamento de TODOS. Sem polimorfismo, você seria obrigado a verificar o tipo de cada objeto com if/else e chamar métodos específicos.\n\nProblemas:\n- Cada novo tipo de funcionário (Diretor, Temporário) exige mais um if/else\n- O código fica cheio de verificações de tipo\n- Se esquecer de adicionar um if para um novo tipo, o cálculo fica errado silenciosamente\n\n**Polimorfismo** resolve isso: você trata TODOS como Funcionario e o Java automaticamente chama o método correto de cada tipo real.',
+        code: `// SEM POLIMORFISMO — if/else para cada tipo!
+void processarPagamento(Object funcionario) {
+    if (funcionario instanceof Gerente) {
+        Gerente g = (Gerente) funcionario;
+        System.out.println("Pagamento gerente: R$" + g.calcularPagamento());
+    } else if (funcionario instanceof Estagiario) {
+        Estagiario e = (Estagiario) funcionario;
+        System.out.println("Pagamento estagiário: R$" + e.calcularPagamento());
+    } else if (funcionario instanceof Funcionario) {
+        Funcionario f = (Funcionario) funcionario;
+        System.out.println("Pagamento: R$" + f.calcularPagamento());
     }
+    // Novo tipo? Mais um else if... e se esquecer?
 }
 
-public class Cachorro extends Animal {
-    @Override
-    public void emitirSom() {
-        System.out.println("Au au!");
-    }
-}
-
-public class Gato extends Animal {
-    @Override
-    public void emitirSom() {
-        System.out.println("Miau!");
-    }
-}
-
-// POLIMORFISMO EM AÇÃO:
-Animal animal1 = new Cachorro(); // referência de Animal, objeto de Cachorro
-Animal animal2 = new Gato();
-
-animal1.emitirSom(); // "Au au!" — executa o do Cachorro!
-animal2.emitirSom(); // "Miau!" — executa o do Gato!
-
-// Funciona com arrays/listas:
-Animal[] animais = { new Cachorro(), new Gato(), new Cachorro() };
-for (Animal a : animais) {
-    a.emitirSom(); // cada um faz o seu som!
+// COM POLIMORFISMO — UMA linha resolve tudo!
+void processarPagamento(Funcionario f) {
+    System.out.println("Pagamento: R$" + f.calcularPagamento());
+    // Funciona para Gerente, Estagiario, Diretor, QUALQUER filho!
 }`,
-        codeExplanation: 'A variável é do tipo Animal, mas o objeto real é Cachorro ou Gato. O Java sabe qual método chamar em tempo de execução. Isso é polimorfismo!',
-        tip: '@Override é opcional mas fortemente recomendado. Ele garante que você está realmente sobrescrevendo um método do pai (e não criando um novo por erro de digitação).',
+        codeExplanation: '**Linhas 2-13** (sem polimorfismo): Para cada tipo, um if/else com instanceof e casting. Se amanhã criarem `Diretor`, precisam adicionar mais um bloco. Manutenção = pesadelo.\n\n**Linhas 16-19** (com polimorfismo): UMA única assinatura `Funcionario f` aceita QUALQUER subclasse. O Java chama automaticamente o `calcularPagamento()` do tipo real do objeto. Zero if/else, zero casting.',
+        warning: 'Código cheio de instanceof e casting geralmente indica que você NÃO está usando polimorfismo corretamente. Se precisa perguntar "que tipo é esse?", algo está errado no design.',
+      },
+
+      // ────────── SEÇÃO 2: Referência do Tipo Pai ──────────
+      {
+        title: 'Referência do Tipo Pai e Binding Dinâmico',
+        body: 'O coração do polimorfismo é: **a variável é do tipo pai, mas o objeto é do tipo filho**.\n\n```\nFuncionario f = new Gerente(\"Bruno\", 5000, 2000);\n```\n\nAqui, `f` é declarada como `Funcionario`, mas aponta para um objeto `Gerente`. Quando você chama `f.calcularPagamento()`, o Java NÃO executa o método de Funcionario — executa o de **Gerente** (que retorna salário + bônus).\n\nIsso se chama **binding dinâmico** (ou late binding): a decisão de qual método executar acontece em **tempo de execução**, não em tempo de compilação. O compilador só verifica se o método existe em Funcionario; quem decide QUAL versão rodar é a JVM, baseada no tipo REAL do objeto.',
+        code: `class Funcionario {
+    protected String nome;
+    protected double salario;
+
+    public Funcionario(String nome, double salario) {
+        this.nome = nome;
+        this.salario = salario;
+    }
+
+    public double calcularPagamento() {
+        return salario;  // funcionário comum: salário cheio
+    }
+
+    public void exibirInfo() {
+        System.out.println(nome + " | R$" + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario);
+        this.bonus = bonus;
+    }
+
+    @Override
+    public double calcularPagamento() {
+        return salario + bonus;  // salário + bônus
+    }
+}
+
+class Estagiario extends Funcionario {
+    private int horasSemanais;
+
+    public Estagiario(String nome, double salario, int horas) {
+        super(nome, salario);
+        this.horasSemanais = horas;
+    }
+
+    @Override
+    public double calcularPagamento() {
+        return (salario / 40.0) * horasSemanais;  // proporcional
+    }
+}
+
+// ═══ POLIMORFISMO EM AÇÃO ═══
+Funcionario f1 = new Funcionario("Ana", 3000);
+Funcionario f2 = new Gerente("Bruno", 5000, 2000);    // tipo pai, objeto filho!
+Funcionario f3 = new Estagiario("Carlos", 2000, 20);  // tipo pai, objeto filho!
+
+f1.exibirInfo();  // Ana | R$3000.00
+f2.exibirInfo();  // Bruno | R$7000.00  ← chamou calcularPagamento() do GERENTE!
+f3.exibirInfo();  // Carlos | R$1000.00 ← chamou calcularPagamento() do ESTAGIÁRIO!`,
+        codeExplanation: '**Linha 49** (`Funcionario f2 = new Gerente(...)`): A variável é Funcionario, mas o objeto é Gerente. O compilador aceita porque Gerente É UM Funcionario (herança).\n\n**Linha 52** (`f2.exibirInfo()`): exibirInfo() internamente chama `calcularPagamento()`. Como f2 é um Gerente, o Java executa a versão do Gerente (salário + bônus = 7000), NÃO a versão de Funcionario.\n\n**Linha 53** (`f3.exibirInfo()`): f3 é um Estagiário, então calcularPagamento() retorna proporcional às horas (2000/40 * 20 = 1000).\n\n**Ponto-chave**: O método exibirInfo() NÃO precisa saber qual tipo real está processando. Ele chama calcularPagamento() e o Java resolve sozinho.',
+        tip: 'Pense assim: o TIPO da variável define O QUE você pode chamar (métodos visíveis). O TIPO do objeto define COMO o método se comporta (qual versão roda).',
+      },
+
+      // ────────── SEÇÃO 3: Polimorfismo com Listas ──────────
+      {
+        title: 'Polimorfismo com Listas: O Poder Real',
+        body: 'O polimorfismo brilha de verdade quando você usa **listas**. Imagine processar a folha de pagamento: em vez de ter uma lista para gerentes, outra para estagiários e outra para funcionários comuns, você tem UMA lista de `Funcionario` que aceita QUALQUER subtipo.\n\nO loop percorre todos e chama `calcularPagamento()` — cada objeto responde do seu jeito. Se amanhã criarem `Diretor`, basta adicionar na lista. O loop NÃO muda!\n\nIsso é o princípio **Open/Closed** (que veremos em SOLID): aberto para extensão (novos tipos), fechado para modificação (código existente não muda).',
+        code: `import java.util.ArrayList;
+
+public class FolhaPagamento {
+    public static void main(String[] args) {
+        // Lista do tipo PAI aceita QUALQUER filho
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+
+        equipe.add(new Funcionario("Ana", 3000));
+        equipe.add(new Gerente("Bruno", 5000, 2000));
+        equipe.add(new Estagiario("Carlos", 2000, 20));
+        equipe.add(new Gerente("Diana", 8000, 3000));
+        equipe.add(new Estagiario("Eduardo", 1800, 30));
+
+        // UM loop processa TODOS — polimorfismo!
+        double totalFolha = 0;
+        System.out.println("══════ FOLHA DE PAGAMENTO ══════");
+
+        for (Funcionario f : equipe) {
+            f.exibirInfo();  // cada um exibe do seu jeito
+            totalFolha += f.calcularPagamento();  // cada um calcula do seu jeito
+        }
+
+        System.out.println("════════════════════════════════");
+        System.out.println("Total: R$" + String.format("%.2f", totalFolha));
+
+        // Amanhã criaram Diretor? Só adiciona:
+        // equipe.add(new Diretor("Fernanda", 15000, 5000, 0.1));
+        // O loop acima NÃO MUDA! Isso é polimorfismo!
+    }
+}`,
+        codeExplanation: '**Linha 6** (`ArrayList<Funcionario>`): A lista é do tipo pai. Aceita Funcionario, Gerente, Estagiario — qualquer coisa que "é um" Funcionario.\n\n**Linhas 8-12**: Misturamos tipos diferentes na MESMA lista. Isso só funciona porque todos herdam de Funcionario.\n\n**Linha 18** (`for (Funcionario f : equipe)`): O loop trata todos como Funcionario. Mas quando chama `f.calcularPagamento()`, o Java sabe que Bruno é Gerente (salário + bônus) e Carlos é Estagiário (proporcional às horas).\n\n**Linhas 27-28**: Se criar Diretor amanhã, basta um `equipe.add(new Diretor(...))`. O loop de cálculo NÃO precisa mudar. Esse é o poder do polimorfismo.',
+        warning: 'Sem polimorfismo, cada novo tipo exigiria modificar TODOS os loops e métodos que processam funcionários. Com polimorfismo, você só cria a nova classe e adiciona na lista.',
+      },
+
+      // ────────── SEÇÃO 4: instanceof e Casting ──────────
+      {
+        title: 'instanceof e Casting: Quando Você Precisa Saber o Tipo',
+        body: 'Às vezes você PRECISA acessar algo específico de uma subclasse (ex.: o departamento de um Gerente). Nesse caso, use **instanceof** para verificar o tipo e **casting** para converter:\n\n```\nif (f instanceof Gerente) {\n    Gerente g = (Gerente) f;  // casting\n    System.out.println(g.getDepartamento());\n}\n```\n\n**Atenção**: se você está usando instanceof o tempo todo, provavelmente não está aproveitando polimorfismo direito. O ideal é que o método sobrescrito resolva a diferença de comportamento.\n\nA partir do Java 16, existe o **pattern matching** que simplifica: `if (f instanceof Gerente g)` — já faz o casting automaticamente.',
+        code: `// Situação: preciso do departamento, que SÓ Gerente tem
+for (Funcionario f : equipe) {
+    f.exibirInfo();  // polimorfismo normal
+
+    // Preciso de algo ESPECÍFICO de Gerente?
+    if (f instanceof Gerente) {
+        Gerente g = (Gerente) f;  // casting: "confie em mim, é um Gerente"
+        System.out.println("  Depto: " + g.getDepartamento());
+    }
+
+    // Java 16+: pattern matching (mais limpo)
+    // if (f instanceof Gerente g) {
+    //     System.out.println("  Depto: " + g.getDepartamento());
+    // }
+}
+
+// ⚠️ CASTING ERRADO = ClassCastException em tempo de execução!
+// Gerente g = (Gerente) new Estagiario("Ana", 2000, 20);  // BOOM!
+// Por isso SEMPRE use instanceof antes de fazer casting.`,
+        codeExplanation: '**Linha 6** (`f instanceof Gerente`): Verifica se o objeto REAL de f é um Gerente (ou subclasse de Gerente). Retorna true ou false.\n\n**Linha 7** (`(Gerente) f`): Casting — diz ao compilador "trate f como Gerente". Só é seguro se você verificou com instanceof antes.\n\n**Linhas 11-14** (Java 16+): Pattern matching faz instanceof + casting em uma linha só. Mais limpo e seguro.\n\n**Linha 18**: Se fizer casting sem verificar, e o objeto NÃO for do tipo esperado, o programa EXPLODE com ClassCastException.',
+        tip: 'Regra: se está usando instanceof em muitos lugares, repense o design. O ideal é resolver diferenças via polimorfismo (métodos sobrescritos). Use instanceof apenas para acessar membros EXCLUSIVOS da subclasse.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual anotação indica que o método da subclasse sobrescreve o método do pai?', snippetBefore: '', snippetAfter: '\n    public void emitirSom() { ... }', options: ['@Override', '@Overrides', '@OverrideMethod', '@OverrideParent'], correctIndex: 0, explanation: '@Override deixa claro que é sobrescrita e o compilador verifica a assinatura.' },
-    ],
-    summary: ['Polimorfismo: mesmo método, comportamentos diferentes', '@Override indica sobrescrita do método do pai', 'Referência do tipo pai pode apontar para objeto do tipo filho', 'O Java decide qual método chamar em tempo de execução'],
-    tryItCode: `class Animal {
-    public void emitirSom() { System.out.println("..."); }
-}
-class Cachorro extends Animal {
-    @Override
-    public void emitirSom() { System.out.println("Au au!"); }
-}
-class Gato extends Animal {
-    @Override
-    public void emitirSom() { System.out.println("Miau!"); }
-}
-public class Main {
-    public static void main(String[] args) {
-        Animal a1 = new Cachorro();
-        Animal a2 = new Gato();
-        a1.emitirSom();
-        a2.emitirSom();
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM polimorfismo: if/else para cada tipo
+void calcularFolha(ArrayList<Object> lista) {
+    double total = 0;
+    for (Object obj : lista) {
+        if (obj instanceof Gerente) {
+            total += ((Gerente) obj).calcularPagamento();
+        } else if (obj instanceof Estagiario) {
+            total += ((Estagiario) obj).calcularPagamento();
+        } else if (obj instanceof Funcionario) {
+            total += ((Funcionario) obj).calcularPagamento();
+        }
+        // Novo tipo? Mais um else if...
     }
 }`,
-    tryItPrompt: 'A variável é Animal, mas o objeto é Cachorro ou Gato; cada um executa seu emitirSom().',
+    withPoo: `// COM polimorfismo: UM loop resolve tudo
+void calcularFolha(ArrayList<Funcionario> lista) {
+    double total = 0;
+    for (Funcionario f : lista) {
+        total += f.calcularPagamento(); // Java resolve!
+    }
+    // Novo tipo? Só cria a classe. O loop NÃO muda!
+}`,
+    comparisonExplanation: 'Sem polimorfismo, cada tipo exige um if/else com instanceof e casting. Com polimorfismo, um único loop trata TODOS os tipos — o Java decide qual método chamar.',
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Como declarar uma variável do tipo pai que aponta para um objeto Gerente?',
+        snippetBefore: '',
+        snippetAfter: ' f = new Gerente("Bruno", 5000, 2000);',
+        options: ['Funcionario', 'Gerente', 'Object', 'var'],
+        correctIndex: 0,
+        explanation: 'Funcionario f = new Gerente(...) — a variável é do tipo pai (Funcionario) mas o objeto é do tipo filho (Gerente). Isso permite polimorfismo.',
+      },
+      {
+        instruction: 'Qual anotação indica que o método da subclasse sobrescreve o do pai?',
+        snippetBefore: '',
+        snippetAfter: '\npublic double calcularPagamento() { return salario + bonus; }',
+        options: ['@Override', '@Overrides', '@Replace', '@Super'],
+        correctIndex: 0,
+        explanation: '@Override diz ao compilador "estou sobrescrevendo um método do pai". Se a assinatura não bater, o compilador avisa.',
+      },
+      {
+        instruction: 'Como verificar se um objeto Funcionario é realmente um Gerente antes de fazer casting?',
+        snippetBefore: 'if (f ',
+        snippetAfter: ' Gerente) { Gerente g = (Gerente) f; }',
+        options: ['instanceof', 'typeof', 'is', 'extends'],
+        correctIndex: 0,
+        explanation: 'instanceof verifica o tipo REAL do objeto em tempo de execução. Sempre use antes de casting para evitar ClassCastException.',
+      },
+    ],
+    summary: [
+      'Polimorfismo: a mesma chamada de método resulta em comportamentos diferentes conforme o tipo real',
+      'Referência do tipo pai pode apontar para objeto do tipo filho (Funcionario f = new Gerente(...))',
+      'Binding dinâmico: o Java decide qual versão do método executar em tempo de execução',
+      '@Override marca a sobrescrita — o compilador verifica a assinatura',
+      'Com listas, polimorfismo permite processar tipos diferentes em UM loop',
+      'Novo tipo? Só cria a classe. O código que usa polimorfismo NÃO muda',
+      'instanceof verifica o tipo real; use antes de casting',
+      'Se está usando instanceof o tempo todo, repense o design — polimorfismo deveria resolver',
+    ],
+    tryItCode: `import java.util.ArrayList;
+
+class Funcionario {
+    protected String nome;
+    protected double salario;
+    public Funcionario(String nome, double salario) {
+        this.nome = nome; this.salario = salario;
+    }
+    public double calcularPagamento() { return salario; }
+    public void exibirInfo() {
+        System.out.println(nome + " | R$" + String.format("%.2f", calcularPagamento()));
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario); this.bonus = bonus;
+    }
+    @Override
+    public double calcularPagamento() { return salario + bonus; }
+}
+
+class Estagiario extends Funcionario {
+    private int horas;
+    public Estagiario(String nome, double salario, int horas) {
+        super(nome, salario); this.horas = horas;
+    }
+    @Override
+    public double calcularPagamento() { return (salario / 40.0) * horas; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<Funcionario> equipe = new ArrayList<>();
+        equipe.add(new Funcionario("Ana", 3000));
+        equipe.add(new Gerente("Bruno", 5000, 2000));
+        equipe.add(new Estagiario("Carlos", 2000, 20));
+
+        double total = 0;
+        for (Funcionario f : equipe) {
+            f.exibirInfo();
+            total += f.calcularPagamento();
+        }
+        System.out.println("\\nTotal folha: R$" + String.format("%.2f", total));
+    }
+}`,
+    tryItPrompt: 'Crie uma classe Diretor (salário + bônus + participação nos lucros) e adicione na lista. O loop NÃO precisa mudar — isso é polimorfismo!',
     commonErrors: [
-      { title: 'Esquecer @Override e errar a assinatura', description: 'Com @Override o compilador avisa se o método do pai não existir ou a assinatura for diferente.' },
-      { title: 'Atributos e polimorfismo', description: 'Atributos não são polimórficos; o que conta é o tipo da referência. Só métodos são resolvidos pelo objeto real.' },
+      {
+        title: 'Casting sem instanceof',
+        description: 'Fazer casting direto sem verificar o tipo causa ClassCastException se o objeto não for do tipo esperado.',
+        code: `// ERRADO: casting direto sem verificar
+Funcionario f = new Estagiario("Ana", 2000, 20);
+Gerente g = (Gerente) f;  // ClassCastException! Estagiário NÃO é Gerente!
+
+// CORRETO: verificar antes
+if (f instanceof Gerente) {
+    Gerente g = (Gerente) f;  // seguro!
+}`,
+      },
+      {
+        title: 'Usar if/else em vez de polimorfismo',
+        description: 'Se você tem if/else verificando tipo para decidir comportamento, provavelmente deveria usar @Override na subclasse.',
+        code: `// ERRADO: decidindo comportamento com if/else
+if (f instanceof Gerente) {
+    System.out.println("Pagamento: " + (f.salario + 2000));
+} else if (f instanceof Estagiario) {
+    System.out.println("Pagamento: " + (f.salario / 2));
+}
+
+// CORRETO: polimorfismo resolve
+System.out.println("Pagamento: " + f.calcularPagamento());
+// Cada classe sobrescreve calcularPagamento() do seu jeito!`,
+      },
+      {
+        title: 'Achar que atributos são polimórficos',
+        description: 'Só MÉTODOS participam de polimorfismo. Atributos são resolvidos pelo tipo da REFERÊNCIA, não do objeto.',
+        code: `class Pai {
+    String tipo = "Pai";
+    String getTipo() { return "Pai"; }
+}
+class Filho extends Pai {
+    String tipo = "Filho";  // "esconde" o do pai (shadowing)
+    @Override
+    String getTipo() { return "Filho"; }
+}
+
+Pai p = new Filho();
+System.out.println(p.tipo);      // "Pai"   ← atributo: tipo da REFERÊNCIA
+System.out.println(p.getTipo()); // "Filho" ← método: tipo do OBJETO`,
+      },
     ],
   },
 
   'm3-abstraction': {
     id: 'm3-abstraction', moduleId: 3,
-    objectives: ['Entender classes abstratas', 'Saber quando usar abstract', 'Diferenciar método abstrato e concreto'],
+    objectives: [
+      'Entender o problema que classes abstratas resolvem',
+      'Saber declarar classes e métodos abstratos com abstract',
+      'Diferenciar método abstrato (sem corpo) e concreto (com corpo)',
+      'Entender que classe abstrata pode ter construtor, atributos e métodos concretos',
+      'Saber quando usar classe abstrata vs classe concreta',
+    ],
     sections: [
-      { title: 'Classes Abstratas', body: 'Uma **classe abstrata** (abstract class) não pode ser instanciada com **new**. Ela existe para ser estendida: define parte do comportamento comum e **obriga** as subclasses a implementar certos métodos declarados como **abstract** (sem corpo). Assim você garante que toda "Forma" tenha, por exemplo, calcularArea(), mas cada subclasse (Círculo, Retângulo) implementa do seu jeito. A classe abstrata pode ter construtores (chamados via super nas subclasses), atributos e métodos concretos (com corpo); só os métodos marcados abstract não têm implementação e devem ser implementados nas subclasses.',
-        code: `// Classe abstrata — não pode fazer new Forma()
-public abstract class Forma {
+      // ────────── SEÇÃO 1: O Problema ──────────
+      {
+        title: 'O Problema: Classe Pai Que Não Deveria Existir Sozinha',
+        body: 'Imagine um sistema de formas geométricas: Círculo, Retângulo, Triângulo. Todos são "Formas" e têm cor e área. Faz sentido criar uma classe pai `Forma` para centralizar o que é comum. Mas pense:\n\n- Faz sentido criar `new Forma()`? Uma "forma" genérica, sem ser círculo nem retângulo? **Não!**\n- Se Forma tiver `calcularArea()` retornando 0, o que acontece se alguém esquecer de sobrescrever na subclasse? **Bug silencioso!**\n\nO problema é duplo:\n1. Não queremos que ninguém crie `new Forma()` diretamente\n2. Queremos **obrigar** as subclasses a implementar `calcularArea()`\n\n**Classes abstratas** resolvem ambos: não podem ser instanciadas e podem ter métodos **abstract** que OBRIGAM as filhas a implementar.',
+        code: `// PROBLEMA: classe concreta com método "falso"
+class Forma {
     protected String cor;
-    
-    public Forma(String cor) {
-        this.cor = cor;
-    }
-    
-    // Método abstrato: SEM corpo, subclasses DEVEM implementar
-    public abstract double calcularArea();
-    
-    // Método concreto: pode ter corpo
-    public void exibir() {
-        System.out.println("Forma " + cor + " - Área: " + calcularArea());
+    public Forma(String cor) { this.cor = cor; }
+
+    public double calcularArea() {
+        return 0;  // Que área? Forma genérica não tem área!
     }
 }
 
-public class Circulo extends Forma {
+class Circulo extends Forma {
     private double raio;
-    
     public Circulo(String cor, double raio) {
         super(cor);
         this.raio = raio;
     }
-    
-    @Override
-    public double calcularArea() {
-        return Math.PI * raio * raio;
+    // ESQUECEU de sobrescrever calcularArea()!
+    // Resultado: circulo.calcularArea() retorna 0. Bug silencioso!
+}
+
+// E pior: alguém pode criar uma "forma" genérica
+Forma f = new Forma("azul"); // Compila! Mas faz sentido? NÃO!
+f.calcularArea(); // Retorna 0... sem sentido`,
+        codeExplanation: '**Linhas 6-8**: calcularArea() retorna 0. É uma implementação "falsa" — Forma genérica não tem área real. Existe só para as filhas sobrescreverem.\n\n**Linhas 17-18**: Se o programador esquece de sobrescrever, o código compila normalmente mas retorna 0. Bug difícil de encontrar!\n\n**Linha 22**: Qualquer um pode criar `new Forma("azul")`. Uma forma sem ser círculo, retângulo ou triângulo não faz sentido no mundo real.',
+        warning: 'Quando a classe pai tem métodos que não fazem sentido sem uma implementação concreta, ela provavelmente deveria ser abstrata.',
+      },
+
+      // ────────── SEÇÃO 2: Declarando Classes Abstratas ──────────
+      {
+        title: 'Classes Abstratas e Métodos Abstratos',
+        body: 'A palavra-chave **abstract** resolve os dois problemas:\n\n1. `abstract class Forma` → ninguém pode fazer `new Forma()`. Erro de compilação!\n2. `public abstract double calcularArea();` → método **sem corpo** (termina com `;`). Qualquer subclasse concreta DEVE implementá-lo, senão não compila.\n\nA classe abstrata pode ter:\n- **Construtor**: chamado via `super()` nas subclasses\n- **Atributos**: normais, herdados pelas subclasses\n- **Métodos concretos** (com corpo): código compartilhado que as filhas herdam\n- **Métodos abstratos** (sem corpo): contrato que as filhas DEVEM implementar\n\nPense na classe abstrata como um **molde incompleto**: ela define a estrutura, mas deixa "buracos" (métodos abstratos) para as filhas preencherem.',
+        code: `// ═══ CLASSE ABSTRATA ═══
+public abstract class Forma {
+    protected String cor;
+
+    // Classe abstrata PODE ter construtor!
+    public Forma(String cor) {
+        this.cor = cor;
+    }
+
+    // Método ABSTRATO: sem corpo, subclasses DEVEM implementar
+    public abstract double calcularArea();
+
+    // Método CONCRETO: tem corpo, subclasses herdam pronto
+    public void exibir() {
+        System.out.println("Forma " + cor + " — Área: "
+            + String.format("%.2f", calcularArea()));
     }
 }
 
-public class Retangulo extends Forma {
-    private double largura, altura;
-    
-    public Retangulo(String cor, double l, double a) {
-        super(cor);
-        this.largura = l;
-        this.altura = a;
+// ═══ SUBCLASSE CONCRETA 1 ═══
+public class Circulo extends Forma {
+    private double raio;
+
+    public Circulo(String cor, double raio) {
+        super(cor);  // chama construtor da classe abstrata
+        this.raio = raio;
     }
-    
+
     @Override
     public double calcularArea() {
-        return largura * altura;
+        return Math.PI * raio * raio;  // OBRIGADO a implementar!
+    }
+}
+
+// ═══ SUBCLASSE CONCRETA 2 ═══
+public class Retangulo extends Forma {
+    private double largura, altura;
+
+    public Retangulo(String cor, double largura, double altura) {
+        super(cor);
+        this.largura = largura;
+        this.altura = altura;
+    }
+
+    @Override
+    public double calcularArea() {
+        return largura * altura;  // OBRIGADO a implementar!
     }
 }`,
-        codeExplanation: 'Forma é abstrata; calcularArea() é abstract (sem corpo). Circulo e Retangulo são concretas e implementam calcularArea(). exibir() é concreto e usa calcularArea().',
+        codeExplanation: '**Linha 2** (`abstract class Forma`): Ninguém pode fazer `new Forma()`. Erro de compilação se tentar.\n\n**Linha 11** (`public abstract double calcularArea();`): Note o `;` no final — sem chaves, sem corpo. É um "buraco" que as filhas devem preencher.\n\n**Linhas 14-17** (`exibir()`): Método concreto que USA `calcularArea()`. Quando um Círculo chama `exibir()`, o `calcularArea()` interno resolve para a versão do Círculo (polimorfismo!).\n\n**Linha 25** (`super(cor)`): Mesmo sendo abstrata, Forma tem construtor. As filhas chamam via super().\n\n**Linhas 30-32**: Círculo DEVE implementar calcularArea(). Se não fizer, erro de compilação: "Circulo must implement abstract method calcularArea()".',
+        tip: 'O método concreto exibir() usa calcularArea() sem saber se é Círculo ou Retângulo. Isso é polimorfismo trabalhando junto com abstração!',
+      },
+
+      // ────────── SEÇÃO 3: Usando com Polimorfismo ──────────
+      {
+        title: 'Classe Abstrata + Polimorfismo na Prática',
+        body: 'A combinação classe abstrata + polimorfismo é extremamente poderosa. Você declara variáveis e listas do tipo da classe abstrata e coloca objetos concretos nelas.\n\nO código que PROCESSA as formas (calcula área total, exibe, etc.) não precisa saber se é Círculo ou Retângulo. Ele trabalha com "Forma" e o Java resolve o resto.\n\nSe amanhã você criar `Triangulo extends Forma`, basta implementar `calcularArea()` e adicionar na lista. O código que processa NÃO muda.',
+        code: `import java.util.ArrayList;
+
+public class SistemaFormas {
+    public static void main(String[] args) {
+        // Lista do tipo ABSTRATO aceita qualquer forma concreta
+        ArrayList<Forma> formas = new ArrayList<>();
+        formas.add(new Circulo("vermelho", 5));
+        formas.add(new Retangulo("azul", 4, 6));
+        formas.add(new Circulo("verde", 3));
+        formas.add(new Retangulo("amarelo", 10, 2));
+
+        // Processa TODAS as formas — polimorfismo + abstração!
+        double areaTotal = 0;
+        for (Forma f : formas) {
+            f.exibir();  // cada forma exibe do seu jeito
+            areaTotal += f.calcularArea();
+        }
+        System.out.println("\\nÁrea total: " + String.format("%.2f", areaTotal));
+
+        // new Forma("roxo");  // ERRO! Não pode instanciar classe abstrata!
+    }
+}`,
+        codeExplanation: '**Linha 6** (`ArrayList<Forma>`): A lista é do tipo abstrato. Aceita Circulo, Retangulo, Triangulo — qualquer subclasse concreta.\n\n**Linha 14** (`for (Forma f : formas)`): O loop trata todas como Forma. Mas calcularArea() de cada uma retorna o valor correto (PI*r² para círculo, l*a para retângulo).\n\n**Linha 20**: Se tentar `new Forma("roxo")`, o compilador IMPEDE. Classe abstrata não pode ser instanciada.',
+      },
+
+      // ────────── SEÇÃO 4: Quando Usar ──────────
+      {
+        title: 'Quando Usar Classe Abstrata',
+        body: 'Use classe abstrata quando:\n\n1. **A classe pai não faz sentido sozinha**: "Forma" sem ser círculo ou retângulo não existe. "Funcionario" genérico pode existir, então talvez não precise ser abstrata.\n\n2. **Quer compartilhar código entre subclasses**: Se todas as formas têm `cor` e `exibir()`, coloque na classe abstrata. Diferente de interface, classe abstrata pode ter atributos e métodos concretos.\n\n3. **Quer OBRIGAR implementação**: Métodos abstract forçam as filhas a implementar. Sem abstract, elas podem "esquecer" e herdar uma implementação genérica (bug silencioso).\n\n**NÃO use** quando:\n- A classe pai faz sentido sozinha (use classe concreta normal)\n- Você só precisa definir um contrato sem código compartilhado (use interface)\n- Precisa de "herança múltipla" — Java só permite extends de UMA classe, mas permite implements de várias interfaces',
+        code: `// ═══ QUANDO USAR CLASSE ABSTRATA ═══
+
+// ✅ BOM: Forma não faz sentido sozinha
+abstract class Forma { ... }
+class Circulo extends Forma { ... }
+
+// ✅ BOM: Conta bancária genérica não deveria existir
+abstract class ContaBancaria {
+    protected double saldo;
+    // Cada tipo de conta calcula taxa diferente
+    public abstract double calcularTaxa();
+    // Método concreto compartilhado
+    public void depositar(double valor) { saldo += valor; }
+}
+class ContaCorrente extends ContaBancaria {
+    @Override
+    public double calcularTaxa() { return saldo * 0.02; }
+}
+class ContaPoupanca extends ContaBancaria {
+    @Override
+    public double calcularTaxa() { return 0; } // isenta!
+}
+
+// ❌ RUIM: Animal pode fazer sentido sozinho em alguns contextos
+// Nesse caso, use classe concreta ou avalie se interface é melhor`,
+        codeExplanation: '**Linhas 7-14** (ContaBancaria): Classe abstrata perfeita — conta genérica não deveria existir, taxa depende do tipo, mas `depositar()` é igual para todas.\n\n**Linhas 16-22**: ContaCorrente e ContaPoupanca herdam `saldo` e `depositar()`, mas cada uma implementa `calcularTaxa()` do seu jeito.\n\n**Regra**: Se a frase "isso genérico não deveria existir no mundo real" faz sentido, use abstract.',
+        warning: 'Java permite extends de apenas UMA classe (abstrata ou não). Se precisar de "múltiplas heranças", use interfaces (que veremos na próxima aula).',
       },
     ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM classe abstrata: método "falso" no pai
+class Forma {
+    String cor;
+    Forma(String cor) { this.cor = cor; }
+
+    double calcularArea() { return 0; } // falso!
+}
+class Circulo extends Forma {
+    double raio;
+    Circulo(String cor, double r) { super(cor); raio = r; }
+    // ESQUECEU de sobrescrever... retorna 0!
+}
+
+Forma f = new Forma("azul"); // compila, mas não faz sentido!
+Circulo c = new Circulo("vermelho", 5);
+c.calcularArea(); // retorna 0! Bug!`,
+    withPoo: `// COM classe abstrata: segurança no compilador
+abstract class Forma {
+    String cor;
+    Forma(String cor) { this.cor = cor; }
+
+    abstract double calcularArea(); // OBRIGATÓRIO implementar!
+}
+class Circulo extends Forma {
+    double raio;
+    Circulo(String cor, double r) { super(cor); raio = r; }
+    @Override
+    double calcularArea() { return Math.PI * raio * raio; } // OBRIGADO!
+}
+
+// Forma f = new Forma("azul"); // ERRO DE COMPILAÇÃO!
+Circulo c = new Circulo("vermelho", 5);
+c.calcularArea(); // 78.54 — correto!`,
+    comparisonExplanation: 'Sem abstract, bugs passam silenciosamente (área 0, instanciar classe genérica). Com abstract, o compilador IMPEDE os dois problemas.',
+
+    // ────────── Exercícios ──────────
     codeFillExercises: [
-      { instruction: 'Qual palavra-chave declara um método sem implementação que as subclasses devem implementar?', snippetBefore: 'public ', snippetAfter: ' double calcularArea();', options: ['abstract', 'virtual', 'empty', 'override'], correctIndex: 0, explanation: 'Métodos abstract não têm corpo e devem ser implementados nas subclasses concretas.' },
+      {
+        instruction: 'Como declarar que a classe Forma não pode ser instanciada diretamente?',
+        snippetBefore: 'public ',
+        snippetAfter: ' class Forma { ... }',
+        options: ['abstract', 'final', 'static', 'sealed'],
+        correctIndex: 0,
+        explanation: 'abstract class não pode ser instanciada com new. Ela existe para ser estendida por subclasses concretas.',
+      },
+      {
+        instruction: 'Como declarar um método sem corpo que as subclasses devem implementar?',
+        snippetBefore: 'public ',
+        snippetAfter: ' double calcularArea();',
+        options: ['abstract', 'virtual', 'void', 'override'],
+        correctIndex: 0,
+        explanation: 'Métodos abstract terminam com ; (sem corpo). Subclasses concretas DEVEM implementá-los.',
+      },
+      {
+        instruction: 'A classe abstrata pode ter construtor?',
+        snippetBefore: 'abstract class Forma {\n    ',
+        snippetAfter: '(String cor) { this.cor = cor; }\n}',
+        options: ['public Forma', 'abstract Forma', 'static Forma', 'new Forma'],
+        correctIndex: 0,
+        explanation: 'Sim! Classes abstratas podem ter construtores. Eles são chamados pelas subclasses via super().',
+      },
     ],
-    summary: ['abstract class não pode ser instanciada', 'Métodos abstract não têm corpo — subclasses implementam', 'Pode ter métodos concretos (com corpo)', 'Use quando quer forçar subclasses a implementar algo'],
-    tryItCode: `abstract class Forma {
+    summary: [
+      'Classe abstrata (abstract class) não pode ser instanciada com new',
+      'Método abstrato (abstract) não tem corpo — subclasses DEVEM implementar',
+      'Se esquecer de implementar, erro de COMPILAÇÃO (não bug silencioso)',
+      'Classe abstrata pode ter: construtor, atributos, métodos concretos E abstratos',
+      'Use quando a classe pai não faz sentido sozinha (Forma, ContaBancaria)',
+      'Métodos concretos na classe abstrata são herdados pelas filhas (código compartilhado)',
+      'Java permite extends de apenas UMA classe (abstrata ou concreta)',
+      'Para "múltipla herança", use interfaces (próxima aula)',
+    ],
+    tryItCode: `import java.util.ArrayList;
+
+abstract class Forma {
     protected String cor;
     public Forma(String cor) { this.cor = cor; }
-    public abstract double area();
-}
-class Retangulo extends Forma {
-    double l, a;
-    public Retangulo(String cor, double l, double a) {
-        super(cor);
-        this.l = l;
-        this.a = a;
+    public abstract double calcularArea();
+    public void exibir() {
+        System.out.println(cor + " — Área: " + String.format("%.2f", calcularArea()));
     }
-    @Override
-    public double area() { return l * a; }
 }
+
+class Circulo extends Forma {
+    private double raio;
+    public Circulo(String cor, double raio) { super(cor); this.raio = raio; }
+    @Override
+    public double calcularArea() { return Math.PI * raio * raio; }
+}
+
+class Retangulo extends Forma {
+    private double largura, altura;
+    public Retangulo(String cor, double l, double a) { super(cor); this.largura = l; this.altura = a; }
+    @Override
+    public double calcularArea() { return largura * altura; }
+}
+
 public class Main {
     public static void main(String[] args) {
-        Retangulo r = new Retangulo("azul", 3, 4);
-        System.out.println("Area: " + r.area());
+        ArrayList<Forma> formas = new ArrayList<>();
+        formas.add(new Circulo("vermelho", 5));
+        formas.add(new Retangulo("azul", 4, 6));
+        formas.add(new Circulo("verde", 3));
+
+        double total = 0;
+        for (Forma f : formas) {
+            f.exibir();
+            total += f.calcularArea();
+        }
+        System.out.println("\\nÁrea total: " + String.format("%.2f", total));
     }
 }`,
-    tryItPrompt: 'Crie uma classe Circulo extends Forma com raio e implemente area() = PI * raio * raio.',
+    tryItPrompt: 'Crie Triangulo extends Forma com base e altura, implemente calcularArea() = (base * altura) / 2, e adicione na lista. O loop NÃO muda!',
     commonErrors: [
-      { title: 'Instanciar classe abstrata', description: 'new Forma() não compila; crie new Circulo() ou new Retangulo().' },
-      { title: 'Esquecer de implementar método abstrato', description: 'A subclasse concreta deve implementar todos os métodos abstract do pai.' },
+      {
+        title: 'Tentar instanciar classe abstrata',
+        description: 'Classes abstratas não podem ser criadas com new. Crie objetos das subclasses concretas.',
+        code: `// ERRADO:
+Forma f = new Forma("azul");
+// ERRO: Forma is abstract; cannot be instantiated
+
+// CORRETO:
+Forma f = new Circulo("azul", 5);  // tipo abstrato, objeto concreto!`,
+      },
+      {
+        title: 'Esquecer de implementar método abstrato na subclasse',
+        description: 'Toda subclasse concreta DEVE implementar todos os métodos abstract do pai.',
+        code: `abstract class Forma {
+    public abstract double calcularArea();
+}
+
+// ERRADO: não implementou calcularArea()!
+class Triangulo extends Forma {
+    // ERRO: Triangulo must implement abstract method calcularArea()
+}
+
+// CORRETO:
+class Triangulo extends Forma {
+    double base, altura;
+    @Override
+    public double calcularArea() { return (base * altura) / 2; }
+}`,
+      },
+      {
+        title: 'Confundir abstract com final',
+        description: 'abstract = "deve ser estendida". final = "NÃO pode ser estendida". São opostos!',
+        code: `abstract class Forma { ... }  // DEVE ser estendida
+final class String { ... }     // NÃO pode ser estendida
+
+// abstract final class X { }  // ERRO! Contradição!`,
+      },
     ],
   },
 
   'm3-interfaces': {
     id: 'm3-interfaces', moduleId: 3,
-    objectives: ['Entender interfaces como contratos', 'Implementar interfaces', 'Diferença entre interface e classe abstrata'],
+    objectives: [
+      'Entender o problema que interfaces resolvem',
+      'Declarar interfaces e implementar com implements',
+      'Saber que uma classe pode implementar VÁRIAS interfaces',
+      'Usar interfaces como tipo de variável (polimorfismo via interface)',
+      'Diferenciar interface de classe abstrata e saber quando usar cada uma',
+    ],
     sections: [
-      { title: 'Interfaces — Contratos', body: 'Uma **interface** define um **contrato**: apenas as assinaturas dos métodos (sem corpo, até Java 7). Quem **implements** a interface se compromete a implementar todos esses métodos. Diferente de herança, uma classe pode implementar **várias** interfaces (implements A, B, C), mas só pode **estender** uma classe. Use interfaces para definir "capacidades" (Pagavel, Imprimivel) sem fixar implementação — isso desacopla e facilita testes e troca de implementação.',
-        code: `// Interface define o contrato
+      // ────────── SEÇÃO 1: O Problema ──────────
+      {
+        title: 'O Problema: Java Não Permite Herança Múltipla',
+        body: 'Imagine que você tem um sistema financeiro. Uma `NotaFiscal` precisa ser **pagável** (calcular pagamento) e **imprimível** (imprimir documento). Com herança, você faria:\n\n```\nclass NotaFiscal extends Pagavel { ... } // ok, mas...\n```\n\nE se também precisar de Imprimivel? Java **não permite** herdar de duas classes:\n\n```\nclass NotaFiscal extends Pagavel, Imprimivel { ... } // ERRO!\n```\n\nAlém disso, `Pagavel` e `Imprimivel` não são "coisas" (como Funcionario ou Forma) — são **capacidades**. "Ser pagável" é algo que nota fiscal, boleto e fatura podem fazer. Não faz sentido que sejam classes.\n\n**Interfaces** resolvem isso: definem **contratos** (o que a classe deve fazer) sem implementação, e uma classe pode implementar **várias** interfaces.',
+        code: `// PROBLEMA: Java não permite herança múltipla de classes
+class Pagavel {
+    double calcularPagamento() { return 0; }
+}
+class Imprimivel {
+    void imprimir() { }
+}
+
+// ERRO DE COMPILAÇÃO!
+class NotaFiscal extends Pagavel, Imprimivel { }
+// Java: "a class can only extend one other class"
+
+// E mesmo que pudesse, Pagavel e Imprimivel são "capacidades",
+// não "coisas". Nota Fiscal não É UM Pagavel, ela é CAPAZ de ser paga.`,
+        codeExplanation: '**Linha 10**: Java proíbe herança múltipla de classes para evitar o "problema do diamante" (conflito de métodos quando dois pais têm o mesmo método).\n\n**Linhas 13-14**: Pagavel e Imprimivel descrevem capacidades, não entidades. Interface é a ferramenta certa para modelar capacidades.',
+        warning: 'Java permite extends de apenas UMA classe, mas permite implements de QUANTAS interfaces quiser. Essa é a grande vantagem.',
+      },
+
+      // ────────── SEÇÃO 2: Declarando e Implementando ──────────
+      {
+        title: 'Interface: Definindo Contratos',
+        body: 'Uma **interface** é declarada com a palavra-chave `interface` (em vez de `class`). Ela contém apenas **assinaturas de métodos** — sem corpo, sem implementação (até Java 7). A classe que quer "assinar o contrato" usa **implements** e DEVE implementar TODOS os métodos.\n\nRegras:\n- Métodos na interface são **public abstract** por padrão (não precisa escrever)\n- Atributos na interface são **public static final** por padrão (constantes)\n- Uma classe pode implementar **várias** interfaces: `implements A, B, C`\n- Uma interface pode **estender** outra interface: `interface B extends A`\n\nPense assim: **interface = contrato**. "Quem implementar Pagavel se COMPROMETE a ter calcularPagamento()."',
+        code: `// ═══ DEFININDO INTERFACES ═══
 public interface Pagavel {
-    double calcularPagamento();
+    double calcularPagamento();  // público e abstrato por padrão
     String getDescricao();
 }
 
@@ -5142,394 +5656,2190 @@ public interface Imprimivel {
     void imprimir();
 }
 
-// Uma classe pode implementar múltiplas interfaces
+// ═══ IMPLEMENTANDO MÚLTIPLAS INTERFACES ═══
 public class NotaFiscal implements Pagavel, Imprimivel {
     private String cliente;
     private double valor;
-    
+
     public NotaFiscal(String cliente, double valor) {
         this.cliente = cliente;
         this.valor = valor;
     }
-    
-    @Override
+
+    @Override  // de Pagavel
     public double calcularPagamento() {
-        return valor * 1.1; // com imposto
+        return valor * 1.1;  // valor + 10% imposto
     }
-    
-    @Override
+
+    @Override  // de Pagavel
     public String getDescricao() {
         return "NF de " + cliente;
     }
-    
-    @Override
+
+    @Override  // de Imprimivel
     public void imprimir() {
-        System.out.println(getDescricao() + " - R$" + calcularPagamento());
+        System.out.println(getDescricao() + " — R$" + calcularPagamento());
     }
 }`,
-        tip: 'Interface = "o que fazer". Classe = "como fazer". Use interfaces para desacoplar seu código.',
+        codeExplanation: '**Linhas 2-5** (interface Pagavel): Apenas assinaturas. Quem implementar DEVE ter calcularPagamento() e getDescricao().\n\n**Linha 12** (`implements Pagavel, Imprimivel`): NotaFiscal assina DOIS contratos. Deve implementar TODOS os métodos de ambas.\n\n**Linhas 22-24** (calcularPagamento): Implementação concreta — como a nota fiscal calcula pagamento. Outra classe (Boleto) implementaria de forma diferente.\n\n**Linhas 32-34** (imprimir): Implementação do contrato Imprimivel. Se esquecer de implementar qualquer método, erro de compilação!',
+        tip: 'Interface = "O QUE fazer". Classe = "COMO fazer". A interface Pagavel diz que DEVE haver calcularPagamento(). A classe NotaFiscal diz COMO calcular.',
+      },
+
+      // ────────── SEÇÃO 3: Polimorfismo via Interface ──────────
+      {
+        title: 'Polimorfismo Via Interface: O Poder dos Contratos',
+        body: 'Assim como com herança, você pode usar a **interface como tipo de variável**. Isso permite tratar objetos DIFERENTES de forma uniforme, desde que implementem a mesma interface.\n\nExemplo: uma lista de `Pagavel` pode conter NotaFiscal, Boleto, Fatura — qualquer coisa pagável. O loop percorre e chama `calcularPagamento()` sem saber o tipo concreto.\n\nIsso é **mais flexível** que polimorfismo via herança, porque as classes não precisam estar na mesma hierarquia. Um Funcionario e uma NotaFiscal são coisas completamente diferentes, mas ambos podem ser "Pagavel".',
+        code: `import java.util.ArrayList;
+
+// Boleto também é Pagavel (mas NÃO é NotaFiscal!)
+class Boleto implements Pagavel {
+    private String descricao;
+    private double valor;
+    private double multa;
+
+    public Boleto(String desc, double valor, double multa) {
+        this.descricao = desc;
+        this.valor = valor;
+        this.multa = multa;
+    }
+
+    @Override
+    public double calcularPagamento() { return valor + multa; }
+
+    @Override
+    public String getDescricao() { return "Boleto: " + descricao; }
+}
+
+// ═══ POLIMORFISMO VIA INTERFACE ═══
+public class SistemaFinanceiro {
+    public static void main(String[] args) {
+        // Lista do tipo INTERFACE aceita qualquer implementação!
+        ArrayList<Pagavel> contas = new ArrayList<>();
+        contas.add(new NotaFiscal("João", 1000));
+        contas.add(new Boleto("Internet", 99.90, 5.00));
+        contas.add(new NotaFiscal("Maria", 2500));
+
+        double total = 0;
+        for (Pagavel p : contas) {
+            System.out.println(p.getDescricao()
+                + " — R$" + String.format("%.2f", p.calcularPagamento()));
+            total += p.calcularPagamento();
+        }
+        System.out.println("\\nTotal a pagar: R$" + String.format("%.2f", total));
+    }
+}`,
+        codeExplanation: '**Linha 4** (`class Boleto implements Pagavel`): Boleto e NotaFiscal são classes COMPLETAMENTE diferentes, mas ambas implementam Pagavel.\n\n**Linha 26** (`ArrayList<Pagavel>`): A lista aceita qualquer coisa que seja Pagavel — não importa se é NotaFiscal, Boleto ou algo que ainda nem foi criado.\n\n**Linha 32** (`for (Pagavel p : contas)`): O loop trata todos como Pagavel. Cada um calcula pagamento do seu jeito. Amanhã criou Fatura implements Pagavel? Só adiciona na lista!',
+        warning: 'A grande vantagem sobre herança: NotaFiscal e Boleto NÃO precisam ter um "pai" em comum. Só precisam implementar o mesmo contrato.',
+      },
+
+      // ────────── SEÇÃO 4: Interface vs Classe Abstrata ──────────
+      {
+        title: 'Interface vs Classe Abstrata: Quando Usar Cada Uma',
+        body: 'Essa é uma das dúvidas mais comuns. Resumo prático:\n\n**Use INTERFACE quando:**\n- Quer definir uma **capacidade** (Pagavel, Imprimivel, Comparavel)\n- Classes de hierarquias DIFERENTES precisam do mesmo contrato\n- Precisa de "herança múltipla" (uma classe implementa várias interfaces)\n\n**Use CLASSE ABSTRATA quando:**\n- Quer compartilhar **código** (atributos, métodos concretos) entre subclasses\n- As subclasses fazem parte da MESMA hierarquia (Forma → Círculo, Retângulo)\n- Precisa de **construtor** para inicializar estado\n\n**Pode usar AMBOS juntos:**\n- Classe abstrata implementa interface parcialmente\n- Subclasses concretas completam a implementação',
+        code: `// ═══ USANDO AMBOS JUNTOS ═══
+
+// Interface: contrato "o que fazer"
+interface Pagavel {
+    double calcularPagamento();
+}
+
+// Classe abstrata: código compartilhado "como fazer parte"
+abstract class Funcionario implements Pagavel {
+    protected String nome;
+    protected double salario;
+
+    public Funcionario(String nome, double salario) {
+        this.nome = nome;
+        this.salario = salario;
+    }
+
+    // Método concreto compartilhado
+    public void exibirInfo() {
+        System.out.println(nome + " | R$"
+            + String.format("%.2f", calcularPagamento()));
+    }
+
+    // calcularPagamento() continua abstrato!
+    // Cada subclasse concreta implementa.
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+    public Gerente(String nome, double sal, double bonus) {
+        super(nome, sal); this.bonus = bonus;
+    }
+    @Override
+    public double calcularPagamento() { return salario + bonus; }
+}
+
+class Estagiario extends Funcionario {
+    private int horas;
+    public Estagiario(String nome, double sal, int horas) {
+        super(nome, sal); this.horas = horas;
+    }
+    @Override
+    public double calcularPagamento() { return (salario / 40.0) * horas; }
+}`,
+        codeExplanation: '**Linha 9** (`abstract class Funcionario implements Pagavel`): A classe abstrata "assina" o contrato Pagavel, mas NÃO implementa calcularPagamento(). Deixa para as filhas.\n\n**Linhas 19-22** (exibirInfo): Método concreto compartilhado. Todas as filhas herdam sem precisar reescrever.\n\n**Linha 34** (Gerente): Implementa calcularPagamento() como o contrato Pagavel exige. Como Funcionario é abstrato e não implementou, a filha concreta DEVE implementar.\n\nResultado: Gerente e Estagiario são Pagavel (interface), Funcionario (herança), e compartilham exibirInfo() (classe abstrata). Cada ferramenta faz seu papel!',
+        tip: 'Interface para CONTRATO, classe abstrata para CÓDIGO COMPARTILHADO. Não são concorrentes — são complementares!',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Como declarar que uma classe implementa uma interface em Java?', snippetBefore: 'public class Campainha ', snippetAfter: ' Som { ... }', options: ['implements', 'extends', 'implements interface', 'uses'], correctIndex: 0, explanation: 'implements é usado para interfaces; extends é para herança de classe.' },
-    ],
-    summary: ['Interface define contratos (métodos obrigatórios)', 'Uma classe pode implementar múltiplas interfaces', 'Todos os métodos da interface devem ser implementados', 'Use interfaces para código desacoplado e flexível'],
-    tryItCode: `interface Som {
-    void emitir();
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM interface: tipos incompatíveis, impossível tratar juntos
+class NotaFiscal {
+    double calcularPagamento() { return valor * 1.1; }
 }
-class Campainha implements Som {
+class Boleto {
+    double calcularPagamento() { return valor + multa; }
+}
+// Mesmo método com mesmo nome, mas NÃO são do mesmo tipo!
+// Impossível colocar numa lista e processar juntos.
+
+// Teria que fazer:
+ArrayList<Object> lista = new ArrayList<>();  // Object? Horrível!
+// E usar instanceof pra cada tipo... pesadelo!`,
+    withPoo: `// COM interface: contrato comum, trata todos igual
+interface Pagavel {
+    double calcularPagamento();
+}
+class NotaFiscal implements Pagavel {
     @Override
-    public void emitir() { System.out.println("Trim!"); }
+    public double calcularPagamento() { return valor * 1.1; }
 }
+class Boleto implements Pagavel {
+    @Override
+    public double calcularPagamento() { return valor + multa; }
+}
+// Agora são do MESMO tipo (Pagavel)!
+ArrayList<Pagavel> lista = new ArrayList<>();
+for (Pagavel p : lista) { total += p.calcularPagamento(); }
+// Limpo, extensível, sem instanceof!`,
+    comparisonExplanation: 'Sem interface, classes sem parentesco não podem ser tratadas de forma uniforme. Com interface, o contrato Pagavel une classes diferentes sob um mesmo tipo.',
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Como declarar que uma classe implementa uma interface?',
+        snippetBefore: 'public class Boleto ',
+        snippetAfter: ' Pagavel { ... }',
+        options: ['implements', 'extends', 'inherits', 'uses'],
+        correctIndex: 0,
+        explanation: 'implements é para interfaces. extends é para herança de classe. Uma classe pode implements várias interfaces.',
+      },
+      {
+        instruction: 'Uma classe pode implementar múltiplas interfaces? Qual a sintaxe?',
+        snippetBefore: 'public class NotaFiscal implements ',
+        snippetAfter: ' { ... }',
+        options: ['Pagavel, Imprimivel', 'Pagavel & Imprimivel', 'Pagavel + Imprimivel', 'Pagavel extends Imprimivel'],
+        correctIndex: 0,
+        explanation: 'Múltiplas interfaces são separadas por vírgula: implements A, B, C. Sem limite de quantidade!',
+      },
+      {
+        instruction: 'Qual é a diferença principal entre interface e classe abstrata?',
+        snippetBefore: '// Interface: só contrato (métodos sem corpo)\n// Classe abstrata: pode ter ',
+        snippetAfter: ' e métodos concretos',
+        options: ['atributos, construtor', 'apenas métodos', 'só constantes', 'interfaces internas'],
+        correctIndex: 0,
+        explanation: 'Classe abstrata pode ter atributos, construtor e métodos concretos (com corpo). Interface define apenas o contrato (métodos obrigatórios).',
+      },
+    ],
+    summary: [
+      'Interface define um contrato: O QUE a classe deve fazer, sem dizer COMO',
+      'Declare com interface, implemente com implements',
+      'Uma classe pode implementar VÁRIAS interfaces (diferente de herança)',
+      'Métodos da interface são public abstract por padrão',
+      'Use interface como tipo de variável para polimorfismo (ArrayList<Pagavel>)',
+      'Classes de hierarquias DIFERENTES podem implementar a mesma interface',
+      'Interface = capacidade/contrato. Classe abstrata = código compartilhado + contrato',
+      'Pode usar ambos juntos: abstract class Funcionario implements Pagavel',
+    ],
+    tryItCode: `import java.util.ArrayList;
+
+interface Pagavel {
+    double calcularPagamento();
+    String getDescricao();
+}
+
+class NotaFiscal implements Pagavel {
+    String cliente; double valor;
+    NotaFiscal(String c, double v) { cliente = c; valor = v; }
+    @Override
+    public double calcularPagamento() { return valor * 1.1; }
+    @Override
+    public String getDescricao() { return "NF: " + cliente; }
+}
+
+class Boleto implements Pagavel {
+    String desc; double valor, multa;
+    Boleto(String d, double v, double m) { desc = d; valor = v; multa = m; }
+    @Override
+    public double calcularPagamento() { return valor + multa; }
+    @Override
+    public String getDescricao() { return "Boleto: " + desc; }
+}
+
 public class Main {
     public static void main(String[] args) {
-        Som s = new Campainha();
-        s.emitir();
+        ArrayList<Pagavel> contas = new ArrayList<>();
+        contas.add(new NotaFiscal("João", 1000));
+        contas.add(new Boleto("Internet", 99.90, 5.00));
+        contas.add(new NotaFiscal("Maria", 2500));
+
+        double total = 0;
+        for (Pagavel p : contas) {
+            System.out.println(p.getDescricao()
+                + " — R$" + String.format("%.2f", p.calcularPagamento()));
+            total += p.calcularPagamento();
+        }
+        System.out.println("\\nTotal: R$" + String.format("%.2f", total));
     }
 }`,
-    tryItPrompt: 'Crie outra classe que implemente Som (ex.: Buzina) e use na variável Som.',
+    tryItPrompt: 'Crie uma classe Fatura implements Pagavel com vencimento e desconto. Adicione na lista e veja o total atualizar sem mudar o loop!',
     commonErrors: [
-      { title: 'Esquecer de implementar um método da interface', description: 'A classe deve implementar todos os métodos declarados na interface.' },
-      { title: 'interface vs abstract class', description: 'Interface: só contrato, múltiplas. Abstract class: pode ter estado e implementação, só uma herança.' },
+      {
+        title: 'Esquecer de implementar um método da interface',
+        description: 'Se a interface tem 3 métodos, a classe DEVE implementar os 3. Senão, erro de compilação.',
+        code: `interface Pagavel {
+    double calcularPagamento();
+    String getDescricao();
+}
+
+// ERRADO: faltou getDescricao()!
+class Boleto implements Pagavel {
+    @Override
+    public double calcularPagamento() { return 100; }
+    // ERRO: Boleto must implement getDescricao()
+}
+
+// CORRETO: todos implementados
+class Boleto implements Pagavel {
+    @Override
+    public double calcularPagamento() { return 100; }
+    @Override
+    public String getDescricao() { return "Boleto"; }
+}`,
+      },
+      {
+        title: 'Confundir implements com extends',
+        description: 'extends é para classes (herança). implements é para interfaces. Nunca misture!',
+        code: `// ERRADO:
+class Boleto extends Pagavel { }  // Pagavel é interface!
+
+// CORRETO:
+class Boleto implements Pagavel { }  // implements para interface
+
+// Classes: extends
+class Gerente extends Funcionario { }
+
+// Pode combinar:
+class Gerente extends Funcionario implements Pagavel, Imprimivel { }`,
+      },
+      {
+        title: 'Esquecer public nos métodos implementados',
+        description: 'Métodos de interface são public por padrão. Ao implementar, o método DEVE ser public.',
+        code: `interface Pagavel {
+    double calcularPagamento(); // é public por padrão!
+}
+
+// ERRADO: visibilidade menor que public
+class Boleto implements Pagavel {
+    double calcularPagamento() { return 100; } // default, não public!
+    // ERRO: attempting to assign weaker access privileges
+}
+
+// CORRETO: explicitamente public
+class Boleto implements Pagavel {
+    @Override
+    public double calcularPagamento() { return 100; }
+}`,
+      },
     ],
   },
 
   'm3-composition': {
     id: 'm3-composition', moduleId: 3,
-    objectives: ['Entender composição vs herança', 'Aplicar "tem um" vs "é um"', 'Saber quando preferir composição'],
+    objectives: [
+      'Entender o que é composição e quando usar',
+      'Diferenciar "é um" (herança) de "tem um" (composição)',
+      'Usar delegação: o objeto "dono" delega ao componente',
+      'Entender por que composição é mais flexível que herança',
+      'Saber aplicar a regra "prefira composição a herança"',
+    ],
     sections: [
-      { title: 'Composição: "Tem um"', body: '**Composição** é quando um objeto **contém** outro como atributo (um Carro tem um Motor). A relação é "tem um", não "é um". É geralmente mais flexível que herança: você pode trocar o Motor, ter vários motores, ou injetar um Motor mock em testes. Herança cria acoplamento forte (a filha depende da implementação do pai); composição acopla apenas à interface ou tipo do componente. Regra prática: se a frase "X é um Y" não soa natural, use composição (X tem um Y).',
-        code: `// Motor é um componente independente
-public class Motor {
+      // ────────── SEÇÃO 1: O Problema da Herança Errada ──────────
+      {
+        title: 'O Problema: Herança Usada Errado',
+        body: 'Herança modela "é um": Gerente **é um** Funcionário. Mas muita gente usa herança para "tem um": Carro **extends** Motor. Isso é errado e causa problemas sérios.\n\nSe Carro herda de Motor, o Carro ganha TODOS os métodos do Motor: `injetarCombustivel()`, `girarPistoes()`, `trocarOleo()`. Faz sentido chamar `carro.girarPistoes()`? **Não!**\n\nAlém disso, herança cria **acoplamento forte**: se Motor mudar, TODOS os "filhos" são afetados. E Java só permite extends de UMA classe — se Carro extends Motor, não pode mais extends Veiculo.\n\n**Composição** é a alternativa: Carro **tem um** Motor como atributo. O Motor fica "dentro" do Carro, escondido. De fora, o usuário vê apenas `carro.ligar()` — não precisa saber que existe um Motor lá dentro.',
+        code: `// ═══ HERANÇA ERRADA ═══
+class Motor {
+    void injetarCombustivel() { System.out.println("Injetando..."); }
+    void girarPistoes() { System.out.println("Girando..."); }
+    void trocarOleo() { System.out.println("Trocando óleo..."); }
+}
+
+class Carro extends Motor {
+    // Carro herdou TUDO do Motor!
+    // Agora é possível:
+    // carro.girarPistoes()    — faz sentido? NÃO!
+    // carro.trocarOleo()      — quem troca óleo é o Motor, não o Carro!
+    // carro.injetarCombustivel() — o Carro não injeta, o Motor sim!
+}
+
+// Teste:
+Carro fusca = new Carro();
+fusca.girarPistoes();  // compila! Mas Carro girando pistões?
+// A herança poluiu a interface do Carro com métodos que não fazem sentido!`,
+        codeExplanation: '**Linha 8** (`Carro extends Motor`): Carro herda TODOS os métodos de Motor. Agora qualquer código pode chamar `carro.girarPistoes()` — isso não faz sentido semântico.\n\n**Linhas 11-13**: Todos esses métodos são do Motor, não do Carro. Herança expôs detalhes internos que deveriam estar escondidos.\n\n**Linha 18**: O compilador aceita `fusca.girarPistoes()` porque Carro herdou de Motor. Mas semanticamente é absurdo. Carro NÃO É UM Motor!',
+        warning: 'Teste rápido: "Carro É UM Motor?" — Se a frase soa estranha, NÃO use herança. Use composição.',
+      },
+
+      // ────────── SEÇÃO 2: Composição Correta ──────────
+      {
+        title: 'Composição: O Objeto "Tem Um" Componente',
+        body: 'Com **composição**, o Motor é um **atributo** do Carro. O Carro usa o Motor internamente, mas de fora ninguém sabe que o Motor existe.\n\nO padrão é **delegação**: o Carro não faz o trabalho sozinho — ele **delega** ao Motor. O método `carro.ligar()` internamente chama `motor.injetarCombustivel()` e `motor.girarPistoes()`. Mas de fora, o usuário só vê `carro.ligar()`.\n\nVantagens:\n- O Carro expõe apenas métodos que fazem sentido para um carro\n- O Motor pode ser trocado (motor esportivo, elétrico) sem mudar o Carro\n- O Motor pode ser reutilizado em Moto, Barco, Gerador...',
+        code: `// ═══ COMPOSIÇÃO CORRETA ═══
+class Motor {
     private int potencia;
-    
+    private boolean ligado;
+
     public Motor(int potencia) {
         this.potencia = potencia;
+        this.ligado = false;
     }
-    
+
     public void ligar() {
+        ligado = true;
         System.out.println("Motor de " + potencia + "cv ligado!");
     }
+
+    public void desligar() {
+        ligado = false;
+        System.out.println("Motor desligado.");
+    }
+
+    public boolean isLigado() { return ligado; }
+    public int getPotencia() { return potencia; }
 }
 
 // Carro TEM UM Motor (composição)
-public class Carro {
+class Carro {
     private String modelo;
-    private Motor motor; // composição!
-    
+    private Motor motor;  // composição: Motor é ATRIBUTO
+
     public Carro(String modelo, int potencia) {
         this.modelo = modelo;
-        this.motor = new Motor(potencia);
+        this.motor = new Motor(potencia);  // cria o motor internamente
     }
-    
+
     public void ligar() {
-        System.out.println(modelo + " pronto!");
-        motor.ligar(); // delega ao motor
+        System.out.println(modelo + " pronto para partir!");
+        motor.ligar();  // DELEGAÇÃO: Carro delega ao Motor
+    }
+
+    public void desligar() {
+        motor.desligar();
+        System.out.println(modelo + " desligado.");
+    }
+
+    public void exibirInfo() {
+        System.out.println(modelo + " | " + motor.getPotencia() + "cv | "
+            + (motor.isLigado() ? "Ligado" : "Desligado"));
+    }
+}`,
+        codeExplanation: '**Linha 28** (`private Motor motor`): Motor é um atributo privado. De fora do Carro, ninguém acessa o motor diretamente.\n\n**Linha 32** (`this.motor = new Motor(potencia)`): O Carro cria seu Motor no construtor. O Motor vive "dentro" do Carro.\n\n**Linha 37** (`motor.ligar()`): Delegação — o Carro não sabe como ligar um motor. Ele pede ao Motor que se ligue. O Carro só coordena.\n\n**Linha 45** (`motor.getPotencia()`): O Carro acessa informações do Motor quando precisa, mas controla o que expõe para fora.\n\nResultado: `carro.ligar()` faz sentido. `carro.girarPistoes()` não existe — perfeito!',
+        tip: 'Composição + delegação = o Carro "tem um" Motor e "pede" ao Motor para fazer coisas. O Carro é o coordenador, o Motor é o especialista.',
+      },
+
+      // ────────── SEÇÃO 3: Flexibilidade da Composição ──────────
+      {
+        title: 'Composição É Mais Flexível: Troque Componentes!',
+        body: 'A grande vantagem da composição sobre herança é a **flexibilidade**. Com herança, o relacionamento é fixo em tempo de compilação: Carro extends Motor — sempre. Com composição, você pode:\n\n1. **Receber o componente pelo construtor** (injeção de dependência)\n2. **Trocar o componente em tempo de execução** (setter)\n3. **Ter múltiplos componentes** (Carro tem Motor E Tanque E ArCondicionado)\n\nCom herança, Java só permite UM extends. Com composição, você pode ter QUANTOS componentes quiser.',
+        code: `// ═══ COMPOSIÇÃO FLEXÍVEL ═══
+
+// Motor pode ser recebido de fora (injeção de dependência)
+class Carro {
+    private String modelo;
+    private Motor motor;
+
+    // Recebe o motor pelo construtor — pode ser qualquer motor!
+    public Carro(String modelo, Motor motor) {
+        this.modelo = modelo;
+        this.motor = motor;
+    }
+
+    // Pode trocar o motor depois!
+    public void trocarMotor(Motor novoMotor) {
+        this.motor = novoMotor;
+        System.out.println(modelo + " recebeu motor de "
+            + novoMotor.getPotencia() + "cv!");
+    }
+
+    public void ligar() {
+        System.out.println(modelo + ":");
+        motor.ligar();
     }
 }
 
-// Carro NÃO extends Motor — faz sentido? Carro é um Motor? NÃO!
-// Carro TEM um Motor? SIM! Use composição.`,
-        codeExplanation: 'Carro tem um atributo Motor. No construtor cria new Motor(potencia). ligar() delega para motor.ligar().',
+// ═══ USO ═══
+Motor motorOriginal = new Motor(65);
+Motor motorEsportivo = new Motor(200);
+
+Carro fusca = new Carro("Fusca", motorOriginal);
+fusca.ligar();  // "Motor de 65cv ligado!"
+
+fusca.trocarMotor(motorEsportivo);
+fusca.ligar();  // "Motor de 200cv ligado!"
+
+// Com herança, seria impossível "trocar" a classe pai!`,
+        codeExplanation: '**Linha 9** (`Motor motor` no construtor): O motor vem de FORA. Quem cria o Carro decide qual motor usar. Isso é **injeção de dependência**.\n\n**Linhas 15-19** (`trocarMotor()`): Troca o motor em tempo de execução! Com herança (extends Motor), isso seria impossível — não dá para "trocar" a classe pai.\n\n**Linhas 31-35**: O mesmo Fusca começa com 65cv e depois ganha 200cv. O Carro não mudou — só o componente interno foi trocado.\n\nIsso é muito útil para testes: você pode criar um `MotorFalso` para testar o Carro sem depender do Motor real.',
+        warning: 'Com herança, o relacionamento é FIXO para sempre. Com composição, você pode trocar, adicionar e remover componentes livremente.',
+      },
+
+      // ────────── SEÇÃO 4: Quando Usar Cada Um ──────────
+      {
+        title: 'Herança vs Composição: Guia Prático',
+        body: '**Use HERANÇA quando:**\n- A relação "é um" é genuína e permanente\n- Gerente **é um** Funcionário — sempre será\n- Cachorro **é um** Animal — sempre será\n- Você quer polimorfismo (tratar Gerente como Funcionário)\n\n**Use COMPOSIÇÃO quando:**\n- A relação é "tem um"\n- Carro **tem um** Motor — Motor é um componente\n- Pedido **tem** Itens — Itens são componentes\n- Você quer flexibilidade (trocar componentes, ter múltiplos)\n\n**Na dúvida, prefira composição!** É a regra clássica do design orientado a objetos. Herança cria acoplamento forte e é difícil de desfazer. Composição é flexível e fácil de modificar.',
+        code: `// ═══ RESUMO VISUAL ═══
+
+// HERANÇA: "é um" (extends)
+class Animal { }
+class Cachorro extends Animal { }  // Cachorro É UM Animal ✅
+
+// COMPOSIÇÃO: "tem um" (atributo)
+class Motor { }
+class Carro {
+    private Motor motor;  // Carro TEM UM Motor ✅
+}
+
+// ═══ COMPOSIÇÃO COM MÚLTIPLOS COMPONENTES ═══
+class Carro {
+    private Motor motor;         // tem motor
+    private Tanque tanque;       // tem tanque
+    private ArCondicionado ar;   // tem ar-condicionado
+    private GPS gps;             // tem GPS
+
+    // Com herança, só poderia "ser" UMA coisa!
+    // Com composição, pode "ter" QUANTAS quiser!
+}
+
+// ═══ REGRA DE OURO ═══
+// "Prefira composição a herança"
+// — Gang of Four (Design Patterns, 1994)`,
+        codeExplanation: '**Linhas 4-5**: Herança legítima — Cachorro É UM Animal em qualquer contexto.\n\n**Linhas 8-10**: Composição legítima — Carro TEM UM Motor. Motor existe independente do Carro.\n\n**Linhas 14-19**: A grande vantagem — um Carro pode TER motor, tanque, ar e GPS ao mesmo tempo. Com herança, só poderia extends de UMA classe.\n\n**Linhas 25-26**: A frase mais famosa do livro mais influente de design OO. Na dúvida, composição vence.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Quando um Carro contém um Motor como atributo, qual relação estamos modelando?', snippetBefore: 'Carro ', snippetAfter: ' Motor (atributo motor)', options: ['tem um', 'é um', 'extends', 'herda de'], correctIndex: 0, explanation: 'Composição modela "tem um"; herança modela "é um".' },
-    ],
-    summary: ['Composição: objeto contém outro objeto', 'Use para relação "tem um" (Carro TEM Motor)', 'Herança para relação "é um" (Cachorro É Animal)', 'Composição é mais flexível e desacoplada'],
-    tryItCode: `class Motor {
-    int potencia;
-    Motor(int p) { potencia = p; }
-    void ligar() { System.out.println("Motor " + potencia + "cv ligado"); }
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// COM HERANÇA (errada para "tem um")
+class Motor {
+    void ligar() { }
+    void girarPistoes() { }
+    void trocarOleo() { }
+}
+class Carro extends Motor { }
+
+Carro c = new Carro();
+c.girarPistoes();  // Carro girando pistões?! Sem sentido!
+c.trocarOleo();    // Carro trocando óleo?! Absurdo!
+// E não pode mais extends outra classe...`,
+    withPoo: `// COM COMPOSIÇÃO (correta para "tem um")
+class Motor {
+    void ligar() { }
+    void girarPistoes() { }
 }
 class Carro {
-    String modelo;
-    Motor motor;
-    Carro(String modelo, int pot) {
-        this.modelo = modelo;
-        this.motor = new Motor(pot);
-    }
-    void ligar() { motor.ligar(); }
+    private Motor motor = new Motor();
+    void ligar() { motor.ligar(); } // delega!
 }
+
+Carro c = new Carro();
+c.ligar();         // ✅ faz sentido!
+// c.girarPistoes() — NÃO EXISTE! Motor fica escondido.
+// Carro pode ter Motor, Tanque, GPS... sem limite!`,
+    comparisonExplanation: 'Com herança errada, Carro expõe métodos que não fazem sentido (girarPistoes). Com composição, Carro esconde o Motor e expõe apenas o que faz sentido (ligar).',
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Carro contém um Motor como atributo. Qual relação estamos modelando?',
+        snippetBefore: '// Carro ',
+        snippetAfter: ' Motor',
+        options: ['tem um', 'é um', 'extends', 'implements'],
+        correctIndex: 0,
+        explanation: 'Composição modela "tem um". Herança modela "é um". Carro TEM UM Motor, não É UM Motor.',
+      },
+      {
+        instruction: 'Como o Carro usa o Motor sem expor os métodos internos do Motor?',
+        snippetBefore: 'public void ligar() {\n    ',
+        snippetAfter: '.ligar(); // Carro pede ao Motor\n}',
+        options: ['motor', 'super', 'this', 'Motor'],
+        correctIndex: 0,
+        explanation: 'Delegação: o Carro chama motor.ligar() internamente. De fora, o usuário só vê carro.ligar().',
+      },
+      {
+        instruction: 'Para receber o Motor de fora (injeção de dependência), como declarar o construtor?',
+        snippetBefore: 'public Carro(String modelo, ',
+        snippetAfter: ' motor) {\n    this.motor = motor;\n}',
+        options: ['Motor', 'int', 'String', 'Object'],
+        correctIndex: 0,
+        explanation: 'O Motor é recebido como parâmetro do tipo Motor. Isso permite trocar o motor ou injetar um mock em testes.',
+      },
+    ],
+    summary: [
+      'Composição: um objeto contém outro como atributo ("tem um")',
+      'Herança: uma classe estende outra ("é um")',
+      'Se "X é um Y" soa estranho, use composição em vez de herança',
+      'Delegação: o objeto dono pede ao componente para fazer o trabalho',
+      'Composição permite trocar componentes em tempo de execução',
+      'Composição permite múltiplos componentes (Motor, Tanque, GPS)',
+      'Herança é fixa e limitada a UMA classe pai em Java',
+      '"Prefira composição a herança" — Gang of Four',
+    ],
+    tryItCode: `class Motor {
+    private int potencia;
+    public Motor(int potencia) { this.potencia = potencia; }
+    public void ligar() { System.out.println("Motor " + potencia + "cv ligado!"); }
+    public int getPotencia() { return potencia; }
+}
+
+class Tanque {
+    private double capacidade;
+    private double nivel;
+    public Tanque(double cap) { capacidade = cap; nivel = cap; }
+    public void abastecer(double litros) {
+        nivel = Math.min(nivel + litros, capacidade);
+        System.out.println("Abastecido! Nível: " + nivel + "/" + capacidade + "L");
+    }
+}
+
+class Carro {
+    private String modelo;
+    private Motor motor;
+    private Tanque tanque;
+
+    public Carro(String modelo, Motor motor, Tanque tanque) {
+        this.modelo = modelo;
+        this.motor = motor;
+        this.tanque = tanque;
+    }
+
+    public void ligar() {
+        System.out.println(modelo + ":");
+        motor.ligar();
+    }
+
+    public void abastecer(double litros) {
+        System.out.println(modelo + ":");
+        tanque.abastecer(litros);
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
-        Carro c = new Carro("Fusca", 65);
-        c.ligar();
+        Motor motor = new Motor(120);
+        Tanque tanque = new Tanque(50);
+        Carro civic = new Carro("Civic", motor, tanque);
+
+        civic.ligar();
+        civic.abastecer(30);
     }
 }`,
-    tryItPrompt: 'Carro tem um Motor (composição). Adicione um atributo Tanque e método abastecer().',
+    tryItPrompt: 'O Carro TEM Motor e Tanque (composição). Adicione um componente ArCondicionado com ligar()/desligar() e integre no Carro!',
     commonErrors: [
-      { title: 'Usar herança para "tem um"', description: 'Carro extends Motor está errado; Carro deve ter um atributo Motor.' },
-      { title: 'Não inicializar o componente', description: 'No construtor, crie ou receba o objeto que compõe (ex.: motor = new Motor(pot)).' },
+      {
+        title: 'Usar herança para "tem um"',
+        description: 'Carro extends Motor expõe girarPistoes() e trocarOleo() no Carro — sem sentido!',
+        code: `// ERRADO: Carro herda métodos internos do Motor
+class Carro extends Motor { }
+Carro c = new Carro();
+c.girarPistoes(); // Compila, mas Carro girando pistões?!
+
+// CORRETO: Motor é atributo
+class Carro {
+    private Motor motor;
+    void ligar() { motor.ligar(); } // delega, não herda
+}`,
+      },
+      {
+        title: 'Esquecer de inicializar o componente',
+        description: 'Se o componente não for criado no construtor, será null e causará NullPointerException.',
+        code: `class Carro {
+    private Motor motor; // nunca foi inicializado!
+
+    void ligar() {
+        motor.ligar(); // NullPointerException! motor é null!
+    }
+}
+
+// CORRETO: inicialize no construtor
+class Carro {
+    private Motor motor;
+    Carro(int potencia) {
+        this.motor = new Motor(potencia); // inicializado!
+    }
+}`,
+      },
+      {
+        title: 'Expor o componente interno diretamente',
+        description: 'Retornar o Motor com getter permite que código externo manipule o motor diretamente, quebrando encapsulamento.',
+        code: `// PERIGOSO: getter expõe o Motor
+class Carro {
+    private Motor motor;
+    public Motor getMotor() { return motor; } // qualquer um manipula!
+}
+
+carro.getMotor().desligar(); // acessou o Motor por fora do Carro!
+
+// MELHOR: delegação controlada
+class Carro {
+    private Motor motor;
+    public void desligar() { motor.desligar(); } // Carro controla
+}`,
+      },
     ],
   },
 
   'm3-overloading': {
     id: 'm3-overloading', moduleId: 3,
-    objectives: ['Diferenciar sobrecarga e sobrescrita', 'Saber quando usar cada uma', 'Entender resolução em compilação vs execução'],
+    objectives: [
+      'Entender o que é sobrecarga (overloading) e quando usar',
+      'Entender o que é sobrescrita (overriding) e quando usar',
+      'Diferenciar claramente os dois conceitos',
+      'Saber que sobrecarga é resolvida em compilação e sobrescrita em execução',
+    ],
     sections: [
-      { title: 'Sobrecarga vs Sobrescrita', body: '**Sobrecarga (overloading)**: vários métodos com o **mesmo nome** na **mesma classe**, mas com **parâmetros diferentes** (número ou tipo). O compilador escolhe qual chamar pelo tipo dos argumentos. Ex.: somar(int, int) e somar(double, double).\n\n**Sobrescrita (overriding)**: a **subclasse** redefine um método que já existe na **superclasse**, com a **mesma assinatura**. Quem decide qual método rodar é a JVM em tempo de execução (polimorfismo). Use @Override na subclasse. Sobrecarga = compilação; sobrescrita = execução.',
-        code: `// SOBRECARGA (overloading) - mesma classe, parâmetros diferentes
-public class Calculadora {
+      // ────────── SEÇÃO 1: Sobrecarga (Overloading) ──────────
+      {
+        title: 'Sobrecarga (Overloading): Mesmo Nome, Parâmetros Diferentes',
+        body: '**Sobrecarga** é quando uma classe tem **vários métodos com o mesmo nome**, mas com **parâmetros diferentes** (diferente quantidade ou diferente tipo). O compilador decide qual método chamar baseado nos argumentos que você passa.\n\nIsso é muito útil para criar métodos "inteligentes" que aceitam diferentes tipos de entrada. Por exemplo, `somar(int, int)`, `somar(double, double)` e `somar(int, int, int)` — mesmo nome, mas o compilador sabe qual usar.\n\nExemplo clássico: `System.out.println()` aceita int, double, String, boolean... São tudo sobrecargas do mesmo método!',
+        code: `// ═══ SOBRECARGA: mesma classe, parâmetros diferentes ═══
+class Calculadora {
+    // Versão 1: dois inteiros
+    int somar(int a, int b) {
+        return a + b;
+    }
+
+    // Versão 2: dois doubles
+    double somar(double a, double b) {
+        return a + b;
+    }
+
+    // Versão 3: três inteiros
+    int somar(int a, int b, int c) {
+        return a + b + c;
+    }
+
+    // Versão 4: String (concatenação)
+    String somar(String a, String b) {
+        return a + b;
+    }
+}
+
+// O COMPILADOR decide qual método chamar:
+Calculadora calc = new Calculadora();
+calc.somar(2, 3);           // chama somar(int, int) → 5
+calc.somar(2.5, 3.5);       // chama somar(double, double) → 6.0
+calc.somar(1, 2, 3);        // chama somar(int, int, int) → 6
+calc.somar("Olá", " Java"); // chama somar(String, String) → "Olá Java"`,
+        codeExplanation: '**Linhas 3-6**: somar(int, int) — aceita dois inteiros.\n\n**Linhas 9-11**: somar(double, double) — mesmo nome, mas parâmetros double. O compilador diferencia pelo tipo.\n\n**Linhas 14-16**: somar(int, int, int) — mesmo nome, mas 3 parâmetros. O compilador diferencia pela quantidade.\n\n**Linhas 26-29**: Quando você chama `calc.somar(2, 3)`, o compilador olha os tipos dos argumentos (int, int) e escolhe a versão correta. Tudo decidido em **tempo de compilação**.',
+        tip: 'Sobrecarga é conveniência — permite usar o mesmo nome para operações similares com tipos diferentes. System.out.println() é o exemplo mais famoso!',
+      },
+
+      // ────────── SEÇÃO 2: Sobrescrita (Overriding) ──────────
+      {
+        title: 'Sobrescrita (Overriding): Subclasse Redefine Método do Pai',
+        body: '**Sobrescrita** é quando a **subclasse** redefine um método que já existe na **superclasse**, com a **mesma assinatura** (mesmo nome, mesmos parâmetros, mesmo retorno). É o mecanismo por trás do polimorfismo.\n\nDiferente da sobrecarga (que o compilador resolve), a sobrescrita é decidida pela **JVM em tempo de execução**: se o objeto real é um Gerente, roda o `calcularPagamento()` do Gerente, mesmo que a variável seja do tipo Funcionario.\n\nUse **@Override** sempre — o compilador verifica se o método realmente existe no pai.',
+        code: `// ═══ SOBRESCRITA: subclasse redefine método do pai ═══
+class Funcionario {
+    protected String nome;
+    protected double salario;
+
+    public Funcionario(String nome, double salario) {
+        this.nome = nome;
+        this.salario = salario;
+    }
+
+    // Método original do pai
+    public double calcularPagamento() {
+        return salario;
+    }
+
+    public String getInfo() {
+        return nome + " — R$" + String.format("%.2f", calcularPagamento());
+    }
+}
+
+class Gerente extends Funcionario {
+    private double bonus;
+
+    public Gerente(String nome, double salario, double bonus) {
+        super(nome, salario);
+        this.bonus = bonus;
+    }
+
+    // SOBRESCRITA: mesma assinatura, comportamento diferente
+    @Override
+    public double calcularPagamento() {
+        return salario + bonus;  // redefine o cálculo!
+    }
+}
+
+// A JVM decide em TEMPO DE EXECUÇÃO qual método usar:
+Funcionario f = new Gerente("Bruno", 5000, 2000);
+f.calcularPagamento(); // 7000 — rodou a versão do GERENTE!
+// A variável é Funcionario, mas o objeto é Gerente.
+// A JVM olha o OBJETO REAL, não o tipo da variável.`,
+        codeExplanation: '**Linhas 12-14**: Método original em Funcionario — retorna salário.\n\n**Linhas 31-33** (`@Override calcularPagamento()`): Gerente REDEFINE o método. Mesma assinatura (nome + parâmetros + retorno), comportamento diferente.\n\n**Linhas 38-39**: A variável é Funcionario, mas o objeto é Gerente. A JVM chama a versão do Gerente. Isso é **binding dinâmico** — decidido em tempo de execução.',
+      },
+
+      // ────────── SEÇÃO 3: Comparação Direta ──────────
+      {
+        title: 'Comparação Direta: Sobrecarga vs Sobrescrita',
+        body: 'Essa é uma das perguntas mais comuns em provas e entrevistas. A diferença é clara:\n\n**Sobrecarga (Overloading)**:\n- **Onde**: mesma classe (ou herdada)\n- **Nome**: mesmo\n- **Parâmetros**: DIFERENTES (quantidade ou tipo)\n- **Decidido em**: COMPILAÇÃO (o compilador escolhe)\n- **Objetivo**: conveniência — mesmo nome para operações similares\n\n**Sobrescrita (Overriding)**:\n- **Onde**: subclasse redefine método da superclasse\n- **Nome**: mesmo\n- **Parâmetros**: IGUAIS (mesma assinatura exata)\n- **Decidido em**: EXECUÇÃO (a JVM escolhe pelo objeto real)\n- **Objetivo**: polimorfismo — subclasse muda o comportamento',
+        code: `class Animal {
+    // Método que será SOBRESCRITO
+    void falar() {
+        System.out.println("...");
+    }
+
+    // Método SOBRECARREGADO (mesmo nome, parâmetros diferentes)
+    void falar(int vezes) {
+        for (int i = 0; i < vezes; i++) {
+            falar(); // chama a versão sem parâmetro
+        }
+    }
+}
+
+class Cachorro extends Animal {
+    // SOBRESCRITA: mesma assinatura que Animal.falar()
+    @Override
+    void falar() {
+        System.out.println("Au au!");
+    }
+    // Cachorro HERDA falar(int vezes) sem precisar reescrever!
+}
+
+// ═══ TESTE ═══
+Animal a = new Cachorro();
+a.falar();     // SOBRESCRITA → "Au au!" (versão do Cachorro)
+a.falar(3);    // SOBRECARGA → chama falar() 3 vezes
+               // Mas falar() dentro de falar(int) é do Cachorro!
+               // "Au au!" "Au au!" "Au au!"`,
+        codeExplanation: '**Linhas 3-5** (`falar()`): Método original do Animal, sem parâmetros.\n\n**Linhas 8-11** (`falar(int vezes)`): SOBRECARGA — mesmo nome, parâmetro diferente. Está na mesma classe.\n\n**Linhas 18-20** (`@Override falar()`): SOBRESCRITA — mesma assinatura que o pai, mas comportamento diferente.\n\n**Linha 28** (`a.falar(3)`): Chama a versão sobrecarregada (compilador escolhe pelo parâmetro int). Dentro, `falar()` chama a versão sobrescrita do Cachorro (JVM escolhe pelo objeto real). Sobrecarga e sobrescrita trabalhando juntas!',
+        tip: 'Sobrecarga e sobrescrita podem coexistir na mesma classe. Elas não são excludentes!',
+      },
+    ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// Sem sobrecarga: nomes diferentes para operações similares
+class Calculadora {
+    int somarInteiros(int a, int b) { return a + b; }
+    double somarDoubles(double a, double b) { return a + b; }
+    int somarTresInteiros(int a, int b, int c) { return a + b + c; }
+}
+// Quem usa precisa lembrar vários nomes!
+calc.somarInteiros(2, 3);
+calc.somarDoubles(2.5, 3.5);
+calc.somarTresInteiros(1, 2, 3);`,
+    withPoo: `// Com sobrecarga: UM nome para operações similares
+class Calculadora {
     int somar(int a, int b) { return a + b; }
     double somar(double a, double b) { return a + b; }
     int somar(int a, int b, int c) { return a + b + c; }
 }
+// UM nome, o compilador escolhe a versão certa!
+calc.somar(2, 3);       // int, int → versão 1
+calc.somar(2.5, 3.5);   // double, double → versão 2
+calc.somar(1, 2, 3);    // int, int, int → versão 3`,
+    comparisonExplanation: 'Sem sobrecarga, cada variação precisa de nome diferente. Com sobrecarga, o compilador escolhe a versão certa pelo tipo dos argumentos.',
 
-// SOBRESCRITA (overriding) - classe filha redefine método do pai
-public class Animal {
-    void falar() { System.out.println("..."); }
-}
-public class Cachorro extends Animal {
-    @Override
-    void falar() { System.out.println("Au au!"); }
-}`,
-        codeExplanation: 'Calculadora: três somar() com listas de parâmetros diferentes = sobrecarga. Cachorro.falar() redefine Animal.falar() = sobrescrita.',
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Vários métodos com o mesmo nome mas parâmetros diferentes na mesma classe é:',
+        snippetBefore: 'int somar(int a, int b) { ... }\ndouble somar(double a, double b) { ... }\n// Isso é ',
+        snippetAfter: ' (overloading)',
+        options: ['sobrecarga', 'sobrescrita', 'polimorfismo', 'herança'],
+        correctIndex: 0,
+        explanation: 'Sobrecarga (overloading): mesmo nome, parâmetros diferentes, na mesma classe. Decidido em compilação.',
+      },
+      {
+        instruction: 'Subclasse redefinir um método do pai com a mesma assinatura é:',
+        snippetBefore: '@Override\nvoid falar() { System.out.println("Au au!"); }\n// Isso é ',
+        snippetAfter: ' (overriding)',
+        options: ['sobrescrita', 'sobrecarga', 'composição', 'abstração'],
+        correctIndex: 0,
+        explanation: 'Sobrescrita (overriding): mesma assinatura, classe filha redefine. Decidido em execução.',
+      },
+      {
+        instruction: 'É possível sobrecarregar um método mudando APENAS o tipo de retorno?',
+        snippetBefore: 'int calcular() { return 1; }\ndouble calcular() { return 1.0; }\n// Isso ',
+        snippetAfter: ' compilar',
+        options: ['NÃO vai', 'vai', 'pode', 'sempre vai'],
+        correctIndex: 0,
+        explanation: 'Mudar só o retorno NÃO é sobrecarga. A lista de parâmetros deve ser diferente. O compilador não consegue decidir qual chamar.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Vários métodos com o mesmo nome mas parâmetros diferentes na mesma classe é chamado de:', snippetBefore: 'int somar(int a, int b) { ... }\ndouble somar(double a, double b) { ... }\n// Isso é ', snippetAfter: '', options: ['sobrecarga', 'sobrescrita', 'polimorfismo', 'herança'], correctIndex: 0, explanation: 'Sobrecarga (overloading): mesmo nome, parâmetros diferentes, mesma classe.' },
+    summary: [
+      'Sobrecarga (overloading): mesmo nome, parâmetros DIFERENTES, mesma classe',
+      'Sobrescrita (overriding): mesma assinatura, subclasse redefine método do pai',
+      'Sobrecarga é decidida em tempo de COMPILAÇÃO (pelo tipo dos argumentos)',
+      'Sobrescrita é decidida em tempo de EXECUÇÃO (pelo tipo real do objeto)',
+      'Use @Override para marcar sobrescrita — compilador verifica a assinatura',
+      'Mudar APENAS o tipo de retorno NÃO é sobrecarga (erro de compilação)',
+      'Sobrecarga e sobrescrita podem coexistir na mesma hierarquia',
+      'System.out.println() é o exemplo mais famoso de sobrecarga em Java',
     ],
-    summary: ['Sobrecarga: mesmo nome, parâmetros diferentes, mesma classe', 'Sobrescrita: mesmo nome e parâmetros, classe filha redefine', 'Sobrecarga é decidida em compilação', 'Sobrescrita é decidida em execução (polimorfismo)'],
-    tryItCode: `class Calc {
-    int somar(int a, int b) { return a + b; }
-    double somar(double a, double b) { return a + b; }
+    tryItCode: `class Calculadora {
+    int somar(int a, int b) {
+        System.out.println("somar(int, int)");
+        return a + b;
+    }
+    double somar(double a, double b) {
+        System.out.println("somar(double, double)");
+        return a + b;
+    }
+    int somar(int a, int b, int c) {
+        System.out.println("somar(int, int, int)");
+        return a + b + c;
+    }
 }
+
 public class Main {
     public static void main(String[] args) {
-        Calc c = new Calc();
-        System.out.println(c.somar(2, 3));
-        System.out.println(c.somar(2.5, 3.5));
+        Calculadora calc = new Calculadora();
+        System.out.println("Resultado: " + calc.somar(2, 3));
+        System.out.println("Resultado: " + calc.somar(2.5, 3.5));
+        System.out.println("Resultado: " + calc.somar(1, 2, 3));
     }
 }`,
-    tryItPrompt: 'Adicione somar(int a, int b, int c) e chame com três inteiros.',
+    tryItPrompt: 'Observe qual versão de somar() é chamada em cada caso. Adicione somar(String, String) que concatena textos e teste!',
     commonErrors: [
-      { title: 'Confundir sobrecarga com sobrescrita', description: 'Sobrecarga = mesma classe, parâmetros diferentes. Sobrescrita = subclasse, mesma assinatura.' },
-      { title: 'Mudar só o retorno', description: 'Não é possível sobrecarregar só pelo tipo de retorno; a lista de parâmetros deve ser diferente.' },
+      {
+        title: 'Confundir sobrecarga com sobrescrita',
+        description: 'São conceitos completamente diferentes! Um é na mesma classe, outro é na subclasse.',
+        code: `// SOBRECARGA: mesma classe, parâmetros diferentes
+class Calc {
+    int somar(int a, int b) { return a + b; }
+    double somar(double a, double b) { return a + b; } // sobrecarga!
+}
+
+// SOBRESCRITA: subclasse, mesma assinatura
+class Pai {
+    void falar() { System.out.println("Pai"); }
+}
+class Filho extends Pai {
+    @Override
+    void falar() { System.out.println("Filho"); } // sobrescrita!
+}`,
+      },
+      {
+        title: 'Achar que mudar só o retorno é sobrecarga',
+        description: 'O compilador não consegue diferenciar métodos que diferem apenas no retorno.',
+        code: `class Calc {
+    int calcular() { return 1; }
+    double calcular() { return 1.0; } // ERRO DE COMPILAÇÃO!
+    // Mesmo nome, mesmos parâmetros (nenhum) — conflito!
+
+    // CORRETO: mude os parâmetros
+    int calcular(int x) { return x; }
+    double calcular(double x) { return x; }  // sobrecarga válida!
+}`,
+      },
+      {
+        title: 'Esquecer @Override na sobrescrita',
+        description: 'Sem @Override, um erro de digitação cria um método NOVO em vez de sobrescrever.',
+        code: `class Animal {
+    void emitirSom() { System.out.println("..."); }
+}
+class Cachorro extends Animal {
+    // SEM @Override — erro de digitação!
+    void emitirSon() { System.out.println("Au au!"); }
+    // Criou método NOVO "emitirSon", não sobrescreveu "emitirSom"!
+
+    // COM @Override — compilador detecta o erro!
+    @Override
+    void emitirSon() { } // ERRO: method does not override!
+}`,
+      },
     ],
   },
 
   'm3-access': {
     id: 'm3-access', moduleId: 3,
-    objectives: ['Entender public, private, protected e default', 'Aplicar a regra na prática'],
+    objectives: [
+      'Entender os 4 modificadores de acesso: private, default, protected, public',
+      'Saber qual usar em cada situação',
+      'Entender como pacotes (packages) se relacionam com visibilidade',
+      'Aplicar a regra "private por padrão, public só quando necessário"',
+    ],
     sections: [
-      { title: 'Modificadores de Acesso', body: 'Os modificadores controlam a **visibilidade** de classes, atributos e métodos.\n\n**private**: só dentro da própria classe. É o mais restritivo; use por padrão para atributos.\n\n**default** (sem modificador): visível no **mesmo pacote**. Classes em pacotes diferentes não enxergam.\n\n**protected**: mesmo pacote **ou** subclasses (mesmo em outro pacote). Útil para atributos que a subclasse precisa acessar.\n\n**public**: visível em qualquer lugar. Use para a API que outras classes devem usar (getters, métodos de serviço). Para classes: só uma por arquivo pode ser public e deve ter o nome do arquivo.',
-        code: `public class Exemplo {
-    public int a;      // acessível de QUALQUER lugar
-    protected int b;   // acessível no pacote + subclasses
-    int c;             // default: acessível apenas no MESMO pacote
-    private int d;     // acessível SOMENTE dentro desta classe
+      // ────────── SEÇÃO 1: Por Que Controlar Acesso ──────────
+      {
+        title: 'Por Que Controlar Quem Acessa O Quê?',
+        body: 'Imagine um carro: o motorista tem acesso ao volante, pedais e marcha (interface pública). Mas NÃO tem acesso direto à injeção eletrônica, ao sistema de freio ABS ou ao módulo do motor (internos/privados).\n\nSe o motorista pudesse mexer diretamente na injeção eletrônica, poderia quebrar o carro. Por isso, só mecânicos autorizados acessam.\n\nNo código é igual: **modificadores de acesso** controlam quem pode ver e usar seus atributos e métodos. Sem eles, qualquer código pode alterar qualquer coisa — receita para bugs.',
+        code: `// SEM controle de acesso: qualquer um mexe em tudo!
+class ContaBancaria {
+    double saldo;      // público por acidente!
+    String titular;
 }
 
-// Ordem de restrição (menos → mais):
-// public > protected > default > private`,
-        tip: 'Regra geral: use private por padrão. Exponha apenas o necessário com public. Use protected para herança.',
-      },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual modificador permite acesso apenas no mesmo pacote (sem escrever nada)?', snippetBefore: '// ', snippetAfter: ': visível só no mesmo pacote\nint c;', options: ['default', 'package', 'same', 'internal'], correctIndex: 0, explanation: 'Sem modificador (default/package-private) a visibilidade é apenas no pacote.' },
-    ],
-    summary: ['private: apenas na classe', 'default: apenas no pacote', 'protected: pacote + subclasses', 'public: qualquer lugar'],
-    tryItCode: `class Exemplo {
-    private int x = 10;
-    public int getX() { return x; }
-}
-public class Main {
-    public static void main(String[] args) {
-        Exemplo e = new Exemplo();
-        System.out.println(e.getX());
+ContaBancaria conta = new ContaBancaria();
+conta.saldo = -5000;  // saldo NEGATIVO? Nenhuma validação!
+conta.titular = "";    // nome vazio? Ninguém impediu!
+
+// COM controle de acesso: dados protegidos!
+class ContaBancaria {
+    private double saldo;  // só a própria classe acessa!
+
+    public void depositar(double valor) {
+        if (valor > 0) {  // validação!
+            saldo += valor;
+        }
+    }
+
+    public double getSaldo() {
+        return saldo;  // acesso controlado (somente leitura)
     }
 }`,
-    tryItPrompt: 'x é private; só getX() é público. Tente acessar e.x no main e veja o erro de compilação.',
+        codeExplanation: '**Linhas 2-3** (sem controle): Atributos sem modificador — qualquer código externo altera diretamente. Saldo pode ficar negativo, titular pode ficar vazio.\n\n**Linha 13** (`private double saldo`): Agora só a própria classe ContaBancaria acessa saldo. Código externo precisa usar depositar().\n\n**Linhas 15-18** (depositar): Método público com validação. Garante que só valores positivos entram. O private protege, o public expõe de forma controlada.',
+        warning: 'Atributos públicos sem validação são uma das maiores fontes de bugs. Use private + métodos com validação.',
+      },
+
+      // ────────── SEÇÃO 2: Os 4 Modificadores ──────────
+      {
+        title: 'Os 4 Modificadores de Acesso em Java',
+        body: 'Java tem 4 níveis de visibilidade, do mais restrito ao mais aberto:\n\n**private** — Só dentro da PRÓPRIA classe. Ninguém de fora acessa, nem subclasses. Use para atributos e métodos internos.\n\n**default** (sem modificador) — Visível no MESMO PACOTE. Classes de outros pacotes não enxergam. Também chamado de "package-private".\n\n**protected** — Mesmo pacote + SUBCLASSES (mesmo de outro pacote). Use para atributos que filhas precisam acessar.\n\n**public** — Acessível de QUALQUER lugar. Use para a API que outras classes devem usar.\n\nOrdem de abertura: private < default < protected < public',
+        code: `// ═══ TABELA DE VISIBILIDADE ═══
+//
+// Modificador    | Mesma classe | Mesmo pacote | Subclasse | Qualquer lugar
+// ───────────────|──────────────|──────────────|───────────|───────────────
+// private        |     ✅       |     ❌        |    ❌     |      ❌
+// default (nada) |     ✅       |     ✅        |    ❌*    |      ❌
+// protected      |     ✅       |     ✅        |    ✅     |      ❌
+// public         |     ✅       |     ✅        |    ✅     |      ✅
+//
+// * default permite subclasse SÓ se estiver no mesmo pacote
+
+public class ContaBancaria {
+    private double saldo;           // só ContaBancaria acessa
+    double taxaBase;                // default: só no mesmo pacote
+    protected String tipo;          // pacote + subclasses
+    public String titular;          // qualquer lugar (cuidado!)
+
+    private void recalcularJuros() { }  // interno
+    public double getSaldo() { return saldo; }  // API pública
+}`,
+        codeExplanation: '**Linha 12** (`private double saldo`): Somente métodos DENTRO de ContaBancaria podem ler ou alterar saldo. Máxima proteção.\n\n**Linha 13** (`double taxaBase` — sem modificador): Acessível por qualquer classe no MESMO pacote, mas invisível para classes de outros pacotes.\n\n**Linha 14** (`protected String tipo`): Acessível no pacote E por subclasses. ContaCorrente extends ContaBancaria pode acessar tipo mesmo de outro pacote.\n\n**Linha 15** (`public String titular`): Qualquer classe, de qualquer pacote, acessa. Use com cuidado!',
+        tip: 'Memorize: private é porta trancada (só dono). default é porta do escritório (só colegas do mesmo andar/pacote). protected é porta da família (colegas + filhos). public é porta aberta (qualquer um).',
+      },
+
+      // ────────── SEÇÃO 3: Na Prática ──────────
+      {
+        title: 'Aplicando Modificadores na Prática',
+        body: 'A regra de ouro é: **comece com private e vá abrindo conforme necessário**.\n\n1. **Atributos**: SEMPRE private. Exponha via getters/setters quando fizer sentido.\n2. **Métodos auxiliares internos**: private (helper methods).\n3. **Métodos que subclasses precisam**: protected.\n4. **API pública** (o que outros usam): public.\n5. **Dentro do mesmo pacote**: default pode ser útil para classes de serviço que colaboram entre si.\n\nPense nos modificadores como "controle de danos": se algo está private, você pode mudar a implementação sem afetar ninguém. Se está public, qualquer mudança pode quebrar código que depende dele.',
+        code: `// ═══ EXEMPLO PRÁTICO COMPLETO ═══
+public class Funcionario {
+    // Atributos: SEMPRE private
+    private String nome;
+    private String cpf;
+    private double salario;
+
+    // Construtor: public (para criar objetos)
+    public Funcionario(String nome, String cpf, double salario) {
+        this.nome = nome;
+        this.cpf = cpf;
+        setSalario(salario); // usa o setter com validação!
+    }
+
+    // Getters: public (API de leitura)
+    public String getNome() { return nome; }
+    public String getCpf() { return cpf; }
+    public double getSalario() { return salario; }
+
+    // Setter com validação: public
+    public void setSalario(double salario) {
+        if (salario < 0) {
+            throw new IllegalArgumentException("Salário não pode ser negativo!");
+        }
+        this.salario = salario;
+    }
+
+    // Método interno: private (ninguém de fora precisa)
+    private String formatarCpf() {
+        return cpf.substring(0, 3) + ".***.***-**";
+    }
+
+    // Método que subclasses podem precisar: protected
+    protected double calcularPagamento() {
+        return salario;
+    }
+
+    // API pública
+    public void exibirInfo() {
+        System.out.println(nome + " | " + formatarCpf()
+            + " | R$" + String.format("%.2f", calcularPagamento()));
+    }
+}`,
+        codeExplanation: '**Linhas 4-6** (`private`): Atributos são SEMPRE private. Ninguém de fora altera diretamente.\n\n**Linhas 16-18** (`public getters`): API de leitura. Código externo lê os dados, mas não altera.\n\n**Linhas 21-26** (`public setSalario`): Setter com validação. Impede salário negativo.\n\n**Linhas 29-31** (`private formatarCpf`): Método auxiliar interno. Só a própria classe usa. Se mudar a formatação, ninguém de fora é afetado.\n\n**Linhas 34-36** (`protected calcularPagamento`): Subclasses (Gerente, Estagiário) podem sobrescrever para calcular diferente.\n\n**Linhas 39-42** (`public exibirInfo`): API pública. Usa formatarCpf() (private) e calcularPagamento() (protected) internamente.',
+      },
+    ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM controle de acesso: tudo exposto
+class Funcionario {
+    String nome;
+    String cpf;
+    double salario;  // qualquer um altera!
+}
+
+Funcionario f = new Funcionario();
+f.salario = -5000;  // negativo! Sem validação!
+f.cpf = "";          // vazio! Sem proteção!
+f.nome = null;       // null! Ninguém impediu!`,
+    withPoo: `// COM controle de acesso: dados protegidos
+class Funcionario {
+    private String nome;
+    private double salario;
+
+    public void setSalario(double sal) {
+        if (sal < 0) throw new IllegalArgumentException("Inválido!");
+        this.salario = sal;
+    }
+    public double getSalario() { return salario; }
+}
+
+Funcionario f = new Funcionario();
+f.setSalario(-5000);  // Exception! Protegido!
+// f.salario = -5000; // NEM COMPILA! private!`,
+    comparisonExplanation: 'Sem private, qualquer código altera dados livremente (bugs garantidos). Com private + validação, a classe protege seus dados.',
+
+    // ────────── Exercícios ──────────
+    codeFillExercises: [
+      {
+        instruction: 'Qual modificador garante que o atributo só é acessível dentro da própria classe?',
+        snippetBefore: '',
+        snippetAfter: ' double saldo; // só ContaBancaria acessa',
+        options: ['private', 'protected', 'default', 'public'],
+        correctIndex: 0,
+        explanation: 'private é o mais restritivo — só a própria classe acessa. Use para atributos sempre.',
+      },
+      {
+        instruction: 'Qual modificador permite acesso no mesmo pacote E nas subclasses?',
+        snippetBefore: '',
+        snippetAfter: ' String tipo; // pacote + subclasses',
+        options: ['protected', 'private', 'public', 'default'],
+        correctIndex: 0,
+        explanation: 'protected permite acesso no pacote e em subclasses (mesmo de outro pacote). Use quando filhas precisam acessar.',
+      },
+      {
+        instruction: 'Quando você NÃO escreve nenhum modificador, qual é a visibilidade?',
+        snippetBefore: 'double taxaBase; // sem modificador = visível no ',
+        snippetAfter: '',
+        options: ['mesmo pacote', 'qualquer lugar', 'só na classe', 'só subclasses'],
+        correctIndex: 0,
+        explanation: 'Sem modificador (default/package-private) = visível apenas no mesmo pacote. Classes de outros pacotes não enxergam.',
+      },
+    ],
+    summary: [
+      'private: só dentro da própria classe — use para TODOS os atributos',
+      'default (sem modificador): apenas no mesmo pacote',
+      'protected: mesmo pacote + subclasses — use quando filhas precisam acessar',
+      'public: acessível de qualquer lugar — use para a API pública',
+      'Ordem de abertura: private < default < protected < public',
+      'Regra de ouro: comece com private, vá abrindo conforme necessário',
+      'Getters/setters com validação controlam acesso a atributos privados',
+      'Métodos internos (helpers) devem ser private',
+    ],
+    tryItCode: `class ContaBancaria {
+    private double saldo;
+    private String titular;
+
+    public ContaBancaria(String titular, double saldoInicial) {
+        this.titular = titular;
+        this.saldo = saldoInicial;
+    }
+
+    public void depositar(double valor) {
+        if (valor <= 0) {
+            System.out.println("Valor inválido!");
+            return;
+        }
+        saldo += valor;
+        System.out.println("Depósito de R$" + valor + " realizado!");
+    }
+
+    public void sacar(double valor) {
+        if (valor <= 0 || valor > saldo) {
+            System.out.println("Saque inválido!");
+            return;
+        }
+        saldo -= valor;
+        System.out.println("Saque de R$" + valor + " realizado!");
+    }
+
+    public void exibirSaldo() {
+        System.out.println(titular + " | Saldo: R$" + String.format("%.2f", saldo));
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        ContaBancaria conta = new ContaBancaria("João", 1000);
+        conta.exibirSaldo();
+        conta.depositar(500);
+        conta.sacar(200);
+        conta.sacar(5000);  // inválido!
+        conta.exibirSaldo();
+        // conta.saldo = -9999;  // NÃO COMPILA! private!
+    }
+}`,
+    tryItPrompt: 'Tente acessar conta.saldo diretamente (descomente a última linha) e veja o erro. O private protege! Adicione um método transferir(ContaBancaria destino, double valor).',
     commonErrors: [
-      { title: 'Deixar tudo public', description: 'Atributos públicos quebram encapsulamento; prefira private + getters/setters quando fizer sentido.' },
-      { title: 'protected em tudo', description: 'Use protected só quando a subclasse realmente precisar acessar; senão private.' },
+      {
+        title: 'Deixar atributos public',
+        description: 'Atributos public permitem alteração direta sem validação — qualquer código pode colocar valores inválidos.',
+        code: `// ERRADO: atributo público
+class Conta {
+    public double saldo;  // qualquer um altera!
+}
+Conta c = new Conta();
+c.saldo = -9999;  // saldo negativo! Sem proteção!
+
+// CORRETO: private + setter com validação
+class Conta {
+    private double saldo;
+    public void setSaldo(double s) {
+        if (s >= 0) this.saldo = s;
+    }
+}`,
+      },
+      {
+        title: 'Usar protected quando private bastaria',
+        description: 'protected abre acesso para subclasses e todo o pacote. Se não precisa disso, use private.',
+        code: `// EXCESSO de abertura:
+class Conta {
+    protected String senha;  // subclasses e pacote inteiro veem a senha!
+}
+
+// CORRETO:
+class Conta {
+    private String senha;  // só a própria Conta acessa a senha!
+    public boolean validarSenha(String tentativa) {
+        return senha.equals(tentativa);
+    }
+}`,
+      },
+      {
+        title: 'Criar getter E setter sem necessidade',
+        description: 'Getter + setter sem validação é quase igual a public. Só crie setter se houver validação ou real necessidade.',
+        code: `// FALSO encapsulamento: getter + setter sem validação
+class Conta {
+    private double saldo;
+    public double getSaldo() { return saldo; }
+    public void setSaldo(double s) { this.saldo = s; } // sem validação!
+}
+// É praticamente igual a "public double saldo"!
+
+// CORRETO: operações com significado
+class Conta {
+    private double saldo;
+    public double getSaldo() { return saldo; } // leitura OK
+    public void depositar(double v) { if (v > 0) saldo += v; } // operação!
+    // SEM setSaldo — saldo muda via depositar/sacar!
+}`,
+      },
     ],
   },
 
   'm3-exceptions': {
     id: 'm3-exceptions', moduleId: 3,
-    objectives: ['Usar try/catch/finally', 'Entender exceções checked vs unchecked', 'Quando usar throws'],
+    objectives: [
+      'Entender o que são exceções e por que tratá-las',
+      'Usar try/catch/finally para tratar erros',
+      'Diferenciar checked e unchecked exceptions',
+      'Usar throw para lançar exceções e throws para declarar',
+      'Criar exceções customizadas quando necessário',
+    ],
     sections: [
-      { title: 'Tratamento de Exceções', body: '**Exceções** são condições de erro que ocorrem em tempo de execução (divisão por zero, arquivo não encontrado, etc.). O bloco **try** envolve o código que pode lançar exceção; **catch** captura e trata (por tipo); **finally** executa sempre, com ou sem exceção, e é ideal para fechar recursos (arquivo, conexão).\n\n**Checked exceptions** (ex.: IOException) devem ser tratadas com try/catch ou declaradas com **throws** na assinatura do método. **Unchecked** (RuntimeException e subclasses, ex.: NullPointerException, IllegalArgumentException) não obrigam o programador a tratar. Não use try/catch para controlar fluxo normal; use para falhas reais.',
-        code: `// try/catch/finally
-try {
-    int resultado = 10 / 0; // ArithmeticException!
-    System.out.println(resultado);
-} catch (ArithmeticException e) {
-    System.out.println("Erro: divisão por zero!");
-    System.out.println("Mensagem: " + e.getMessage());
-} finally {
-    System.out.println("Sempre executa, com ou sem erro");
+      // ────────── SEÇÃO 1: O Problema ──────────
+      {
+        title: 'O Problema: Erros Que Explodem o Programa',
+        body: 'Quando algo dá errado em tempo de execução (divisão por zero, acessar null, índice fora do array), o Java lança uma **exceção** (exception). Se ninguém tratar, o programa **para imediatamente** e imprime um stack trace no console.\n\nIsso é péssimo para o usuário: imagina um sistema bancário que crasha porque alguém digitou uma letra onde esperava número? O programa precisa **tratar** o erro: exibir mensagem amigável, tentar de novo, ou tomar uma ação alternativa.\n\n**Exceções** são a forma do Java de dizer "algo deu errado". **try/catch** é como você diz "eu sei que pode dar errado e sei o que fazer".',
+        code: `// SEM tratamento: programa EXPLODE!
+public class Main {
+    public static void main(String[] args) {
+        int[] nums = {1, 2, 3};
+
+        System.out.println(nums[5]); // ArrayIndexOutOfBoundsException!
+        // Programa PARA aqui. Linha abaixo NUNCA executa!
+        System.out.println("Essa linha nunca aparece...");
+    }
 }
 
-// Múltiplos catches
-try {
-    String texto = null;
-    texto.length(); // NullPointerException
-} catch (NullPointerException e) {
-    System.out.println("Objeto nulo!");
-} catch (Exception e) {
-    System.out.println("Erro genérico: " + e.getMessage());
+// Saída:
+// Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException:
+//     Index 5 out of bounds for length 3
+//     at Main.main(Main.java:5)
+
+// O stack trace mostra: QUAL exceção, QUAL linha, QUAL arquivo.
+// Útil para debug, horrível para o usuário final!`,
+        codeExplanation: '**Linha 6**: Tenta acessar índice 5 de um array de 3 elementos. O Java lança ArrayIndexOutOfBoundsException.\n\n**Linha 8**: NUNCA executa! Quando uma exceção não é tratada, o programa para imediatamente naquele ponto.\n\n**Linhas 12-15**: O stack trace mostra o tipo da exceção, a mensagem e exatamente onde aconteceu (arquivo e linha). Essencial para debug.',
+        warning: 'Exceções não tratadas matam o programa. Em sistemas reais (bancos, e-commerces), isso significa perda de dados e clientes.',
+      },
+
+      // ────────── SEÇÃO 2: try/catch/finally ──────────
+      {
+        title: 'try/catch/finally: Tratando Exceções',
+        body: 'O bloco **try** envolve código que pode falhar. Se uma exceção ocorrer, o Java pula para o **catch** correspondente ao tipo da exceção. O bloco **finally** executa SEMPRE — com ou sem exceção — ideal para liberar recursos (fechar arquivo, conexão, etc.).\n\nVocê pode ter múltiplos catches para tratar exceções diferentes. A ordem importa: exceções mais ESPECÍFICAS primeiro, genéricas depois (o Java usa o primeiro catch que combinar).',
+        code: `// ═══ try/catch/finally COMPLETO ═══
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Início do programa");
+
+        try {
+            System.out.println("Dentro do try...");
+            int resultado = 10 / 0;  // ArithmeticException!
+            System.out.println("Isso NÃO executa");  // pula!
+        } catch (ArithmeticException e) {
+            System.out.println("Erro capturado: " + e.getMessage());
+            // getMessage() retorna: "/ by zero"
+        } finally {
+            System.out.println("Finally SEMPRE executa!");
+        }
+
+        System.out.println("Programa continua normalmente!");
+
+        // ═══ MÚLTIPLOS CATCHES ═══
+        try {
+            String texto = null;
+            texto.length();  // NullPointerException!
+        } catch (NullPointerException e) {
+            System.out.println("Erro: objeto é null!");
+        } catch (Exception e) {
+            // Captura qualquer exceção NÃO pega acima
+            System.out.println("Erro genérico: " + e.getMessage());
+        }
+    }
 }
 
-// throws: declara que o método pode lançar exceção
+// Saída:
+// Início do programa
+// Dentro do try...
+// Erro capturado: / by zero
+// Finally SEMPRE executa!
+// Programa continua normalmente!`,
+        codeExplanation: '**Linha 8**: Divisão por zero lança ArithmeticException. O Java PULA a linha 9 e vai direto ao catch.\n\n**Linhas 10-12** (`catch`): Captura ArithmeticException. `e.getMessage()` retorna a descrição do erro.\n\n**Linhas 13-15** (`finally`): Executa SEMPRE — com exceção (como aqui) ou sem. Use para fechar recursos.\n\n**Linha 17**: O programa CONTINUA após o try/catch! Sem try/catch, teria parado na linha 8.\n\n**Linhas 23-28** (múltiplos catches): NullPointerException é específica (vem primeiro). Exception é genérica (vem por último, captura o que sobrar).',
+        tip: 'Ordem dos catches: do mais ESPECÍFICO ao mais GENÉRICO. Se colocar Exception primeiro, ele captura tudo e os catches abaixo nunca executam.',
+      },
+
+      // ────────── SEÇÃO 3: throw e throws ──────────
+      {
+        title: 'throw e throws: Lançando e Declarando Exceções',
+        body: '**throw** lança uma exceção manualmente. Use quando seu código detecta uma situação inválida:\n\n```\nthrow new IllegalArgumentException("Valor inválido!");\n```\n\n**throws** declara que um método PODE lançar uma exceção. Quem chamar esse método é OBRIGADO a tratar (ou re-declarar throws):\n\n```\npublic void lerArquivo(String path) throws IOException { ... }\n```\n\nDiferença:\n- **throw** = "estou lançando um erro AGORA" (dentro do método)\n- **throws** = "aviso: esse método PODE lançar erro" (na assinatura)',
+        code: `// ═══ throw: lançar exceção manualmente ═══
+class ContaBancaria {
+    private double saldo;
+
+    public void sacar(double valor) {
+        if (valor <= 0) {
+            throw new IllegalArgumentException("Valor deve ser positivo!");
+        }
+        if (valor > saldo) {
+            throw new IllegalArgumentException("Saldo insuficiente! Saldo: R$" + saldo);
+        }
+        saldo -= valor;
+    }
+}
+
+// Quem usa DEVE tratar:
+try {
+    conta.sacar(-100);
+} catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+    // "Erro: Valor deve ser positivo!"
+}
+
+// ═══ throws: declarar que o método pode falhar ═══
+import java.io.*;
+
 public void lerArquivo(String caminho) throws IOException {
-    // código que pode falhar
+    FileReader reader = new FileReader(caminho); // pode falhar!
+    // Se o arquivo não existir, lança FileNotFoundException (é IOException)
+}
+
+// Quem chama lerArquivo() É OBRIGADO a tratar:
+try {
+    lerArquivo("dados.txt");
+} catch (IOException e) {
+    System.out.println("Arquivo não encontrado: " + e.getMessage());
 }`,
-        codeExplanation: 'try envolve código que pode falhar. catch trata o erro específico. finally sempre executa (útil para fechar recursos). throws declara que o método pode lançar exceção.',
+        codeExplanation: '**Linha 7** (`throw new IllegalArgumentException(...)`): Lança exceção manualmente. O método PARA aqui e o erro "sobe" para quem chamou.\n\n**Linhas 9-11**: Outra verificação. Se saldo insuficiente, lança com mensagem descritiva.\n\n**Linhas 17-21**: Quem chama `sacar()` pode tratar com try/catch. IllegalArgumentException é unchecked, então tratar é opcional (mas recomendado).\n\n**Linha 27** (`throws IOException`): Declara que lerArquivo() pode lançar IOException. Como é checked exception, quem chamar É OBRIGADO a tratar ou declarar throws também.',
+      },
+
+      // ────────── SEÇÃO 4: Checked vs Unchecked ──────────
+      {
+        title: 'Checked vs Unchecked: Dois Tipos de Exceção',
+        body: 'Java tem dois tipos de exceções:\n\n**Checked** (verificadas em compilação):\n- O compilador OBRIGA você a tratar (try/catch ou throws)\n- Geralmente representam falhas EXTERNAS: arquivo não existe, rede caiu, banco indisponível\n- Exemplos: IOException, FileNotFoundException, SQLException\n- Herdam de Exception (mas NÃO de RuntimeException)\n\n**Unchecked** (não verificadas em compilação):\n- O compilador NÃO obriga a tratar (mas você pode)\n- Geralmente representam BUGS no código: null, índice inválido, argumento errado\n- Exemplos: NullPointerException, ArrayIndexOutOfBoundsException, IllegalArgumentException\n- Herdam de RuntimeException\n\nRegra prática: **checked** = "pode acontecer mesmo com código correto" (arquivo deletado). **Unchecked** = "bug no código" (acessar null).',
+        code: `// ═══ HIERARQUIA DE EXCEÇÕES ═══
+//
+//                  Throwable
+//                 /         \\
+//            Error          Exception
+//       (não trate!)       /         \\
+//                  IOException    RuntimeException
+//                  SQLException   NullPointerException
+//                  (checked)      IllegalArgumentException
+//                                 ArrayIndexOutOfBoundsException
+//                                 (unchecked)
+
+// CHECKED: compilador OBRIGA tratar
+import java.io.*;
+try {
+    FileReader fr = new FileReader("dados.txt");
+} catch (FileNotFoundException e) {  // obrigatório!
+    System.out.println("Arquivo não encontrado!");
+}
+
+// UNCHECKED: compilador NÃO obriga (mas recomendo tratar)
+String s = null;
+try {
+    s.length();  // NullPointerException
+} catch (NullPointerException e) {  // opcional
+    System.out.println("Objeto nulo!");
+}`,
+        codeExplanation: '**Linhas 1-11**: A hierarquia. Error (não trate — são erros graves como OutOfMemoryError). Exception divide-se em checked (IOException) e unchecked (RuntimeException e filhas).\n\n**Linhas 14-18** (checked): FileNotFoundException é checked. Se você não colocar try/catch, o código NÃO COMPILA. O compilador força o tratamento.\n\n**Linhas 21-26** (unchecked): NullPointerException é unchecked. O código compila sem try/catch. Mas se acontecer e não tratar, o programa crasha.',
+        tip: 'Na dúvida: falhas externas (IO, rede, banco) = checked. Bugs de programação (null, índice) = unchecked.',
       },
     ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM try/catch: programa morre no primeiro erro
+System.out.println("Processando...");
+int resultado = 10 / 0;  // CRASH!
+// Tudo abaixo perdido. Dados não salvos. Usuário frustrado.
+System.out.println("Isso nunca executa...");`,
+    withPoo: `// COM try/catch: programa trata o erro e continua
+System.out.println("Processando...");
+try {
+    int resultado = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Erro: " + e.getMessage());
+    // Pode: tentar de novo, usar valor padrão, avisar usuário
+}
+System.out.println("Programa continua!");`,
+    comparisonExplanation: 'Sem try/catch, o programa morre no erro. Com try/catch, o erro é tratado e o programa continua funcionando.',
+
+    // ────────── Exercícios ──────────
     codeFillExercises: [
-      { instruction: 'Qual bloco executa sempre, com ou sem exceção, e é usado para liberar recursos?', snippetBefore: 'try { ... } catch (Exception e) { ... }\n', snippetAfter: ' { System.out.println("Sempre executa"); }', options: ['finally', 'always', 'cleanup', 'end'], correctIndex: 0, explanation: 'O bloco finally é executado sempre, ideal para fechar arquivos ou conexões.' },
+      {
+        instruction: 'Qual bloco executa SEMPRE, com ou sem exceção?',
+        snippetBefore: 'try { ... } catch (Exception e) { ... }\n',
+        snippetAfter: ' { System.out.println("Sempre executa!"); }',
+        options: ['finally', 'always', 'end', 'cleanup'],
+        correctIndex: 0,
+        explanation: 'finally executa sempre — ideal para fechar arquivos, conexões e outros recursos.',
+      },
+      {
+        instruction: 'Como lançar uma exceção manualmente dentro de um método?',
+        snippetBefore: 'if (valor < 0) {\n    ',
+        snippetAfter: ' new IllegalArgumentException("Valor inválido!");\n}',
+        options: ['throw', 'throws', 'raise', 'catch'],
+        correctIndex: 0,
+        explanation: 'throw lança a exceção no momento. throws é usado na assinatura do método para declarar que ele PODE lançar.',
+      },
+      {
+        instruction: 'Exceções que o compilador OBRIGA a tratar são chamadas de:',
+        snippetBefore: '// IOException, SQLException = exceções ',
+        snippetAfter: '',
+        options: ['checked', 'unchecked', 'runtime', 'fatal'],
+        correctIndex: 0,
+        explanation: 'Checked exceptions (IOException, etc.) obrigam try/catch ou throws. Unchecked (RuntimeException) não obrigam.',
+      },
     ],
-    summary: ['try/catch trata erros em tempo de execução', 'finally sempre executa (cleanup)', 'Checked exceptions obrigam tratamento (IOException)', 'Unchecked não obrigam (NullPointerException)', 'throws declara exceções que o método pode lançar'],
-    tryItCode: `public class Main {
+    summary: [
+      'Exceções são erros em tempo de execução — sem tratamento, o programa morre',
+      'try envolve código que pode falhar; catch trata o erro por tipo',
+      'finally executa SEMPRE (com ou sem exceção) — ideal para cleanup',
+      'Múltiplos catches: exceções específicas PRIMEIRO, genéricas DEPOIS',
+      'throw lança exceção manualmente; throws declara que o método pode lançar',
+      'Checked (IOException): compilador OBRIGA tratar — falhas externas',
+      'Unchecked (NullPointerException): compilador NÃO obriga — bugs de código',
+      'Nunca ignore exceções com catch vazio — no mínimo registre o erro',
+    ],
+    tryItCode: `class ContaBancaria {
+    private double saldo;
+
+    public ContaBancaria(double saldoInicial) {
+        this.saldo = saldoInicial;
+    }
+
+    public void sacar(double valor) {
+        if (valor <= 0) {
+            throw new IllegalArgumentException("Valor deve ser positivo!");
+        }
+        if (valor > saldo) {
+            throw new IllegalArgumentException("Saldo insuficiente! Saldo: R$" + saldo);
+        }
+        saldo -= valor;
+        System.out.println("Sacou R$" + valor + " | Saldo: R$" + saldo);
+    }
+}
+
+public class Main {
     public static void main(String[] args) {
+        ContaBancaria conta = new ContaBancaria(1000);
+
         try {
-            int x = 10 / 0;
-        } catch (ArithmeticException e) {
+            conta.sacar(500);   // OK
+            conta.sacar(800);   // Erro: saldo insuficiente!
+        } catch (IllegalArgumentException e) {
             System.out.println("Erro: " + e.getMessage());
         } finally {
-            System.out.println("Finally sempre executa");
+            System.out.println("Operação finalizada.");
+        }
+
+        // Teste com valor negativo:
+        try {
+            conta.sacar(-100);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Erro: " + e.getMessage());
         }
     }
 }`,
-    tryItPrompt: 'Altere para 10/2 e veja que o finally roda mesmo sem exceção.',
+    tryItPrompt: 'Teste sacar valores inválidos (negativo, maior que saldo). O try/catch impede que o programa morra!',
     commonErrors: [
-      { title: 'catch genérico demais', description: 'Capture exceções específicas antes da genérica (Exception por último).' },
-      { title: 'Ignorar exceção no catch vazio', description: 'No mínimo registre o erro (log) ou re-lance (throw e).' },
+      {
+        title: 'catch vazio (engolir exceção)',
+        description: 'O pior erro: capturar exceção e não fazer NADA. O erro acontece silenciosamente e você não sabe.',
+        code: `// PÉSSIMO: catch vazio!
+try {
+    conta.sacar(9999);
+} catch (Exception e) {
+    // nada aqui... o erro sumiu!
+}
+// O saque falhou mas ninguém sabe!
+
+// CORRETO: pelo menos registre o erro
+try {
+    conta.sacar(9999);
+} catch (Exception e) {
+    System.out.println("Erro: " + e.getMessage());
+    // Em produção: logger.error("Saque falhou", e);
+}`,
+      },
+      {
+        title: 'catch genérico antes do específico',
+        description: 'Se colocar Exception primeiro, ele captura TUDO e os catches específicos nunca executam.',
+        code: `// ERRADO: Exception captura tudo!
+try { ... }
+catch (Exception e) { }            // captura TUDO aqui!
+catch (NullPointerException e) { }  // NUNCA alcança! Erro de compilação!
+
+// CORRETO: específico PRIMEIRO
+try { ... }
+catch (NullPointerException e) { }  // específico primeiro
+catch (IllegalArgumentException e) { }
+catch (Exception e) { }             // genérico por último`,
+      },
+      {
+        title: 'Confundir throw com throws',
+        description: 'throw lança exceção no momento. throws declara que o método pode lançar.',
+        code: `// throw: LANÇA a exceção (dentro do método)
+public void sacar(double valor) {
+    if (valor < 0) {
+        throw new IllegalArgumentException("Negativo!"); // lança AGORA
+    }
+}
+
+// throws: DECLARA que o método pode lançar (na assinatura)
+public void lerArquivo(String path) throws IOException {
+    // Este método PODE lançar IOException
+    // Quem chamar é OBRIGADO a tratar (checked exception)
+}`,
+      },
     ],
   },
 
   'm3-solid': {
     id: 'm3-solid', moduleId: 3,
-    objectives: ['Conhecer os 5 princípios SOLID', 'Aplicar SRP e OCP na prática', 'Entender L, I e D em resumo'],
+    objectives: [
+      'Entender o que é SOLID e por que esses princípios existem',
+      'Aplicar S — Single Responsibility: uma classe, uma responsabilidade',
+      'Aplicar O — Open/Closed: aberto para extensão, fechado para modificação',
+      'Entender L — Liskov Substitution: subclasses respeitam o contrato',
+      'Entender I — Interface Segregation: interfaces pequenas e específicas',
+      'Entender D — Dependency Inversion: dependa de abstrações, não de implementações',
+    ],
     sections: [
-      { title: 'SOLID — Os 5 Princípios', body: 'SOLID são cinco princípios de design que ajudam a manter o código limpo, extensível e fácil de manter.\n\n**S — Single Responsibility (SRP)**: Uma classe deve ter **uma única razão para mudar**. Se ela calcula salário, gera relatório e salva no banco, três motivos diferentes podem forçar alteração; prefira separar em classes distintas.\n\n**O — Open/Closed**: Aberta para **extensão** (novas subclasses, novas implementações), fechada para **modificação** (evite mudar código que já funciona). Use polimorfismo e interfaces para estender sem alterar o existente.\n\n**L — Liskov Substitution**: Objetos das subclasses devem poder substituir objetos da superclasse sem quebrar o programa. O contrato (comportamento esperado) deve ser respeitado.\n\n**I — Interface Segregation**: Prefira interfaces pequenas e específicas a uma interface enorme. Quem implementa não deve ser forçado a depender de métodos que não usa.\n\n**D — Dependency Inversion**: Módulos de alto nível não devem depender de módulos de baixo nível; ambos devem depender de **abstrações** (interfaces). Assim você pode trocar implementações (ex.: banco de dados) sem reescrever a lógica.',
-        code: `// S — Single Responsibility (antes)
-public class Funcionario {
-    void calcularSalario() { /* ... */ }
-    void gerarRelatorio() { /* ... */ }  // NÃO! Outra responsabilidade
-    void salvarNoBanco() { /* ... */ }   // NÃO! Outra responsabilidade
+      // ────────── SEÇÃO 1: S — Single Responsibility ──────────
+      {
+        title: 'S — Single Responsibility: Uma Classe, Uma Responsabilidade',
+        body: 'SOLID são 5 princípios de design criados para manter código **limpo, extensível e fácil de manter**. Vamos um por um.\n\nO princípio **S** (Single Responsibility — SRP) diz: **uma classe deve ter apenas uma razão para mudar**.\n\nSe a classe Funcionario calcula salário, gera relatório PDF e salva no banco de dados, ela tem 3 responsabilidades. Se a regra de relatório mudar, você mexe na mesma classe que calcula salário. Se o banco mudar, mexe na mesma classe que gera relatório. Tudo misturado = tudo frágil.\n\nSolução: **separe em classes com responsabilidades claras**. Funcionario cuida dos dados, RelatorioService gera relatórios, FuncionarioRepository salva no banco.',
+        code: `// ═══ ANTES: classe "Deus" que faz tudo ═══
+class Funcionario {
+    private String nome;
+    private double salario;
+
+    double calcularPagamento() { return salario; }   // OK: responsabilidade 1
+
+    void gerarRelatorioPDF() {                        // NÃO! responsabilidade 2
+        // código de gerar PDF misturado com dados do funcionário...
+    }
+
+    void salvarNoBanco() {                            // NÃO! responsabilidade 3
+        // código de SQL misturado com regras de negócio...
+    }
 }
 
-// S — Single Responsibility (depois)
-public class Funcionario {
-    void calcularSalario() { /* ... */ } // Só faz UMA coisa
+// ═══ DEPOIS: cada classe com UMA responsabilidade ═══
+class Funcionario {
+    private String nome;
+    private double salario;
+    double calcularPagamento() { return salario; }    // só dados e cálculo!
 }
-public class RelatorioService {
-    void gerar(Funcionario f) { /* ... */ }
+
+class RelatorioService {
+    void gerarPDF(Funcionario f) { /* gera PDF */ }   // só relatórios!
 }
-public class FuncionarioRepository {
-    void salvar(Funcionario f) { /* ... */ }
+
+class FuncionarioRepository {
+    void salvar(Funcionario f) { /* SQL aqui */ }      // só persistência!
 }`,
-        codeExplanation: 'SRP: Funcionario só cuida de dados e cálculo de salário. RelatorioService e FuncionarioRepository têm responsabilidades separadas.',
-        tip: 'Comece pelo S (SRP) — ele já resolve a maioria dos problemas de design. Se uma classe faz muita coisa, quebre em classes menores.',
+        codeExplanation: '**Linhas 2-15** (antes): Funcionario faz 3 coisas — cálculo, relatório e banco. Mudança em qualquer área mexe na mesma classe.\n\n**Linhas 18-31** (depois): Cada classe faz UMA coisa. Mudou o formato do relatório? Só mexe em RelatorioService. Mudou o banco de dados? Só mexe em FuncionarioRepository. Funcionario permanece intacto.',
+        tip: 'Teste do SRP: "Essa classe tem mais de uma razão para mudar?" Se sim, quebre em classes menores.',
+      },
+
+      // ────────── SEÇÃO 2: O — Open/Closed ──────────
+      {
+        title: 'O — Open/Closed: Aberto Para Extensão, Fechado Para Modificação',
+        body: 'O princípio **O** (Open/Closed — OCP) diz: **o código deve ser aberto para extensão e fechado para modificação**.\n\nNa prática: se precisa de um novo tipo de desconto, você NÃO deveria modificar a classe existente (que já funciona e já foi testada). Deveria CRIAR uma nova classe.\n\nIsso é exatamente o que polimorfismo e interfaces fazem! Em vez de if/else para cada tipo, você cria uma interface e cada implementação é uma extensão. Novo tipo? Nova classe. Código existente não muda.',
+        code: `// ═══ VIOLANDO OCP: if/else para cada tipo ═══
+class CalculadoraDesconto {
+    double calcular(String tipo, double valor) {
+        if (tipo.equals("natal")) {
+            return valor * 0.20;
+        } else if (tipo.equals("blackfriday")) {
+            return valor * 0.30;
+        } else if (tipo.equals("aniversario")) {  // novo tipo = MODIFICAR!
+            return valor * 0.10;
+        }
+        return 0;
+    }
+    // Cada novo desconto = mexer nesse método. Perigoso!
+}
+
+// ═══ RESPEITANDO OCP: interface + implementações ═══
+interface Desconto {
+    double calcular(double valor);
+}
+
+class DescontoNatal implements Desconto {
+    @Override
+    public double calcular(double valor) { return valor * 0.20; }
+}
+
+class DescontoBlackFriday implements Desconto {
+    @Override
+    public double calcular(double valor) { return valor * 0.30; }
+}
+
+// Novo desconto? Cria NOVA classe. NÃO mexe nas existentes!
+class DescontoAniversario implements Desconto {
+    @Override
+    public double calcular(double valor) { return valor * 0.10; }
+}
+
+// Uso: aceita QUALQUER desconto via interface
+double aplicar(Desconto d, double valor) {
+    return valor - d.calcular(valor);
+}`,
+        codeExplanation: '**Linhas 2-13** (violando): Cada novo tipo de desconto exige adicionar mais um else if. O método cresce infinitamente e fica frágil.\n\n**Linhas 17-37** (respeitando): Interface Desconto define o contrato. Cada desconto é uma classe separada. Novo desconto? Nova classe. O método `aplicar()` (linha 40) aceita QUALQUER Desconto sem precisar mudar.\n\nIsso é OCP: **extensão** (nova classe) sem **modificação** (código existente não muda).',
+      },
+
+      // ────────── SEÇÃO 3: L — Liskov Substitution ──────────
+      {
+        title: 'L — Liskov Substitution: Subclasses Respeitam o Contrato',
+        body: 'O princípio **L** (Liskov Substitution — LSP) diz: **onde você usa a classe pai, deve poder usar qualquer subclasse sem quebrar o programa**.\n\nSe um método espera `Funcionario`, e você passa `Gerente extends Funcionario`, o Gerente deve funcionar EXATAMENTE como esperado — respeitando o contrato do pai.\n\nExemplo clássico de VIOLAÇÃO: Quadrado extends Retângulo. Se Retângulo tem setLargura() e setAltura() independentes, Quadrado não pode — largura e altura são sempre iguais. Código que usa Retângulo (e espera poder alterar largura sem mudar altura) quebra com Quadrado.',
+        code: `// ═══ VIOLANDO LSP: Quadrado NÃO substitui Retângulo ═══
+class Retangulo {
+    protected int largura, altura;
+    void setLargura(int l) { largura = l; }
+    void setAltura(int a) { altura = a; }
+    int area() { return largura * altura; }
+}
+
+class Quadrado extends Retangulo {
+    // Quadrado: largura DEVE ser igual à altura!
+    @Override
+    void setLargura(int l) { largura = l; altura = l; } // muda os dois!
+    @Override
+    void setAltura(int a) { largura = a; altura = a; }  // muda os dois!
+}
+
+// Código que usa Retângulo:
+void testar(Retangulo r) {
+    r.setLargura(5);
+    r.setAltura(3);
+    // Esperado: 5 * 3 = 15
+    System.out.println(r.area());
+    // Com Retângulo: 15 ✅
+    // Com Quadrado: 9 ❌ (setAltura mudou largura para 3!)
+}`,
+        codeExplanation: '**Linhas 11-14**: Quadrado sobrescreve set para manter largura = altura. Parece lógico, mas...\n\n**Linhas 18-24**: O método testar() espera comportamento de Retângulo (largura e altura independentes). Quando recebe Quadrado, setAltura(3) muda a largura também, e a área dá 9 em vez de 15.\n\n**Resultado**: Quadrado NÃO pode substituir Retângulo sem quebrar. Violação de LSP! Solução: não use herança aqui — use classes separadas ou uma classe abstrata Forma.',
+        warning: 'Se a subclasse MUDA o comportamento esperado pelo código que usa o pai, é violação de Liskov. "É um" no sentido lógico nem sempre funciona no código.',
+      },
+
+      // ────────── SEÇÃO 4: I e D ──────────
+      {
+        title: 'I — Interface Segregation e D — Dependency Inversion',
+        body: '**I — Interface Segregation (ISP)**: Prefira interfaces **pequenas e específicas** a uma interface enorme. Se a interface Animal tem `voar()`, `nadar()` e `correr()`, um Cachorro é obrigado a implementar `voar()` (que não faz sentido).\n\nSolução: separe em interfaces menores — `Voavel`, `Nadavel`, `Corredor`. Cachorro implementa só o que precisa.\n\n**D — Dependency Inversion (DIP)**: Módulos de alto nível NÃO devem depender de módulos de baixo nível. Ambos devem depender de **abstrações** (interfaces).\n\nEm vez de `FolhaPagamento` depender diretamente de `BancoDeDadosMySQL`, crie uma interface `Repositorio` e faça `FolhaPagamento` depender dela. Assim você pode trocar MySQL por PostgreSQL ou até um banco em memória para testes, sem mudar FolhaPagamento.',
+        code: `// ═══ I — Interface Segregation ═══
+
+// ERRADO: interface gigante
+interface Animal {
+    void comer();
+    void correr();
+    void voar();   // Cachorro voa?!
+    void nadar();  // Águia nada?!
+}
+
+// CORRETO: interfaces pequenas
+interface Alimentavel { void comer(); }
+interface Corredor { void correr(); }
+interface Voavel { void voar(); }
+interface Nadavel { void nadar(); }
+
+class Cachorro implements Alimentavel, Corredor, Nadavel {
+    public void comer() { }
+    public void correr() { }
+    public void nadar() { }
+    // Não precisa implementar voar()!
+}
+
+// ═══ D — Dependency Inversion ═══
+
+// ERRADO: depende de implementação concreta
+class FolhaPagamento {
+    private BancoMySQL banco = new BancoMySQL(); // acoplado!
+    void salvar(Funcionario f) { banco.inserir(f); }
+}
+
+// CORRETO: depende de abstração (interface)
+interface Repositorio {
+    void salvar(Funcionario f);
+}
+class FolhaPagamento {
+    private Repositorio repo; // depende da INTERFACE!
+    FolhaPagamento(Repositorio repo) { this.repo = repo; }
+    void processar(Funcionario f) { repo.salvar(f); }
+}
+// Agora pode usar MySQL, PostgreSQL, ou mock para testes!`,
+        codeExplanation: '**Linhas 4-9** (ISP violado): Interface Animal gigante obriga Cachorro a implementar voar(). Sem sentido.\n\n**Linhas 12-22** (ISP correto): Interfaces pequenas. Cachorro implementa só o que faz sentido.\n\n**Linhas 28-30** (DIP violado): FolhaPagamento cria BancoMySQL diretamente. Quer trocar para PostgreSQL? Muda FolhaPagamento.\n\n**Linhas 33-41** (DIP correto): FolhaPagamento depende de Repositorio (interface). O banco concreto é injetado de fora (injeção de dependência). Quer trocar? Só passa outra implementação.',
+        tip: 'DIP + composição + injeção de dependência é o combo mais usado em projetos profissionais Java (Spring Framework, por exemplo).',
       },
     ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM SOLID: classe "Deus", if/else infinito, acoplamento forte
+class SistemaRH {
+    void calcularSalario(Funcionario f) { ... }
+    void gerarRelatorio(Funcionario f) { ... }
+    void salvarNoBanco(Funcionario f) { ... }
+    void enviarEmail(Funcionario f) { ... }
+    void calcularDesconto(String tipo, double valor) {
+        if (tipo.equals("natal")) { ... }
+        else if (tipo.equals("blackfriday")) { ... }
+        // cada novo tipo = mexer aqui
+    }
+}
+// Uma classe faz TUDO. Qualquer mudança pode quebrar tudo.`,
+    withPoo: `// COM SOLID: classes focadas, extensíveis, desacopladas
+class Funcionario { double calcularSalario() { ... } }  // S
+class RelatorioService { void gerar(Funcionario f) { ... } }  // S
+class FuncionarioRepo implements Repositorio { ... }  // D
+interface Desconto { double calcular(double valor); }  // O
+class DescontoNatal implements Desconto { ... }  // O: extensão!
+class DescontoBlackFriday implements Desconto { ... }
+// Novo desconto? Nova classe. Código existente NÃO muda.`,
+    comparisonExplanation: 'Sem SOLID, tudo fica em uma classe gigante difícil de manter. Com SOLID, cada classe faz uma coisa, extensões não quebram código existente, e dependências são abstratas.',
+
+    // ────────── Exercícios ──────────
     codeFillExercises: [
-      { instruction: 'Qual princípio SOLID diz que uma classe deve ter apenas uma razão para mudar?', snippetBefore: 'O princípio ', snippetAfter: ' (Single Responsibility) diz: uma classe, uma responsabilidade.', options: ['S', 'O', 'L', 'I'], correctIndex: 0, explanation: 'S = Single Responsibility Principle: uma classe deve ter uma única responsabilidade.' },
+      {
+        instruction: 'Qual princípio SOLID diz que uma classe deve ter apenas uma razão para mudar?',
+        snippetBefore: 'O princípio ',
+        snippetAfter: ' (Single Responsibility) diz: uma classe, uma responsabilidade.',
+        options: ['S', 'O', 'L', 'I'],
+        correctIndex: 0,
+        explanation: 'S = Single Responsibility. Se a classe faz muitas coisas, separe em classes menores.',
+      },
+      {
+        instruction: 'Qual princípio diz que código deve ser aberto para extensão e fechado para modificação?',
+        snippetBefore: 'O princípio ',
+        snippetAfter: ' (Open/Closed) permite estender sem alterar código existente.',
+        options: ['O', 'S', 'L', 'D'],
+        correctIndex: 0,
+        explanation: 'O = Open/Closed. Use polimorfismo e interfaces para estender sem modificar.',
+      },
+      {
+        instruction: 'Qual princípio diz que devemos depender de abstrações (interfaces), não de implementações concretas?',
+        snippetBefore: 'O princípio ',
+        snippetAfter: ' (Dependency Inversion) desacopla módulos via interfaces.',
+        options: ['D', 'I', 'S', 'L'],
+        correctIndex: 0,
+        explanation: 'D = Dependency Inversion. Dependa de interfaces, não de classes concretas. Isso permite trocar implementações.',
+      },
     ],
-    summary: ['S: Uma classe, uma responsabilidade', 'O: Estenda comportamento sem modificar código existente', 'L: Subclasses devem funcionar onde a classe pai funciona', 'I: Interfaces pequenas e específicas', 'D: Dependa de abstrações (interfaces)'],
+    summary: [
+      'S (SRP): uma classe, uma responsabilidade — uma razão para mudar',
+      'O (OCP): aberto para extensão (nova classe), fechado para modificação (não mexe no existente)',
+      'L (LSP): subclasses devem poder substituir o pai sem quebrar o programa',
+      'I (ISP): interfaces pequenas e específicas — não obrigue a implementar o que não usa',
+      'D (DIP): dependa de abstrações (interfaces), não de implementações concretas',
+      'SRP é o mais importante para começar — se a classe faz demais, quebre!',
+      'OCP usa polimorfismo e interfaces para permitir extensão',
+      'DIP + injeção de dependência é a base de frameworks como Spring',
+    ],
+    tryItCode: `// Exemplo de SRP + OCP juntos
+import java.util.ArrayList;
+
+interface Desconto {
+    double calcular(double valor);
+    String getNome();
+}
+
+class DescontoNatal implements Desconto {
+    public double calcular(double valor) { return valor * 0.20; }
+    public String getNome() { return "Natal (20%)"; }
+}
+
+class DescontoBlackFriday implements Desconto {
+    public double calcular(double valor) { return valor * 0.30; }
+    public String getNome() { return "Black Friday (30%)"; }
+}
+
+class DescontoFidelidade implements Desconto {
+    public double calcular(double valor) { return valor * 0.05; }
+    public String getNome() { return "Fidelidade (5%)"; }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        double preco = 200.0;
+        ArrayList<Desconto> descontos = new ArrayList<>();
+        descontos.add(new DescontoNatal());
+        descontos.add(new DescontoBlackFriday());
+        descontos.add(new DescontoFidelidade());
+
+        for (Desconto d : descontos) {
+            double desc = d.calcular(preco);
+            System.out.println(d.getNome() + ": R$" + preco
+                + " - R$" + desc + " = R$" + (preco - desc));
+        }
+    }
+}`,
+    tryItPrompt: 'Crie DescontoDiaDasMaes (15%) implementando a interface. Adicione na lista — o loop NÃO muda! Isso é OCP em ação.',
     commonErrors: [
-      { title: 'Classe "Deus" que faz tudo', description: 'Quebre em várias classes com responsabilidades claras (SRP).' },
-      { title: 'Estender modificando o pai o tempo todo', description: 'Preferir composição e interfaces para estender (O e D).' },
+      {
+        title: 'Classe "Deus" que faz tudo (viola SRP)',
+        description: 'Se a classe tem muitos métodos de áreas diferentes, quebre em classes menores.',
+        code: `// ERRADO: uma classe faz tudo
+class SistemaRH {
+    void calcularSalario() { }
+    void gerarRelatorio() { }
+    void enviarEmail() { }
+    void salvarNoBanco() { }
+    // 4 razões para mudar!
+}
+
+// CORRETO: cada classe com uma responsabilidade
+class SalarioService { void calcular() { } }
+class RelatorioService { void gerar() { } }
+class EmailService { void enviar() { } }
+class FuncionarioRepository { void salvar() { } }`,
+      },
+      {
+        title: 'if/else infinito para tipos (viola OCP)',
+        description: 'Se cada novo tipo exige mais um if/else, use polimorfismo.',
+        code: `// ERRADO: if/else cresce para sempre
+double calcularDesconto(String tipo) {
+    if (tipo.equals("natal")) return 0.2;
+    else if (tipo.equals("blackfriday")) return 0.3;
+    // novo tipo = mexer aqui...
+}
+
+// CORRETO: interface + implementações
+interface Desconto { double calcular(double v); }
+class DescontoNatal implements Desconto { ... }
+// Novo desconto = nova classe. Sem mexer nas existentes!`,
+      },
+      {
+        title: 'Depender de implementação concreta (viola DIP)',
+        description: 'Dependa de interfaces, não de classes concretas. Isso permite trocar implementações.',
+        code: `// ERRADO: acoplado a MySQL
+class Servico {
+    private BancoMySQL db = new BancoMySQL(); // concreto!
+}
+
+// CORRETO: depende de interface
+interface Repositorio { void salvar(Object o); }
+class Servico {
+    private Repositorio repo; // abstrato!
+    Servico(Repositorio repo) { this.repo = repo; }
+}
+// Pode injetar MySQL, PostgreSQL, ou mock!`,
+      },
     ],
   },
 
   'm3-project': {
     id: 'm3-project', moduleId: 3,
-    objectives: ['Aplicar todos os conceitos de POO', 'Construir um mini-sistema completo', 'Revisar interface, classe abstrata, herança e encapsulamento'],
+    objectives: [
+      'Aplicar TODOS os conceitos de POO em um sistema completo',
+      'Usar interface, classe abstrata, herança, encapsulamento e polimorfismo juntos',
+      'Entender como as peças se conectam em um projeto real',
+      'Praticar extensão: adicionar novos tipos SEM alterar código existente',
+    ],
     sections: [
-      { title: 'Projeto Final: Sistema de Cadastro', body: 'Este projeto integra os conceitos do módulo: **interface** (Exibivel) define o contrato "exibir"; **classe abstrata** (ItemCadastro) centraliza id, nome e o método abstrato calcularValor(); **herança** (Produto extends ItemCadastro) implementa a lógica concreta; **encapsulamento** (private, getters); **static** (contador de IDs). No main, usamos uma lista (ArrayList) e polimorfismo ao percorrer e chamar exibir(). É um bom modelo para exercitar: você pode adicionar outra subclasse (ex.: Servico com preço por hora) e ver que o código que percorre a lista não precisa mudar.',
-        code: `// Interface para itens que podem ser exibidos
+      // ────────── SEÇÃO 1: O Projeto ──────────
+      {
+        title: 'O Projeto: Sistema de Estoque com Produtos e Serviços',
+        body: 'Vamos construir um mini-sistema de estoque que cadastra **Produtos** e **Serviços**, calcula valores e gera um relatório. Esse projeto usa TODOS os conceitos do módulo:\n\n- **Interface** (`Exibivel`): contrato que define o método exibir()\n- **Classe abstrata** (`ItemCadastro`): centraliza id, nome e o método abstrato calcularValor()\n- **Herança** (`Produto` e `Servico` estendem `ItemCadastro`)\n- **Encapsulamento** (atributos private, getters, validação)\n- **static** (contador automático de IDs)\n- **Polimorfismo** (lista de ItemCadastro com tipos diferentes)\n- **@Override** (cada tipo implementa calcularValor() do seu jeito)\n\nVamos construir passo a passo.',
+      },
+
+      // ────────── SEÇÃO 2: Interface e Classe Abstrata ──────────
+      {
+        title: 'Passo 1: Interface e Classe Abstrata Base',
+        body: 'Começamos de cima para baixo: primeiro definimos o **contrato** (interface) e a **estrutura base** (classe abstrata).\n\nA interface `Exibivel` define que todo item do sistema DEVE ter um método `exibir()` que retorna String. A classe abstrata `ItemCadastro` implementa essa interface e centraliza o que é COMUM a todos os itens: id (gerado automaticamente com static), nome e o método abstrato `calcularValor()`.\n\nPor que classe abstrata e não concreta? Porque "ItemCadastro" genérico não faz sentido — não sabemos calcular o valor de um "item genérico". Só Produto e Serviço sabem.',
+        code: `// ═══ PASSO 1: Interface ═══
+// Define o contrato "todo item pode ser exibido"
 public interface Exibivel {
     String exibir();
 }
 
-// Classe abstrata base
+// ═══ PASSO 2: Classe Abstrata Base ═══
+// Centraliza o que é COMUM a todos os itens
 public abstract class ItemCadastro implements Exibivel {
-    private static int contador = 0;
-    private final int id;
+    private static int contadorId = 0;  // static: compartilhado entre TODOS
+    private final int id;               // final: não muda depois de criado
     private String nome;
-    
+
     public ItemCadastro(String nome) {
-        this.id = ++contador;
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome não pode ser vazio!");
+        }
+        this.id = ++contadorId;  // ID automático: 1, 2, 3...
         this.nome = nome;
     }
-    
+
+    // Getters (encapsulamento: private + acesso controlado)
     public int getId() { return id; }
     public String getNome() { return nome; }
-    
-    public abstract double calcularValor();
-}
 
-// Produto concreto
+    // Abstrato: cada tipo concreto implementa do seu jeito
+    public abstract double calcularValor();
+
+    // Concreto: todas as subclasses herdam
+    @Override
+    public String exibir() {
+        return String.format("#%d | %s | R$%.2f", id, nome, calcularValor());
+    }
+}`,
+        codeExplanation: '**Linha 3** (interface Exibivel): Contrato simples — qualquer coisa "exibível" tem o método exibir().\n\n**Linha 9** (`abstract class ItemCadastro implements Exibivel`): Classe abstrata que implementa a interface. Não pode ser instanciada diretamente.\n\n**Linha 10** (`private static int contadorId`): static = compartilhado entre TODAS as instâncias. Cada novo item incrementa o contador.\n\n**Linhas 15-17**: Validação no construtor! Nome vazio lança exceção. Encapsulamento protege os dados.\n\n**Linha 27** (`public abstract double calcularValor()`): Cada subclasse concreta DEVE implementar. Produto calcula preço*estoque, Serviço calcula preço*horas.\n\n**Linhas 30-33** (`exibir()`): Método concreto que USA calcularValor(). Como calcularValor() é polimórfico, exibir() mostra o valor correto para cada tipo!',
+        tip: 'Note que exibir() usa calcularValor() SEM saber se é Produto ou Serviço. Isso é polimorfismo + abstração trabalhando juntos!',
+      },
+
+      // ────────── SEÇÃO 3: Classes Concretas ──────────
+      {
+        title: 'Passo 2: Classes Concretas (Produto e Serviço)',
+        body: 'Agora criamos as classes concretas que IMPLEMENTAM o que a classe abstrata deixou "em aberto" (calcularValor).\n\n**Produto**: tem preço unitário e estoque. Valor = preço * estoque.\n**Serviço**: tem preço por hora e horas estimadas. Valor = preço * horas.\n\nCada uma chama `super(nome)` no construtor para inicializar a parte herdada (id e nome). Cada uma sobrescreve `calcularValor()` com sua lógica específica. E cada uma pode sobrescrever `exibir()` para adicionar detalhes extras.',
+        code: `// ═══ PRODUTO: item físico com estoque ═══
 public class Produto extends ItemCadastro {
     private double preco;
     private int estoque;
-    
+
     public Produto(String nome, double preco, int estoque) {
-        super(nome);
+        super(nome);  // inicializa id e nome (classe abstrata)
+        if (preco < 0) throw new IllegalArgumentException("Preço inválido!");
+        if (estoque < 0) throw new IllegalArgumentException("Estoque inválido!");
         this.preco = preco;
         this.estoque = estoque;
     }
-    
+
     @Override
     public double calcularValor() {
-        return preco * estoque;
+        return preco * estoque;  // valor total em estoque
     }
-    
+
     @Override
     public String exibir() {
-        return getId() + " | " + getNome() + " | R$" + preco 
-               + " | Estoque: " + estoque + " | Total: R$" + calcularValor();
+        return super.exibir() + " | Estoque: " + estoque + " un";
     }
+
+    // Getters
+    public double getPreco() { return preco; }
+    public int getEstoque() { return estoque; }
 }
 
-// Uso com ArrayList
-ArrayList<Produto> produtos = new ArrayList<>();
-produtos.add(new Produto("Notebook", 3500, 10));
-produtos.add(new Produto("Mouse", 89.90, 50));
+// ═══ SERVIÇO: trabalho com preço por hora ═══
+public class Servico extends ItemCadastro {
+    private double precoPorHora;
+    private int horasEstimadas;
 
-for (Produto p : produtos) {
-    System.out.println(p.exibir());
+    public Servico(String nome, double precoPorHora, int horas) {
+        super(nome);
+        if (precoPorHora < 0) throw new IllegalArgumentException("Preço/hora inválido!");
+        if (horas <= 0) throw new IllegalArgumentException("Horas inválidas!");
+        this.precoPorHora = precoPorHora;
+        this.horasEstimadas = horas;
+    }
+
+    @Override
+    public double calcularValor() {
+        return precoPorHora * horasEstimadas;  // preço * horas
+    }
+
+    @Override
+    public String exibir() {
+        return super.exibir() + " | " + horasEstimadas + "h x R$"
+            + String.format("%.2f", precoPorHora) + "/h";
+    }
 }`,
-        codeExplanation: 'Este projeto usa: interface (Exibivel), classe abstrata (ItemCadastro), herança (Produto extends ItemCadastro), encapsulamento (private + getters), static (contador), polimorfismo (calcularValor e exibir).',
+        codeExplanation: '**Linha 7** (`super(nome)`): Chama o construtor de ItemCadastro, que valida o nome e gera o ID automático.\n\n**Linhas 8-9**: Validação! Preço e estoque negativos lançam exceção. Encapsulamento protege.\n\n**Linhas 14-16** (calcularValor de Produto): Preço * estoque. Um notebook de R$3500 com 10 em estoque = R$35.000.\n\n**Linhas 19-21** (exibir de Produto): Chama `super.exibir()` para a parte comum (id, nome, valor) e ADICIONA o estoque. Reuso de código!\n\n**Linhas 43-45** (calcularValor de Serviço): PrecoPorHora * horas. Desenvolvimento web a R$150/h por 40h = R$6.000.\n\n**Cada tipo calcula e exibe do seu jeito**, mas o código que processa a lista NÃO precisa saber qual é qual.',
+      },
+
+      // ────────── SEÇÃO 4: Sistema Completo ──────────
+      {
+        title: 'Passo 3: O Sistema Completo com Polimorfismo',
+        body: 'Agora juntamos tudo: uma lista de `ItemCadastro` (tipo abstrato) aceita Produto e Serviço (tipos concretos). O loop percorre todos e chama `exibir()` e `calcularValor()` — cada um responde do seu jeito.\n\nConceitos aplicados:\n- **Interface**: Exibivel define o contrato\n- **Classe abstrata**: ItemCadastro centraliza código comum\n- **Herança**: Produto e Serviço estendem ItemCadastro\n- **Polimorfismo**: lista do tipo pai, objetos do tipo filho\n- **Encapsulamento**: private + validação + getters\n- **static**: contador automático de IDs\n- **@Override**: cada tipo implementa seu comportamento\n\nSe amanhã precisar de `Assinatura` (mensal, com valor recorrente), basta criar a classe e adicionar na lista. O loop NÃO muda. Isso é **OCP (Open/Closed)** na prática!',
+        code: `import java.util.ArrayList;
+
+public class SistemaEstoque {
+    public static void main(String[] args) {
+        // Lista do tipo ABSTRATO — aceita qualquer subclasse!
+        ArrayList<ItemCadastro> itens = new ArrayList<>();
+
+        // Adicionando Produtos
+        itens.add(new Produto("Notebook Dell", 3500.00, 10));
+        itens.add(new Produto("Mouse Gamer", 89.90, 50));
+        itens.add(new Produto("Monitor 24\\"", 1200.00, 15));
+
+        // Adicionando Serviços
+        itens.add(new Servico("Desenvolvimento Web", 150.00, 40));
+        itens.add(new Servico("Consultoria TI", 200.00, 8));
+
+        // ═══ RELATÓRIO — POLIMORFISMO EM AÇÃO ═══
+        System.out.println("═══════════════════════════════════════════════");
+        System.out.println("         RELATÓRIO DE ESTOQUE / SERVIÇOS       ");
+        System.out.println("═══════════════════════════════════════════════");
+
+        double valorTotal = 0;
+        for (ItemCadastro item : itens) {
+            System.out.println(item.exibir());  // cada um exibe do SEU jeito!
+            valorTotal += item.calcularValor();  // cada um calcula do SEU jeito!
+        }
+
+        System.out.println("═══════════════════════════════════════════════");
+        System.out.println("Itens cadastrados: " + itens.size());
+        System.out.println("Valor total: R$" + String.format("%.2f", valorTotal));
+        System.out.println("═══════════════════════════════════════════════");
+
+        // Tratamento de exceções
+        try {
+            itens.add(new Produto("", 100, 5));  // nome vazio!
+        } catch (IllegalArgumentException e) {
+            System.out.println("\\nErro ao cadastrar: " + e.getMessage());
+        }
+    }
+}`,
+        codeExplanation: '**Linha 6** (`ArrayList<ItemCadastro>`): Lista do tipo ABSTRATO. Aceita Produto, Servico, e qualquer subclasse futura.\n\n**Linhas 9-15**: Misturamos Produtos e Serviços na MESMA lista. Polimorfismo permite isso.\n\n**Linhas 23-26**: O loop trata todos como ItemCadastro. `item.exibir()` chama a versão correta (Produto mostra estoque, Serviço mostra horas). `item.calcularValor()` calcula corretamente para cada tipo.\n\n**Linhas 34-37**: Tratamento de exceções! Se tentar cadastrar item com nome vazio, a exceção é capturada e tratada.\n\nResultado: um sistema limpo, extensível e robusto usando TODOS os conceitos de POO.',
+        warning: 'Para adicionar um novo tipo (Assinatura, Licença, etc.), você só precisa: 1) Criar a classe extends ItemCadastro. 2) Implementar calcularValor(). 3) Adicionar na lista. O relatório NÃO muda!',
       },
     ],
+
+    // ────────── Comparação ──────────
+    withoutPoo: `// SEM POO: tudo misturado, repetido, frágil
+String[] nomes = {"Notebook", "Mouse", "Dev Web"};
+double[] precos = {3500, 89.90, 150};
+int[] qtds = {10, 50, 40};
+String[] tipos = {"produto", "produto", "servico"};
+
+double total = 0;
+for (int i = 0; i < nomes.length; i++) {
+    if (tipos[i].equals("produto")) {
+        total += precos[i] * qtds[i];
+        System.out.println(nomes[i] + " R$" + precos[i] + " x" + qtds[i]);
+    } else if (tipos[i].equals("servico")) {
+        total += precos[i] * qtds[i];
+        System.out.println(nomes[i] + " R$" + precos[i] + "/h x" + qtds[i] + "h");
+    }
+}
+// Sem validação, sem encapsulamento, if/else para cada tipo...`,
+    withPoo: `// COM POO: organizado, extensível, protegido
+ArrayList<ItemCadastro> itens = new ArrayList<>();
+itens.add(new Produto("Notebook", 3500, 10));
+itens.add(new Servico("Dev Web", 150, 40));
+
+double total = 0;
+for (ItemCadastro item : itens) {
+    System.out.println(item.exibir());  // polimorfismo!
+    total += item.calcularValor();
+}
+// Novo tipo? Nova classe. Loop NÃO muda. Dados protegidos.`,
+    comparisonExplanation: 'Sem POO: arrays paralelos, if/else, sem proteção. Com POO: objetos encapsulados, polimorfismo, extensível sem modificar código existente.',
+
+    // ────────── Exercícios ──────────
     codeFillExercises: [
-      { instruction: 'Para percorrer uma lista e chamar um método em cada elemento, qual estrutura usar?', snippetBefore: 'for (Produto p : ', snippetAfter: ') {\n    p.exibir();\n}', options: ['produtos', 'lista', 'array', 'itens'], correctIndex: 0, explanation: 'O for-each percorre a coleção e aplica a ação em cada elemento.' },
+      {
+        instruction: 'Para que a lista aceite Produto e Serviço, qual tipo usar no ArrayList?',
+        snippetBefore: 'ArrayList<',
+        snippetAfter: '> itens = new ArrayList<>();',
+        options: ['ItemCadastro', 'Produto', 'Object', 'Exibivel'],
+        correctIndex: 0,
+        explanation: 'ArrayList<ItemCadastro> aceita qualquer subclasse: Produto, Servico, etc. Polimorfismo via tipo abstrato.',
+      },
+      {
+        instruction: 'No construtor de Produto, como inicializar a parte herdada (id e nome)?',
+        snippetBefore: 'public Produto(String nome, double preco, int estoque) {\n    ',
+        snippetAfter: '(nome); // inicializa parte do pai\n}',
+        options: ['super', 'this', 'ItemCadastro', 'parent'],
+        correctIndex: 0,
+        explanation: 'super(nome) chama o construtor de ItemCadastro, que valida o nome e gera o ID automático.',
+      },
+      {
+        instruction: 'Por que ItemCadastro é abstract e não pode ser instanciada?',
+        snippetBefore: '// new ItemCadastro("teste") → ERRO!\n// Porque não sabemos calcular o valor de um item ',
+        snippetAfter: '',
+        options: ['genérico', 'público', 'privado', 'estático'],
+        correctIndex: 0,
+        explanation: 'ItemCadastro genérico não faz sentido — não sabemos calcular o valor. Só Produto e Serviço sabem.',
+      },
     ],
-    summary: ['Combine todos os conceitos: classes, herança, interfaces, encapsulamento', 'Use interfaces para contratos', 'Classes abstratas para comportamento base', 'ArrayList para coleções dinâmicas', 'Parabéns! Você completou o curso! 🎉'],
+    summary: [
+      'Interface (Exibivel): define o contrato "todo item pode ser exibido"',
+      'Classe abstrata (ItemCadastro): centraliza id, nome, exibir() e obriga calcularValor()',
+      'Herança (Produto/Servico extends ItemCadastro): implementam a lógica concreta',
+      'Encapsulamento (private + validação + getters): protege os dados',
+      'static (contadorId): gera IDs automáticos compartilhados entre todas as instâncias',
+      'Polimorfismo (ArrayList<ItemCadastro>): uma lista, múltiplos tipos',
+      '@Override: cada tipo implementa calcularValor() e exibir() do seu jeito',
+      'Parabéns! Você completou o módulo de POO! 🎉',
+    ],
     tryItCode: `import java.util.ArrayList;
 
 interface Exibivel { String exibir(); }
-abstract class Item {
-    String nome;
-    Item(String nome) { this.nome = nome; }
-    abstract double valor();
+
+abstract class ItemCadastro implements Exibivel {
+    private static int contadorId = 0;
+    private final int id;
+    private String nome;
+    public ItemCadastro(String nome) { this.id = ++contadorId; this.nome = nome; }
+    public int getId() { return id; }
+    public String getNome() { return nome; }
+    public abstract double calcularValor();
+    @Override
+    public String exibir() {
+        return String.format("#%d | %s | R$%.2f", id, nome, calcularValor());
+    }
 }
-class Produto extends Item {
-    double preco;
-    int qtd;
-    Produto(String n, double p, int q) { super(n); preco = p; qtd = q; }
-    double valor() { return preco * qtd; }
-    public String exibir() { return nome + " R$" + preco + " x" + qtd + " = R$" + valor(); }
+
+class Produto extends ItemCadastro {
+    private double preco;
+    private int estoque;
+    public Produto(String nome, double preco, int estoque) {
+        super(nome); this.preco = preco; this.estoque = estoque;
+    }
+    @Override
+    public double calcularValor() { return preco * estoque; }
+    @Override
+    public String exibir() { return super.exibir() + " | " + estoque + " un"; }
 }
+
+class Servico extends ItemCadastro {
+    private double precoHora;
+    private int horas;
+    public Servico(String nome, double precoHora, int horas) {
+        super(nome); this.precoHora = precoHora; this.horas = horas;
+    }
+    @Override
+    public double calcularValor() { return precoHora * horas; }
+    @Override
+    public String exibir() { return super.exibir() + " | " + horas + "h"; }
+}
+
 public class Main {
     public static void main(String[] args) {
-        ArrayList<Produto> lista = new ArrayList<>();
-        lista.add(new Produto("Notebook", 3500, 2));
-        lista.add(new Produto("Mouse", 50, 5));
-        for (Produto p : lista) System.out.println(p.exibir());
+        ArrayList<ItemCadastro> itens = new ArrayList<>();
+        itens.add(new Produto("Notebook", 3500, 10));
+        itens.add(new Produto("Mouse", 89.90, 50));
+        itens.add(new Servico("Dev Web", 150, 40));
+        itens.add(new Servico("Consultoria", 200, 8));
+
+        double total = 0;
+        System.out.println("══════ RELATÓRIO ══════");
+        for (ItemCadastro item : itens) {
+            System.out.println(item.exibir());
+            total += item.calcularValor();
+        }
+        System.out.println("═══════════════════════");
+        System.out.println("Total: R$" + String.format("%.2f", total));
     }
 }`,
-    tryItPrompt: 'Adicione outro Produto ou crie a classe Servico extends Item e implemente valor() e exibir().',
+    tryItPrompt: 'Crie a classe Assinatura extends ItemCadastro com valorMensal e meses (calcularValor = valorMensal * meses). Adicione na lista — o relatório atualiza sem mudar o loop!',
     commonErrors: [
-      { title: 'Esquecer de implementar método abstrato', description: 'Produto deve implementar valor() e exibir().' },
-      { title: 'Não chamar super no construtor', description: 'O construtor de Produto deve chamar super(nome) na primeira linha.' },
+      {
+        title: 'Esquecer de implementar calcularValor() na subclasse',
+        description: 'ItemCadastro é abstrata. Subclasses concretas DEVEM implementar calcularValor(), senão erro de compilação.',
+        code: `// ERRADO: não implementou calcularValor()!
+class Assinatura extends ItemCadastro {
+    // ERRO: Assinatura must implement abstract method calcularValor()
+}
+
+// CORRETO:
+class Assinatura extends ItemCadastro {
+    private double valorMensal;
+    private int meses;
+    public Assinatura(String nome, double v, int m) {
+        super(nome); valorMensal = v; meses = m;
+    }
+    @Override
+    public double calcularValor() { return valorMensal * meses; }
+}`,
+      },
+      {
+        title: 'Esquecer super(nome) no construtor',
+        description: 'O construtor de ItemCadastro precisa do nome para gerar o ID. Sem super(), erro de compilação.',
+        code: `// ERRADO: sem super!
+class Produto extends ItemCadastro {
+    public Produto(String nome, double preco, int estoque) {
+        this.preco = preco;  // ERRO! Falta super(nome)!
+    }
+}
+
+// CORRETO: super na primeira linha
+class Produto extends ItemCadastro {
+    public Produto(String nome, double preco, int estoque) {
+        super(nome);  // PRIMEIRO! Inicializa id e nome
+        this.preco = preco;
+        this.estoque = estoque;
+    }
+}`,
+      },
+      {
+        title: 'Usar lista do tipo concreto em vez do abstrato',
+        description: 'Se a lista é ArrayList<Produto>, não aceita Serviço. Use o tipo abstrato para polimorfismo.',
+        code: `// LIMITADO: só aceita Produto
+ArrayList<Produto> lista = new ArrayList<>();
+lista.add(new Produto("Notebook", 3500, 10));
+// lista.add(new Servico("Dev", 150, 40));  // ERRO! Não é Produto!
+
+// CORRETO: tipo abstrato aceita todos
+ArrayList<ItemCadastro> lista = new ArrayList<>();
+lista.add(new Produto("Notebook", 3500, 10));  // OK!
+lista.add(new Servico("Dev", 150, 40));         // OK!`,
+      },
     ],
   },
 };
