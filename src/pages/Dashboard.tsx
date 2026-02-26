@@ -1,11 +1,25 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules, getAllLessons } from '@/data/modules';
 import { useProgress } from '@/hooks/useProgress';
-import { Trophy, BookOpen, Target, Star, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getProfileFromApi } from '@/lib/profileStore';
+import CertificateModal from '@/components/CertificateModal';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award } from 'lucide-react';
 
 export default function Dashboard() {
   const { progress, isCompleted } = useProgress();
+  const { user } = useAuth();
+  const [studentName, setStudentName] = useState('');
+  const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    user.getIdToken(true).then((token) =>
+      getProfileFromApi(token).then((p) => setStudentName(p.nome || user.displayName || 'Aluno'))
+    ).catch(() => setStudentName(user.displayName || 'Aluno'));
+  }, [user]);
   const allLessons = getAllLessons();
   const totalLessons = allLessons.length;
   const completedCount = progress.completedLessons.length;
@@ -54,14 +68,26 @@ export default function Dashboard() {
           {modules.map((m) => {
             const done = m.lessons.filter((l) => isCompleted(l.id)).length;
             const pct = Math.round((done / m.lessons.length) * 100);
+            const isModuleComplete = done === m.lessons.length;
             return (
               <div key={m.id} className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-sm">{m.icon} Módulo {m.id} — {m.title}</h3>
-                  <span className="text-sm text-muted-foreground">{done}/{m.lessons.length}</span>
+                  <div className="flex items-center gap-3">
+                    {isModuleComplete && (
+                      <button
+                        onClick={() => setCertModule(m)}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        <Award className="h-4 w-4" />
+                        Certificado
+                      </button>
+                    )}
+                    <span className="text-sm text-muted-foreground">{done}/{m.lessons.length}</span>
+                  </div>
                 </div>
                 <div className="h-3 rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
+                  <div className={`h-full rounded-full transition-all duration-500 ${isModuleComplete ? 'bg-green-500' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -105,6 +131,17 @@ export default function Dashboard() {
               Começar a Estudar <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
+        )}
+        {certModule && (
+          <CertificateModal
+            open={!!certModule}
+            onOpenChange={(open) => { if (!open) setCertModule(null); }}
+            studentName={studentName}
+            moduleTitle={`Módulo ${certModule.id} — ${certModule.title}`}
+            moduleIcon={certModule.icon}
+            moduleLevel={certModule.level}
+            lessonCount={certModule.lessons.length}
+          />
         )}
       </div>
     </Layout>
