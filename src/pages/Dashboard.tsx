@@ -5,8 +5,9 @@ import { modules, getAllLessons } from '@/data/modules';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
+import { getLevel } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
-import { Trophy, BookOpen, Target, Star, ArrowRight, Award } from 'lucide-react';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap } from 'lucide-react';
 
 export default function Dashboard() {
   const { progress, isCompleted } = useProgress();
@@ -42,6 +43,35 @@ export default function Dashboard() {
     <Layout>
       <div className="container py-10 animate-fade-in">
         <h1 className="text-3xl font-bold mb-8">Dashboard do Aluno</h1>
+
+        {/* XP & Streak bar */}
+        {(() => {
+          const lvl = getLevel(progress.xp);
+          const pctXp = lvl.xpForNext > 0 ? Math.round((lvl.xpInLevel / lvl.xpForNext) * 100) : 100;
+          return (
+            <div className="rounded-xl border border-border bg-card p-5 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Zap className="h-7 w-7 text-yellow-500" />
+                  <div>
+                    <p className="text-sm font-semibold">Nível {lvl.level} — {lvl.title}</p>
+                    <p className="text-xs text-muted-foreground">{progress.xp} XP total{lvl.xpForNext > 0 ? ` • ${lvl.xpForNext - lvl.xpInLevel} XP para o próximo nível` : ''}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flame className={`h-6 w-6 ${progress.streak.current > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{progress.streak.current} dia{progress.streak.current !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-muted-foreground">streak {progress.streak.longest > 0 ? `(recorde: ${progress.streak.longest})` : ''}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-secondary overflow-hidden mt-3">
+                <div className="h-full rounded-full bg-yellow-500 transition-all duration-500" style={{ width: `${pctXp}%` }} />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
