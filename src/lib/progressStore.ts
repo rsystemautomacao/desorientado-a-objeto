@@ -8,6 +8,8 @@ export interface Progress {
     longest: number;
     lastDate: string; // ISO date string 'YYYY-MM-DD'
   };
+  /** Tracks when each lesson was last studied (quiz taken or marked complete) */
+  lastStudied: Record<string, string>; // lessonId -> ISO date 'YYYY-MM-DD'
 }
 
 const DEFAULT: Progress = {
@@ -16,6 +18,7 @@ const DEFAULT: Progress = {
   favorites: [],
   xp: 0,
   streak: { current: 0, longest: 0, lastDate: '' },
+  lastStudied: {},
 };
 
 function getApiBase(): string {
@@ -36,6 +39,7 @@ export async function getProgressFromApi(token: string): Promise<Progress> {
     quizResults: data.quizResults && typeof data.quizResults === 'object' ? data.quizResults : {},
     favorites: Array.isArray(data.favorites) ? data.favorites : [],
     xp: typeof data.xp === 'number' ? data.xp : 0,
+    lastStudied: data.lastStudied && typeof data.lastStudied === 'object' ? data.lastStudied : {},
     streak: data.streak && typeof data.streak === 'object'
       ? {
           current: typeof data.streak.current === 'number' ? data.streak.current : 0,
@@ -95,6 +99,51 @@ export function getLevel(xp: number): { level: number; title: string; xpForNext:
   const xpForNext = level < thresholds.length - 1 ? thresholds[level + 1] - thresholds[level] : 0;
   const xpInLevel = xp - thresholds[level];
   return { level, title: titles[level] ?? 'Lenda', xpForNext, xpInLevel };
+}
+
+// ── Spaced Repetition Review Suggestions ──
+export interface ReviewSuggestion {
+  lessonId: string;
+  reason: string;
+  priority: number; // higher = more urgent
+}
+
+export function getReviewSuggestions(progress: Progress): ReviewSuggestion[] {
+  const today = todayStr();
+  const suggestions: ReviewSuggestion[] = [];
+
+  for (const [lessonId, result] of Object.entries(progress.quizResults)) {
+    const pct = result.total > 0 ? result.score / result.total : 0;
+    const lastDate = progress.lastStudied[lessonId] ?? '';
+    const daysAgo = lastDate ? daysBetween(lastDate, today) : 999;
+
+    // Low quiz score (< 60%) — high priority
+    if (pct < 0.6) {
+      suggestions.push({
+        lessonId,
+        reason: `Quiz ${result.score}/${result.total} — reforce os conceitos`,
+        priority: 90 + daysAgo,
+      });
+    }
+    // Medium score (60-80%) and studied 7+ days ago
+    else if (pct < 0.8 && daysAgo >= 7) {
+      suggestions.push({
+        lessonId,
+        reason: `Quiz ${Math.round(pct * 100)}% ha ${daysAgo} dias — hora de revisar`,
+        priority: 50 + daysAgo,
+      });
+    }
+    // Good score but long time ago (14+ days)
+    else if (daysAgo >= 14) {
+      suggestions.push({
+        lessonId,
+        reason: `Estudou ha ${daysAgo} dias — revisao recomendada`,
+        priority: 20 + daysAgo,
+      });
+    }
+  }
+
+  return suggestions.sort((a, b) => b.priority - a.priority).slice(0, 5);
 }
 
 export async function saveProgressToApi(token: string, progress: Progress): Promise<void> {

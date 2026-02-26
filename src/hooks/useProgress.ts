@@ -17,7 +17,12 @@ const DEFAULT_PROGRESS: Progress = {
   favorites: [],
   xp: 0,
   streak: { current: 0, longest: 0, lastDate: '' },
+  lastStudied: {},
 };
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function storageKey(uid: string | null): string {
   return uid ? `${STORAGE_KEY_PREFIX}-${uid}` : STORAGE_KEY_PREFIX;
@@ -127,6 +132,7 @@ export function useProgress() {
         completedLessons: [...p.completedLessons, id],
         xp: p.xp + XP_REWARDS.LESSON_COMPLETE,
         streak: updateStreak(p.streak),
+        lastStudied: { ...p.lastStudied, [id]: todayStr() },
       };
     });
   }, []);
@@ -146,6 +152,7 @@ export function useProgress() {
         quizResults: { ...p.quizResults, [lessonId]: { score, total } },
         xp: p.xp + xpGain,
         streak: updateStreak(p.streak),
+        lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
       };
     });
   }, []);
