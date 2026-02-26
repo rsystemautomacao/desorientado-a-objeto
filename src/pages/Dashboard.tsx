@@ -8,6 +8,10 @@ import { getProfileFromApi } from '@/lib/profileStore';
 import { getLevel } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
 import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap } from 'lucide-react';
+import {
+  RadialBarChart, RadialBar, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+} from 'recharts';
 
 export default function Dashboard() {
   const { progress, isCompleted } = useProgress();
@@ -123,6 +127,80 @@ export default function Dashboard() {
             );
           })}
         </div>
+
+        {/* Charts */}
+        {quizEntries.length > 0 && (
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
+            {/* Radial progress per module */}
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="text-lg font-bold mb-4">Progresso por Módulo</h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <RadialBarChart
+                  cx="50%" cy="50%"
+                  innerRadius="30%" outerRadius="90%"
+                  data={modules.map((m, i) => {
+                    const done = m.lessons.filter((l) => isCompleted(l.id)).length;
+                    const pctM = Math.round((done / m.lessons.length) * 100);
+                    const colors = ['#22c55e', '#eab308', '#ef4444'];
+                    return { name: `M${m.id}`, value: pctM, fill: colors[i] ?? '#667eea' };
+                  })}
+                  startAngle={180}
+                  endAngle={0}
+                  barSize={16}
+                >
+                  <RadialBar dataKey="value" cornerRadius={8} background={{ fill: 'hsl(var(--secondary))' }} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className="flex justify-center gap-6 text-xs text-muted-foreground">
+                {modules.map((m, i) => {
+                  const colors = ['#22c55e', '#eab308', '#ef4444'];
+                  const done = m.lessons.filter((l) => isCompleted(l.id)).length;
+                  return (
+                    <div key={m.id} className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: colors[i] }} />
+                      <span>M{m.id} ({done}/{m.lessons.length})</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quiz scores bar chart */}
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="text-lg font-bold mb-4">Desempenho nos Quizzes</h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={quizEntries.map(([id, v]) => {
+                    const lesson = allLessons.find((l) => l.id === id);
+                    const pctQ = Math.round((v.score / v.total) * 100);
+                    return { name: lesson?.title?.slice(0, 15) ?? id, pct: pctQ, score: v.score, total: v.total };
+                  })}
+                  margin={{ top: 4, right: 4, left: -20, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-30} textAnchor="end" height={60} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                    formatter={(value: number, _: string, entry: { payload: { score: number; total: number } }) => [`${entry.payload.score}/${entry.payload.total} (${value}%)`, 'Acerto']}
+                  />
+                  <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
+                    {quizEntries.map(([id, v], i) => {
+                      const pctQ = v.total > 0 ? v.score / v.total : 0;
+                      const color = pctQ >= 0.8 ? '#22c55e' : pctQ >= 0.6 ? '#eab308' : '#ef4444';
+                      return <Cell key={`cell-${i}`} fill={color} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1" /> ≥80%
+                <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mx-1 ml-3" /> ≥60%
+                <span className="inline-block w-2 h-2 rounded-full bg-red-500 mx-1 ml-3" /> &lt;60%
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Weak points */}
         {weakLessons.length > 0 && (
