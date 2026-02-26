@@ -5,103 +5,273 @@ export const lessonContents: Record<string, LessonContent> = {
     id: 'm1-intro',
     moduleId: 1,
     objectives: [
-      'Entender o que é Java e por que é tão usado',
-      'Conhecer a estrutura básica de um programa Java',
-      'Compilar e executar seu primeiro programa',
-      'Entender o conceito de JVM, JDK e JRE',
+      'Entender o que é Java e por que é tão usado no mercado',
+      'Conhecer a diferença entre JDK, JRE e JVM',
+      'Dominar a estrutura básica de um programa Java',
+      'Compilar e executar seu primeiro programa no terminal',
+      'Usar System.out.println e System.out.print corretamente',
+      'Conhecer os três tipos de comentários em Java',
     ],
     sections: [
+      // ────────── SEÇÃO 1: O que é Java? ──────────
       {
         title: 'O que é Java?',
-        body: 'Java é uma linguagem de programação criada em 1995 pela Sun Microsystems (hoje Oracle). É uma das linguagens mais populares do mundo e está presente em praticamente todo lugar: aplicações web (backend), apps Android, sistemas bancários, e-commerces, IoT e muito mais.\n\nO grande diferencial do Java é o conceito "Write Once, Run Anywhere" (Escreva uma vez, rode em qualquer lugar). Você compila seu código uma vez e o arquivo gerado (.class) pode ser executado em qualquer sistema que tenha uma JVM — Windows, Linux, Mac. Isso é possível graças à JVM (Java Virtual Machine), que interpreta o bytecode em qualquer sistema operacional.\n\nPor que aprender Java? Além da ampla adoção no mercado, Java tem sintaxe clara, tipagem estática (o que ajuda a evitar erros), enorme ecossistema de bibliotecas e uma comunidade muito ativa. Dominar Java abre portas para desenvolvimento backend, Android e sistemas enterprise.',
+        body: 'Java é uma linguagem de programação criada em 1995 pela Sun Microsystems (hoje Oracle). É uma das linguagens mais populares do mundo e está presente em praticamente todo lugar: aplicações web (backend com Spring Boot), apps Android, sistemas bancários, e-commerces, IoT e muito mais.\n\nO grande diferencial do Java é o conceito **”Write Once, Run Anywhere”** (Escreva uma vez, rode em qualquer lugar). Você compila seu código uma vez e o arquivo gerado (.class) pode ser executado em qualquer sistema que tenha uma JVM — Windows, Linux, Mac. Isso é possível graças à **JVM (Java Virtual Machine)**, que interpreta o bytecode em qualquer sistema operacional.\n\nPor que aprender Java? Além da ampla adoção no mercado, Java tem:\n- **Tipagem estática**: o compilador encontra erros ANTES de rodar o programa\n- **Enorme ecossistema**: milhares de bibliotecas prontas para usar\n- **Comunidade ativa**: fácil encontrar ajuda e material de estudo\n- **Salários competitivos**: uma das linguagens mais requisitadas em vagas\n\nDominar Java abre portas para desenvolvimento backend, Android e sistemas enterprise.',
+        code: `// Exemplo: seu primeiro programa Java
+// Este arquivo se chamaria OlaMundo.java
+public class OlaMundo {
+    public static void main(String[] args) {
+        System.out.println(“Olá, mundo!”);
+        System.out.println(“Java roda em qualquer sistema!”);
+    }
+}
+
+// Para compilar e rodar no terminal:
+// javac OlaMundo.java   → gera OlaMundo.class
+// java OlaMundo         → executa e imprime as mensagens`,
+        codeExplanation: '**Linha 3** (`public class OlaMundo`): Define uma classe chamada OlaMundo. Em Java, TODO código fica dentro de uma classe. O nome da classe DEVE ser igual ao nome do arquivo (.java).\n\n**Linha 4** (`public static void main(String[] args)`): O método main é o **ponto de entrada** do programa — a JVM começa a executar por aqui. Essa assinatura é obrigatória e não pode ser alterada.\n\n**Linha 5-6** (`System.out.println(...)`): Imprime texto no console e pula para a próxima linha. `System.out` é a saída padrão (o terminal) e `println` significa “print line” (imprimir linha).\n\n**Linhas 11-12**: Comandos do terminal para compilar (`javac`) e executar (`java`). O compilador gera um arquivo .class com bytecode.',
+        tip: 'Java foi projetado para ser uma linguagem orientada a objetos. Até o simples “Olá Mundo” precisa estar dentro de uma classe — você vai entender o porquê ao longo do curso.',
       },
+
+      // ────────── SEÇÃO 2: JDK, JRE e JVM ──────────
       {
         title: 'JDK, JRE e JVM — Qual a diferença?',
-        body: 'Esses três termos confundem muita gente, mas são simples:\n\n• JVM (Java Virtual Machine): É a máquina virtual que executa o bytecode Java. Cada sistema operacional tem sua própria JVM.\n\n• JRE (Java Runtime Environment): Contém a JVM + bibliotecas necessárias para RODAR programas Java.\n\n• JDK (Java Development Kit): Contém a JRE + ferramentas para DESENVOLVER (compilador javac, debugger, etc).',
-        tip: 'Para programar em Java, você precisa do JDK. Para apenas rodar programas, basta o JRE.',
+        body: 'Esses três termos confundem muita gente, mas são simples quando você pensa neles como **camadas**:\n\n**JVM (Java Virtual Machine)**\nÉ a máquina virtual que executa o bytecode Java. Cada sistema operacional tem sua própria JVM, mas todos executam o mesmo bytecode — por isso Java é portável.\n\n**JRE (Java Runtime Environment)**\nContém a JVM + bibliotecas necessárias para **RODAR** programas Java. É o que o usuário final precisa.\n\n**JDK (Java Development Kit)**\nContém a JRE + ferramentas para **DESENVOLVER** (compilador javac, debugger, etc). É o que o programador precisa.\n\nPense assim: JDK contém JRE, que contém JVM. Como bonecas russas!',
+        code: `// Visualização das camadas:
+//
+// ┌──────────────────────────────────┐
+// │            JDK                   │
+// │  (javac, jdb, jar, javadoc...)   │
+// │                                  │
+// │  ┌──────────────────────────┐    │
+// │  │          JRE             │    │
+// │  │  (bibliotecas padrão)    │    │
+// │  │                          │    │
+// │  │  ┌──────────────────┐    │    │
+// │  │  │      JVM         │    │    │
+// │  │  │ (executa .class) │    │    │
+// │  │  └──────────────────┘    │    │
+// │  └──────────────────────────┘    │
+// └──────────────────────────────────┘
+//
+// Fluxo: código.java → javac → código.class → JVM → execução`,
+        codeExplanation: '**JVM (camada interna)**: Lê os arquivos .class e executa as instruções. Cada SO (Windows, Linux, Mac) tem sua própria JVM, mas o bytecode é universal.\n\n**JRE (camada do meio)**: Inclui a JVM + todas as bibliotecas padrão do Java (String, Math, ArrayList, etc). Necessário para RODAR qualquer programa Java.\n\n**JDK (camada externa)**: Inclui tudo do JRE + ferramentas de desenvolvimento: `javac` (compilador), `jdb` (debugger), `jar` (empacotador), `javadoc` (gerador de documentação).\n\n**Fluxo de compilação**: Seu código `.java` passa pelo `javac` (que vem no JDK), gerando um `.class` com bytecode. A JVM (que vem no JRE) executa esse bytecode.',
+        tip: 'Para programar em Java, você precisa do JDK. Para apenas rodar programas Java, basta o JRE. Na dúvida, instale o JDK que já inclui tudo.',
       },
+
+      // ────────── SEÇÃO 3: Estrutura Básica de um Programa ──────────
       {
-        title: 'Estrutura Básica de um Programa',
-        body: 'Todo programa Java precisa de pelo menos uma classe e um método main. A classe é o “recipiente” do seu código; o método main é o ponto de entrada — é por onde a JVM começa a executar. Sem um método main com essa assinatura exata, o programa não “roda”.\n\nResumo do que você vê no exemplo abaixo:\n• A classe deve ter o mesmo nome do arquivo (ex.: MeuPrograma.java → class MeuPrograma).\n• public static void main(String[] args) é obrigatório para executar.\n• System.out.println() imprime uma linha e pula para a próxima; System.out.print() imprime sem pular linha.',
-        code: `// Todo arquivo Java deve ter uma classe com o mesmo nome do arquivo
-// Este arquivo se chamaria MeuPrograma.java
+        title: 'Estrutura Básica de um Programa Java',
+        body: 'Todo programa Java precisa de pelo menos **uma classe** e um **método main**. A classe é o “recipiente” do seu código; o método main é o ponto de entrada — é por onde a JVM começa a executar.\n\nRegras importantes:\n- A classe **deve ter o mesmo nome** do arquivo (ex.: `MeuPrograma.java` → `class MeuPrograma`)\n- `public static void main(String[] args)` é a assinatura **exata** — errar uma palavra e o programa não roda\n- `System.out.println()` imprime e pula linha; `System.out.print()` imprime SEM pular\n- Toda instrução termina com **ponto-e-vírgula** (`;`)\n- Java diferencia maiúsculas de minúsculas: `Main` ≠ `main` ≠ `MAIN`',
+        code: `// Arquivo: MeuPrograma.java
 public class MeuPrograma {
-    
-    // O método main é o ponto de entrada do programa
-    // public: acessível de qualquer lugar
-    // static: pode ser chamado sem criar um objeto
-    // void: não retorna nada
-    // String[] args: aceita argumentos da linha de comando
+
+    // O método main: ponto de entrada do programa
+    // public  → acessível de qualquer lugar
+    // static  → pode ser chamado sem criar um objeto
+    // void    → não retorna nenhum valor
+    // String[] args → aceita argumentos da linha de comando
     public static void main(String[] args) {
-        
-        // System.out.println imprime uma linha no console
-        System.out.println("Olá, mundo!");
-        System.out.println("Estou aprendendo Java!");
-        
-        // System.out.print NÃO pula linha
-        System.out.print("Linha 1 ");
-        System.out.print("Linha 1 ainda");
+
+        // println = print + line (imprime e pula linha)
+        System.out.println(“Primeira linha”);
+        System.out.println(“Segunda linha”);
+
+        // print = imprime SEM pular linha
+        System.out.print(“Mesma “);
+        System.out.print(“linha “);
+        System.out.println(“até aqui!”);
+
+        // Saída completa:
+        // Primeira linha
+        // Segunda linha
+        // Mesma linha até aqui!
     }
 }`,
-        codeExplanation: 'A classe MeuPrograma envolve todo o código. O método main é onde a execução começa. System.out.println() imprime texto no console e pula uma linha. System.out.print() imprime sem pular linha.',
+        codeExplanation: '**Linha 2** (`public class MeuPrograma`): Define a classe. O nome `MeuPrograma` deve ser IDÊNTICO ao nome do arquivo `MeuPrograma.java` — incluindo maiúsculas e minúsculas.\n\n**Linha 9** (`public static void main(String[] args)`): O método main com assinatura exata. Cada palavra tem um significado: `public` permite que a JVM acesse o método; `static` permite chamar sem criar objeto; `void` indica que não retorna valor; `String[] args` são argumentos opcionais da linha de comando.\n\n**Linha 12-13** (`System.out.println`): Imprime o texto entre aspas e automaticamente pula para a próxima linha. Cada chamada gera uma nova linha na saída.\n\n**Linha 16-17** (`System.out.print`): Imprime SEM pular linha. O próximo print ou println continua na mesma linha. “Mesma “ e “linha “ ficam grudados.\n\n**Linha 18** (`System.out.println(“até aqui!”)`): Como usamos `println`, após “até aqui!” o cursor pula para a próxima linha. O resultado é: “Mesma linha até aqui!”.',
+        warning: 'Java é case-sensitive (diferencia maiúsculas/minúsculas). `String` ≠ `string`, `System` ≠ `system`, `Main` ≠ `main`. Esse é um dos erros mais comuns de iniciantes!',
       },
+
+      // ────────── SEÇÃO 4: Compilação e Execução ──────────
       {
-        title: 'Compilação e Execução',
-        body: 'Java é uma linguagem compilada e interpretada. O fluxo é:\n\n1. Você escreve o código-fonte em um arquivo .java.\n2. O compilador javac transforma esse código em bytecode (arquivo .class). O bytecode é uma “linguagem intermediária” que a JVM entende.\n3. A JVM lê o .class e executa as instruções no seu sistema.\n\nIsso explica por que Java é portável: o mesmo .class pode rodar em Windows, Linux ou Mac, desde que haja uma JVM instalada.',
-        code: `// No terminal:
-// 1. Compilar:
-javac MeuPrograma.java
+        title: 'Compilação e Execução — O Caminho do Código',
+        body: 'Java é uma linguagem **compilada e interpretada**. O fluxo completo é:\n\n**1. Escrever** → Você cria o código-fonte em um arquivo `.java`\n**2. Compilar** → O `javac` transforma o código em **bytecode** (arquivo `.class`)\n**3. Executar** → A JVM lê o `.class` e executa no seu sistema\n\nPor que essa etapa intermediária? Porque o bytecode é **universal** — o mesmo arquivo `.class` roda em Windows, Linux e Mac sem recompilar. Linguagens como C/C++ compilam direto para código de máquina de um SO específico e precisam recompilar para cada plataforma.\n\nIsso explica o lema “Write Once, Run Anywhere”: você escreve e compila uma vez, e o bytecode roda em qualquer lugar que tenha uma JVM.',
+        code: `// ═══ PASSO 1: Criar o arquivo ═══
+// Crie um arquivo chamado Calculadora.java
+public class Calculadora {
+    public static void main(String[] args) {
+        int a = 10;
+        int b = 5;
+        System.out.println(“Soma: “ + (a + b));
+        System.out.println(“Diferença: “ + (a - b));
+        System.out.println(“Produto: “ + (a * b));
+    }
+}
 
-// 2. Executar:
-java MeuPrograma
+// ═══ PASSO 2: Compilar no terminal ═══
+// javac Calculadora.java
+//   → Gera o arquivo Calculadora.class (bytecode)
+//   → Se houver erros de sintaxe, o javac mostra aqui!
 
-// Saída:
-// Olá, mundo!
-// Estou aprendendo Java!
-// Linha 1 Linha 1 ainda`,
-        codeExplanation: 'O comando javac compila o arquivo .java gerando um .class. O comando java executa o programa compilado (note que não colocamos a extensão .class).',
-        warning: 'O nome do arquivo DEVE ser igual ao nome da classe pública. Se a classe é MeuPrograma, o arquivo deve ser MeuPrograma.java.',
+// ═══ PASSO 3: Executar ═══
+// java Calculadora
+//   → NÃO coloque .class nem .java
+//   → Saída:
+//   Soma: 15
+//   Diferença: 5
+//   Produto: 50`,
+        codeExplanation: '**Linhas 3-10** (código-fonte): Um programa simples que faz cálculos. Note que usamos `+` dentro de `println` para concatenar texto com valores. Os parênteses em `(a + b)` garantem que a soma é feita antes da concatenação.\n\n**Linha 14** (`javac Calculadora.java`): O compilador `javac` lê o arquivo `.java` e gera um `.class`. Se você escreveu algo errado (esqueceu `;`, errou nome de classe), o compilador mostra o erro AQUI — antes de rodar.\n\n**Linha 19** (`java Calculadora`): Executa o bytecode. Note que NÃO usamos extensão (nem `.java` nem `.class`). A JVM procura o arquivo `Calculadora.class` e executa o método `main`.\n\n**Vantagem da compilação**: Erros de sintaxe são pegos ANTES da execução. Em linguagens interpretadas (como Python), o erro só aparece quando aquela linha roda.',
+        tip: 'Se o javac mostrar um erro, leia a mensagem com atenção. Ela indica a linha e o tipo do erro. Exemplo: “error: \';\' expected” significa que faltou ponto-e-vírgula.',
       },
+
+      // ────────── SEÇÃO 5: Comentários em Java ──────────
       {
-        title: 'Comentários em Java',
-        body: 'Comentários são trechos de texto ignorados pelo compilador. São essenciais para documentar seu código e facilitar a manutenção.',
-        code: `// Comentário de uma linha
+        title: 'Comentários — Documentando seu Código',
+        body: 'Comentários são trechos de texto **ignorados pelo compilador**. Eles existem para humanos, não para a máquina. São essenciais para:\n\n- **Explicar o porquê** de uma decisão no código (não o quê — o código já mostra o quê)\n- **Documentar** parâmetros, retornos e comportamentos de métodos\n- **Desativar** temporariamente uma linha para testar algo\n\nJava tem três tipos de comentários, cada um com seu uso ideal.',
+        code: `public class ExemploComentarios {
+    public static void main(String[] args) {
 
-/* Comentário de
-   múltiplas linhas */
+        // ═══ 1. COMENTÁRIO DE LINHA ═══
+        // Use para notas curtas ao lado ou acima de uma linha
+        int idade = 20; // idade do aluno em anos
 
-/**
- * Comentário Javadoc
- * Usado para documentação oficial
- * @author Seu Nome
- * @version 1.0
- */`,
-        codeExplanation: 'Use // para comentários curtos, /* */ para blocos maiores, e /** */ para documentação Javadoc que pode ser extraída automaticamente.',
+        // ═══ 2. COMENTÁRIO DE BLOCO ═══
+        /* Use para desativar várias linhas de uma vez
+           ou para explicações maiores que uma linha.
+           Tudo entre /* e */ /* é ignorado. */
+        /* System.out.println(“Esta linha não executa”); */
+        System.out.println(“Esta linha executa!”);
+
+        // ═══ 3. COMENTÁRIO JAVADOC ═══
+        // Javadoc é especial: gera documentação HTML automática
+        // Usado ACIMA de classes e métodos (não dentro do main)
+    }
+
+    /**
+     * Calcula a média entre duas notas.
+     * @param nota1 primeira nota (0 a 10)
+     * @param nota2 segunda nota (0 a 10)
+     * @return a média aritmética das notas
+     */
+    public static double calcularMedia(double nota1, double nota2) {
+        return (nota1 + nota2) / 2.0;
+    }
+}`,
+        codeExplanation: '**Linha 6** (`// idade do aluno em anos`): Comentário de linha — tudo após `//` até o final da linha é ignorado. Ideal para notas curtas.\n\n**Linhas 9-11** (`/* ... */`): Comentário de bloco — tudo entre `/*` e `*/` é ignorado, mesmo que tenha várias linhas. Útil para desativar trechos de código durante testes.\n\n**Linha 12** (`/* System.out.println... */`): Exemplo prático — a linha está “comentada”, então não executa. Programadores fazem isso o tempo todo para testar sem apagar código.\n\n**Linhas 21-26** (`/** ... */`): Comentário Javadoc — começa com `/**` (dois asteriscos). Usa tags especiais: `@param` descreve parâmetros, `@return` descreve o retorno. Ferramentas como `javadoc` geram documentação HTML automaticamente a partir disso.',
+        tip: 'Um bom comentário explica o PORQUÊ, não o QUÊ. Ruim: `// soma 1 ao contador` (o código já mostra isso). Bom: `// pula o índice 0 porque é o cabeçalho da tabela`.',
+        warning: 'Nunca deixe blocos de código comentados no projeto final. Se não está usando, delete. O controle de versão (Git) guarda o histórico para você.',
       },
     ],
     tryItCode: `public class Main {
     public static void main(String[] args) {
-        System.out.println("Olá, mundo!");
-        System.out.println("Estou aprendendo Java.");
-        System.out.print("Linha sem pular ");
-        System.out.print("--- ainda na mesma linha.");
+        // Teste println (pula linha) vs print (não pula)
+        System.out.println(“=== Meu Primeiro Programa ===”);
+        System.out.println(“Linha 1 com println”);
+        System.out.println(“Linha 2 com println”);
+
+        System.out.print(“Usando print: “);
+        System.out.print(“tudo “);
+        System.out.print(“na “);
+        System.out.println(“mesma linha!”);
+
+        // Concatenando texto com números
+        int ano = 2025;
+        System.out.println(“Aprendendo Java em “ + ano);
+
+        // Tente adicionar suas próprias mensagens abaixo!
     }
 }`,
-    tryItPrompt: 'Altere as mensagens, adicione mais println ou print e execute para ver a saída.',
+    tryItPrompt: 'Experimente: troque as mensagens, adicione mais linhas com println e print, concatene texto com números usando +, e veja a diferença entre print e println na saída.',
     codeFillExercises: [
-      { instruction: 'Selecione o método correto para imprimir Hello World em Java.', snippetBefore: 'System.out.', snippetAfter: '("Hello World");', options: ['prntl', 'println', 'echo', 'printline'], correctIndex: 1, explanation: 'println é o método da classe PrintStream que imprime o texto e pula uma linha.' },
+      {
+        instruction: 'Selecione o método correto para imprimir texto E pular para a próxima linha.',
+        snippetBefore: 'System.out.',
+        snippetAfter: '(“Hello World”);',
+        options: ['print', 'println', 'echo', 'write'],
+        correctIndex: 1,
+        explanation: 'println (print + line) imprime o texto e automaticamente pula para a próxima linha. print imprime sem pular linha.',
+      },
+      {
+        instruction: 'Qual comando compila um arquivo Java no terminal?',
+        snippetBefore: '',
+        snippetAfter: ' MeuPrograma.java',
+        options: ['java', 'javac', 'compile', 'run'],
+        correctIndex: 1,
+        explanation: 'javac (java compiler) é o compilador que transforma .java em .class (bytecode). O comando java é usado para EXECUTAR, não compilar.',
+      },
+      {
+        instruction: 'Complete a assinatura do método main corretamente.',
+        snippetBefore: 'public static void ',
+        snippetAfter: '(String[] args) {',
+        options: ['Main', 'main', 'start', 'run'],
+        correctIndex: 1,
+        explanation: 'O método main (com m minúsculo!) é o ponto de entrada obrigatório. Java é case-sensitive: Main ≠ main.',
+      },
     ],
     commonErrors: [
-      { title: 'Nome do arquivo diferente da classe', description: 'O arquivo deve ter o mesmo nome da classe pública. MeuPrograma.java para a classe MeuPrograma.' },
-      { title: 'Esquecer o ponto-e-vírgula', description: 'Toda instrução em Java termina com ; (ponto-e-vírgula).' },
-      { title: 'main escrito errado', description: 'A assinatura deve ser exatamente: public static void main(String[] args)' },
+      {
+        title: 'Nome do arquivo diferente da classe',
+        description: 'O arquivo Java DEVE ter o mesmo nome da classe pública, incluindo maiúsculas e minúsculas. Se a classe é MeuPrograma, o arquivo deve ser MeuPrograma.java — não meuprograma.java nem meuPrograma.java.',
+        code: `// ERRO: arquivo chamado “programa.java” com classe “Programa”
+// O compilador diz: “class Programa is public, should be declared
+// in a file named Programa.java”
+
+// Arquivo: programa.java (minúsculo — ERRADO!)
+public class Programa {  // ← nome com P maiúsculo
+    public static void main(String[] args) {
+        System.out.println(“Não vai compilar!”);
+    }
+}
+
+// CORREÇÃO: renomear o arquivo para Programa.java (P maiúsculo)`,
+      },
+      {
+        title: 'Esquecer o ponto-e-vírgula',
+        description: 'Toda instrução em Java termina com ; (ponto-e-vírgula). Esquecer gera um erro de compilação que pode parecer confuso porque o compilador aponta a linha SEGUINTE como problema.',
+        code: `public class Main {
+    public static void main(String[] args) {
+        // ERRO: faltou ; no final
+        System.out.println(“Olá”)  // ← faltou ;
+        System.out.println(“Mundo”); // compilador aponta erro AQUI
+
+        // CORREÇÃO:
+        System.out.println(“Olá”);  // ← com ;
+        System.out.println(“Mundo”);
+    }
+}`,
+      },
+      {
+        title: 'Assinatura do main errada',
+        description: 'A assinatura do método main deve ser EXATAMENTE: public static void main(String[] args). Trocar qualquer palavra (esquecer static, escrever Main em vez de main, usar string minúsculo) faz o programa compilar mas NÃO executar.',
+        code: `// ERRADO — compila, mas ao executar:
+// “Main method not found in class Teste”
+
+public class Teste {
+    // ERRADO: faltou “static”
+    public void main(String[] args) {
+        System.out.println(“Não executa!”);
+    }
+}
+
+// CORRETO:
+public class Teste {
+    public static void main(String[] args) {
+        System.out.println(“Agora funciona!”);
+    }
+}`,
+      },
     ],
     summary: [
-      'Java é compilado para bytecode e executado pela JVM',
-      'Todo programa precisa de uma classe e um método main',
-      'System.out.println() imprime no console',
-      'O nome do arquivo .java deve ser igual ao da classe pública',
-      'Use comentários para documentar seu código',
+      'Java é compilado para bytecode (.class) e executado pela JVM, garantindo portabilidade',
+      'JDK (desenvolvimento) contém JRE (execução) que contém JVM (máquina virtual)',
+      'Todo programa Java precisa de pelo menos uma classe e um método main',
+      'A assinatura do main é obrigatória: public static void main(String[] args)',
+      'System.out.println() imprime e pula linha; System.out.print() imprime sem pular',
+      'O nome do arquivo .java deve ser IDÊNTICO ao nome da classe pública',
+      'Java é case-sensitive: Main ≠ main ≠ MAIN',
+      'javac compila (.java → .class), java executa (.class)',
+      'Toda instrução termina com ponto-e-vírgula (;)',
+      'Use // para comentários de linha, /* */ para blocos e /** */ para Javadoc',
     ],
   },
 
@@ -109,254 +279,682 @@ java MeuPrograma
     id: 'm1-variables',
     moduleId: 1,
     objectives: [
-      'Conhecer os 8 tipos primitivos do Java',
+      'Entender o que são variáveis e como a memória funciona',
+      'Conhecer os 8 tipos primitivos do Java e quando usar cada um',
       'Entender a diferença entre tipos primitivos e referência',
-      'Declarar, inicializar e usar variáveis',
-      'Trabalhar com String e seus métodos',
-      'Entender casting (conversão de tipos)',
+      'Declarar, inicializar e usar variáveis corretamente',
+      'Trabalhar com String e seus principais métodos',
+      'Dominar casting (conversão de tipos) implícito e explícito',
+      'Criar constantes com final',
     ],
     sections: [
+      // ────────── SEÇÃO 1: O que são Variáveis? ──────────
       {
-        title: 'O que são variáveis?',
-        body: 'Variáveis são espaços na memória do computador que guardam valores. Pense nelas como "caixas etiquetadas": cada caixa tem um nome (identificador), um tipo (o que pode guardar) e um valor.\n\nEm Java você declara o tipo antes de usar. Isso ajuda o compilador a encontrar erros e deixa o código mais claro. Exemplo: int idade = 25; declara uma variável chamada idade, do tipo inteiro, com valor 25. Depois você pode usar idade em cálculos ou alterar o valor (idade = 26;).',
+        title: 'O que são Variáveis?',
+        body: 'Variáveis são **espaços reservados na memória** do computador que guardam valores. Pense nelas como "caixas etiquetadas": cada caixa tem um **nome** (identificador), um **tipo** (o que pode guardar) e um **valor**.\n\nEm Java, você DEVE declarar o tipo antes de usar a variável. Isso é chamado de **tipagem estática** e é uma das grandes vantagens do Java: o compilador encontra erros de tipo ANTES de rodar o programa. Em linguagens como Python ou JavaScript, esse erro só apareceria em tempo de execução.\n\nRegras para nomes de variáveis:\n- Começam com letra, `_` ou `$` (nunca com número)\n- Não podem ser palavras reservadas (`int`, `class`, `if`, etc.)\n- Convenção Java: **camelCase** → `minhaIdade`, `nomeCompleto`, `saldoBancario`\n- São **case-sensitive**: `idade` ≠ `Idade` ≠ `IDADE`',
+        code: `public class ExemploVariaveis {
+    public static void main(String[] args) {
+        // Declaração: reserva espaço na memória
+        int idade;
+
+        // Inicialização: coloca um valor na variável
+        idade = 25;
+
+        // Declaração + inicialização juntos (mais comum)
+        double salario = 3500.00;
+        String nome = "Carlos";
+        boolean ativo = true;
+
+        // Usando variáveis em expressões
+        double salarioAnual = salario * 12;
+        System.out.println(nome + " tem " + idade + " anos");
+        System.out.println("Salário anual: R$ " + salarioAnual);
+
+        // Alterando o valor (reatribuição)
+        idade = 26; // aniversário!
+        System.out.println("Agora tem " + idade + " anos");
+
+        // NOMES VÁLIDOS:
+        int minhaIdade = 25;     // camelCase (padrão Java)
+        int _contador = 0;       // começa com _
+        int $valor = 100;        // começa com $
+
+        // NOMES INVÁLIDOS (não compilam):
+        // int 1numero = 10;     // começa com número
+        // int minha-idade = 25; // tem hífen
+        // int class = 5;        // palavra reservada
+    }
+}`,
+        codeExplanation: '**Linha 4** (`int idade;`): Declara a variável sem valor. O compilador reserva 4 bytes de memória para um inteiro, mas a variável ainda não foi inicializada.\n\n**Linha 7** (`idade = 25;`): Atribui o valor 25 à variável. Agora a variável pode ser usada.\n\n**Linha 10** (`double salario = 3500.00;`): Declaração e inicialização na mesma linha — o padrão mais comum no dia a dia.\n\n**Linha 16** (`salario * 12`): Variáveis podem ser usadas em expressões matemáticas. O resultado é armazenado em outra variável.\n\n**Linha 21** (`idade = 26;`): Reatribuição — o valor antigo (25) é descartado e substituído por 26. Por isso se chama "variável": o valor pode variar.',
+        tip: 'Sempre use camelCase para variáveis em Java: palavraCompostaPelaCapitalização. Isso é uma convenção forte da comunidade Java.',
+        warning: 'Java exige que variáveis locais sejam inicializadas ANTES do uso. Se declarar `int x;` e tentar usar `x` sem atribuir valor, o compilador dá erro.',
       },
+
+      // ────────── SEÇÃO 2: Tipos Primitivos ──────────
       {
-        title: 'Tipos Primitivos',
-        body: 'Java tem exatamente 8 tipos primitivos. Eles são os blocos fundamentais de dados e não são objetos (não têm métodos). Cada um ocupa um tamanho fixo na memória e tem um intervalo de valores bem definido. Os mais usados no dia a dia são int (números inteiros) e double (números decimais).',
-        code: `// INTEIROS (números sem decimal)
-byte idade = 25;         // -128 a 127 (1 byte)
-short ano = 2024;        // -32768 a 32767 (2 bytes)
-int populacao = 215000000; // ~-2bi a ~2bi (4 bytes) - MAIS USADO
-long distancia = 9999999999L; // muito grande (8 bytes) - note o L
+        title: 'Os 8 Tipos Primitivos',
+        body: 'Java tem exatamente **8 tipos primitivos**. Eles são os blocos fundamentais de dados — não são objetos (não têm métodos) e são armazenados diretamente na memória.\n\nCada tipo ocupa um tamanho fixo e tem um intervalo de valores bem definido. Na prática do dia a dia, você vai usar **int** para inteiros e **double** para decimais em 90% dos casos.',
+        code: `public class TiposPrimitivos {
+    public static void main(String[] args) {
 
-// DECIMAIS (números com ponto flutuante)
-float preco = 29.99f;    // precisão simples (4 bytes) - note o f
-double pi = 3.14159265;  // precisão dupla (8 bytes) - MAIS USADO
+        // ═══ INTEIROS (números sem casa decimal) ═══
+        byte  pequeno   = 127;            // -128 a 127           (1 byte)
+        short medio     = 32000;          // -32.768 a 32.767     (2 bytes)
+        int   numero    = 2_000_000_000;  // ~-2bi a ~2bi         (4 bytes) ★ MAIS USADO
+        long  enorme    = 9_999_999_999L; // muito grande         (8 bytes) → note o L!
 
-// CARACTERE
-char letra = 'A';        // um único caractere (2 bytes) - aspas simples!
+        // ═══ DECIMAIS (números com ponto flutuante) ═══
+        float  preco    = 29.99f;         // precisão simples     (4 bytes) → note o f!
+        double pi       = 3.14159265;     // precisão dupla       (8 bytes) ★ MAIS USADO
 
-// BOOLEANO
-boolean ativo = true;    // true ou false (1 bit)
-boolean maior = 10 > 5;  // true`,
-        codeExplanation: 'int e double são os mais usados no dia a dia. Use long quando int não for suficiente (adicione L ao final). Use float apenas quando necessário (adicione f ao final). char usa aspas simples, String usa aspas duplas.',
-        tip: 'Na dúvida, use int para inteiros e double para decimais. São os padrões do Java.',
+        // ═══ CARACTERE ═══
+        char letra   = 'A';              // UM único caractere   (2 bytes) → aspas SIMPLES!
+        char unicode = '\u0041';          // 'A' em Unicode
+
+        // ═══ BOOLEANO ═══
+        boolean ativo    = true;          // true ou false apenas
+        boolean aprovado = 7 >= 5;        // true (resultado da expressão)
+
+        // DICA: use _ para separar milhares (Java 7+)
+        int populacao = 215_000_000;      // mais legível que 215000000
+
+        System.out.println("int: " + numero);
+        System.out.println("long: " + enorme);
+        System.out.println("double: " + pi);
+        System.out.println("char: " + letra);
+        System.out.println("boolean: " + ativo);
+    }
+}`,
+        codeExplanation: '**Linha 6** (`byte pequeno = 127`): O menor tipo inteiro — vai de -128 a 127. Raramente usado, a menos que precise economizar memória em arrays enormes.\n\n**Linha 8** (`int numero = 2_000_000_000`): O tipo inteiro padrão. Os underscores (`_`) são ignorados pelo compilador e servem só para facilitar a leitura.\n\n**Linha 9** (`long enorme = 9_999_999_999L`): Para números que não cabem em int. O **L** no final é obrigatório — sem ele, o compilador tenta interpretar como int e dá erro.\n\n**Linha 12** (`float preco = 29.99f`): Decimal com precisão simples. O **f** no final é obrigatório — sem ele, Java interpreta como double e dá erro de tipo.\n\n**Linha 13** (`double pi = 3.14159265`): Decimal com precisão dupla — o padrão para números decimais.\n\n**Linha 16** (`char letra = \'A\'`): Um ÚNICO caractere entre aspas **simples**. Aspas duplas são para String.\n\n**Linha 20** (`boolean aprovado = 7 >= 5`): Booleanos podem receber o resultado de expressões lógicas.',
+        tip: 'Na dúvida, use int para inteiros e double para decimais. São os padrões do Java e cobrem 90% dos casos.',
       },
+
+      // ────────── SEÇÃO 3: String — Tipo de Referência ──────────
       {
-        title: 'String — Tipo de Referência',
-        body: 'String não é um tipo primitivo, é um objeto. Mas Java permite criar Strings de forma simplificada:',
-        code: `// Criando Strings
-String nome = "Maria";
-String sobrenome = "Silva";
+        title: 'String — O Tipo de Referência Mais Usado',
+        body: 'String **não é um tipo primitivo** — é um **objeto** (tipo de referência). Mas Java permite criar Strings de forma simplificada, como se fossem primitivos.\n\nA diferença prática mais importante: **Strings são imutáveis**. Quando você chama `nome.toUpperCase()`, a String original NÃO muda — o método retorna uma NOVA String. Para "atualizar", você precisa reatribuir: `nome = nome.toUpperCase();`.\n\nOutra diferença crucial: **nunca compare Strings com ==**. O `==` compara se são o mesmo objeto na memória, não o conteúdo. Use `.equals()` para comparar texto.',
+        code: `public class ExemploStrings {
+    public static void main(String[] args) {
 
-// Concatenação (juntar strings)
-String nomeCompleto = nome + " " + sobrenome; // "Maria Silva"
+        // Criando Strings
+        String nome = "Maria";
+        String sobrenome = "Silva";
 
-// Métodos úteis de String
-System.out.println(nome.length());           // 5 (tamanho)
-System.out.println(nome.toUpperCase());      // "MARIA"
-System.out.println(nome.toLowerCase());      // "maria"
-System.out.println(nome.charAt(0));          // 'M' (primeiro caractere)
-System.out.println(nome.contains("ar"));     // true
-System.out.println(nome.equals("Maria"));    // true (comparação correta!)
-System.out.println(nome.substring(0, 3));    // "Mar"
-System.out.println(nome.replace('a', 'o'));  // "Morio"`,
-        codeExplanation: 'Strings são imutáveis em Java — métodos como toUpperCase() retornam uma NOVA String, não modificam a original.',
-        warning: 'NUNCA compare Strings com ==. Use .equals(). O == compara referências na memória, não o conteúdo!',
+        // Concatenação (juntar strings com +)
+        String completo = nome + " " + sobrenome; // "Maria Silva"
+        System.out.println(completo);
+
+        // ═══ MÉTODOS MAIS USADOS ═══
+
+        // Tamanho
+        System.out.println(nome.length());       // 5
+
+        // Maiúsculas e minúsculas
+        System.out.println(nome.toUpperCase());  // "MARIA"
+        System.out.println(nome.toLowerCase());  // "maria"
+
+        // Acessar caractere por posição
+        System.out.println(nome.charAt(0));      // 'M' (primeiro)
+        System.out.println(nome.charAt(4));      // 'a' (último)
+
+        // Busca
+        System.out.println(nome.contains("ar")); // true
+        System.out.println(nome.indexOf("ri"));  // 2 (posição)
+        System.out.println(nome.startsWith("Ma")); // true
+
+        // Recortar
+        System.out.println(nome.substring(0, 3)); // "Mar" (do 0 ao 2)
+
+        // Substituir
+        System.out.println(nome.replace('a', 'o')); // "Morio"
+
+        // ═══ COMPARAÇÃO CORRETA ═══
+        String a = "Java";
+        String b = "Java";
+        System.out.println(a.equals(b));           // true ✓ CORRETO
+        System.out.println(a.equalsIgnoreCase("java")); // true
+        // System.out.println(a == b);  // PERIGO! Pode dar true ou false
+    }
+}`,
+        codeExplanation: '**Linha 9** (`nome + " " + sobrenome`): O operador `+` concatena Strings. Java automaticamente converte números para String quando concatenados.\n\n**Linha 16** (`nome.length()`): Retorna o número de caracteres. Note os parênteses — é um método, diferente de arrays que usam `.length` sem parênteses.\n\n**Linha 23** (`nome.charAt(0)`): Retorna o caractere na posição indicada. Posições começam em 0, como arrays.\n\n**Linha 31** (`nome.substring(0, 3)`): Retorna um pedaço da String — do índice 0 (incluso) ao 3 (excluso). Resultado: "Mar".\n\n**Linha 37** (`a.equals(b)`): A forma CORRETA de comparar conteúdo de Strings. NUNCA use `==` para comparar Strings — o `==` compara referências na memória, não o texto.',
+        warning: 'NUNCA compare Strings com ==. Use .equals() para conteúdo. Código como `if (nome == "Maria")` pode funcionar por acaso em testes simples mas vai falhar em produção!',
       },
+
+      // ────────── SEÇÃO 4: Casting ──────────
       {
-        title: 'Casting (Conversão de Tipos)',
-        body: 'Às vezes precisamos converter um tipo em outro. Existem dois tipos de casting:',
-        code: `// CASTING IMPLÍCITO (automático) - menor para maior
-// byte -> short -> int -> long -> float -> double
-int numero = 10;
-double resultado = numero; // 10.0 (automático, sem perda)
+        title: 'Casting — Conversão de Tipos',
+        body: 'Às vezes precisamos converter um tipo em outro. Java tem dois tipos de casting:\n\n**Casting Implícito (automático)**: Acontece quando vamos de um tipo MENOR para um MAIOR. Não perde dados.\nOrdem: `byte → short → int → long → float → double`\n\n**Casting Explícito (manual)**: Necessário quando vamos de um tipo MAIOR para um MENOR. Pode perder dados! Você precisa usar a sintaxe `(tipo)` para confirmar ao compilador que sabe o que está fazendo.',
+        code: `public class ExemploCasting {
+    public static void main(String[] args) {
 
-// CASTING EXPLÍCITO (manual) - maior para menor
-double preco = 29.99;
-int precoInteiro = (int) preco; // 29 (perde a parte decimal!)
+        // ═══ CASTING IMPLÍCITO (automático — seguro) ═══
+        int numero = 42;
+        double resultado = numero;  // int → double: 42.0
+        System.out.println(resultado); // 42.0
 
-// String para número
-String idadeTexto = "25";
-int idade = Integer.parseInt(idadeTexto);    // 25
-double valor = Double.parseDouble("19.90");  // 19.90
+        long grande = numero;       // int → long: 42
+        float decimal = numero;     // int → float: 42.0
 
-// Número para String
-String texto = String.valueOf(42);           // "42"
-String texto2 = "" + 42;                     // "42" (concatenação)`,
-        codeExplanation: 'Casting implícito é seguro (não perde dados). Casting explícito pode perder precisão. Para converter String em número, use Integer.parseInt() ou Double.parseDouble().',
+        // ═══ CASTING EXPLÍCITO (manual — pode perder dados!) ═══
+        double preco = 29.99;
+        int precoInteiro = (int) preco;  // double → int: 29 (trunca!)
+        System.out.println(precoInteiro); // 29 (perdeu o .99!)
+
+        // Cuidado com overflow!
+        int valorGrande = 130;
+        byte valorPequeno = (byte) valorGrande; // 130 não cabe em byte!
+        System.out.println(valorPequeno); // -126 (overflow!)
+
+        // ═══ STRING ↔ NÚMERO ═══
+        // String para número
+        String idadeTexto = "25";
+        int idade = Integer.parseInt(idadeTexto);       // 25
+        double valor = Double.parseDouble("19.90");     // 19.90
+
+        // Número para String
+        String texto1 = String.valueOf(42);             // "42"
+        String texto2 = Integer.toString(42);           // "42"
+        String texto3 = "" + 42;                        // "42" (concatenação)
+
+        System.out.println("Idade: " + idade);
+        System.out.println("Texto: " + texto1);
+    }
+}`,
+        codeExplanation: '**Linha 6** (`double resultado = numero`): Casting implícito — int (4 bytes) cabe em double (8 bytes) sem perda. O compilador faz automaticamente.\n\n**Linha 14** (`(int) preco`): Casting explícito — double → int. O `(int)` diz ao compilador: "eu sei que posso perder dados, faça mesmo assim". A parte decimal é TRUNCADA (não arredondada!).\n\n**Linhas 18-20**: Overflow! 130 não cabe em byte (-128 a 127). O valor "dá a volta" e resulta em -126. Isso é um bug silencioso — Java não dá erro.\n\n**Linha 25** (`Integer.parseInt("25")`): Converte String para int. Se a String não for um número válido (ex.: "abc"), lança NumberFormatException.\n\n**Linha 30** (`"" + 42`): Truque comum — concatenar com String vazia converte qualquer valor para String.',
+        tip: 'Casting explícito TRUNCA, não arredonda! (int) 9.99 resulta em 9, não 10. Se quiser arredondar, use Math.round().',
       },
+
+      // ────────── SEÇÃO 5: Constantes com final ──────────
       {
         title: 'Constantes com final',
-        body: 'Use a palavra-chave final para criar constantes — valores que não podem ser alterados:',
-        code: `// Constantes são escritas em MAIÚSCULAS por convenção
-final double PI = 3.14159;
-final int MAX_TENTATIVAS = 3;
-final String EMPRESA = "Tech Corp";
+        body: 'Use a palavra-chave **final** para criar constantes — valores que **não podem ser alterados** após a inicialização. Tentar reatribuir uma variável `final` gera erro de compilação.\n\nPor convenção, constantes em Java usam **SNAKE_CASE em MAIÚSCULAS**: `MAX_TENTATIVAS`, `PI`, `TAXA_JUROS`. Isso facilita identificar constantes no código.',
+        code: `public class ExemploConstantes {
+    public static void main(String[] args) {
 
-// PI = 3.14; // ERRO! Não pode alterar uma constante`,
-        codeExplanation: 'A convenção em Java é usar SNAKE_CASE em maiúsculas para constantes. Tentar alterar o valor gera um erro de compilação.',
+        // Constantes: valores que NUNCA mudam
+        final double PI = 3.14159;
+        final int MAX_TENTATIVAS = 3;
+        final String EMPRESA = "Tech Corp";
+        final double TAXA_JUROS = 0.05; // 5%
+
+        // Usando constantes em cálculos
+        double raio = 5.0;
+        double area = PI * raio * raio;
+        System.out.println("Área do círculo: " + area);
+
+        double investimento = 1000.0;
+        double rendimento = investimento * TAXA_JUROS;
+        System.out.println("Rendimento: R$ " + rendimento);
+
+        // ERRO DE COMPILAÇÃO se tentar alterar:
+        // PI = 3.14;  // error: cannot assign a value to final variable PI
+        // MAX_TENTATIVAS = 5;  // error: cannot assign a value to final variable
+    }
+}`,
+        codeExplanation: '**Linha 5** (`final double PI = 3.14159`): A palavra `final` impede que o valor seja alterado. É como uma "trava" na variável.\n\n**Linha 6** (`MAX_TENTATIVAS`): SNAKE_CASE em maiúsculas é a convenção para constantes. Qualquer programador Java reconhece isso como constante.\n\n**Linhas 20-21**: Tentar reatribuir uma variável final causa erro de compilação — o programa nem compila. Isso é uma proteção contra bugs acidentais.',
+        warning: 'final em tipos de referência (como String) impede a reatribuição da variável, mas NÃO impede a modificação do objeto internamente. Para Strings isso não importa (são imutáveis), mas para listas e objetos faz diferença.',
       },
-    ],
-    commonErrors: [
-      { title: 'Comparar String com ==', description: 'Use .equals() para comparar conteúdo de Strings. O == compara referências na memória.' },
-      { title: 'Esquecer o f em float', description: 'float preco = 29.99 dá erro. Use float preco = 29.99f;' },
-      { title: 'Esquecer o L em long', description: 'Números grandes precisam do L: long x = 9999999999L;' },
-      { title: 'Variável não inicializada', description: 'Java exige que variáveis locais sejam inicializadas antes do uso.' },
-    ],
-    codeFillExercises: [
-      { instruction: 'Complete a declaração de uma variável inteira chamada idade com valor 25.', snippetBefore: '', snippetAfter: ' idade = 25;', options: ['int', 'integer', 'Integer', 'var'], correctIndex: 0, explanation: 'Em Java usamos o tipo primitivo int para números inteiros.' },
-      { instruction: 'Para comparar o conteúdo de duas Strings em Java, qual método usar?', snippetBefore: 'if (nome.', snippetAfter: '("Maria")) { ... }', options: ['==', 'equals', 'compare', 'same'], correctIndex: 1, explanation: 'Strings devem ser comparadas com .equals() para comparar conteúdo; == compara referências.' },
-    ],
-    summary: [
-      'Java tem 8 tipos primitivos: byte, short, int, long, float, double, char, boolean',
-      'int e double são os mais usados',
-      'String é um tipo de referência (objeto), não primitivo',
-      'Compare Strings com .equals(), nunca com ==',
-      'Casting implícito é automático (menor → maior), explícito precisa de (tipo)',
-      'Use final para constantes',
     ],
     tryItCode: `public class Main {
     public static void main(String[] args) {
+        // Tipos primitivos
         int idade = 25;
-        double preco = 19.90;
-        String nome = "Maria";
-        System.out.println("Nome: " + nome + ", Idade: " + idade);
-        System.out.println("Preco: " + preco);
-        // Teste: altere os valores acima e execute novamente.
+        double salario = 3500.50;
+        boolean ativo = true;
+        char inicial = 'C';
+
+        // String (tipo de referência)
+        String nome = "Carlos";
+
+        // Imprimindo
+        System.out.println("Nome: " + nome);
+        System.out.println("Idade: " + idade);
+        System.out.println("Salário: R$ " + salario);
+        System.out.println("Ativo: " + ativo);
+        System.out.println("Inicial: " + inicial);
+
+        // Casting
+        double resultado = idade;           // implícito: 25.0
+        int truncado = (int) salario;       // explícito: 3500
+        System.out.println("\\nCasting implícito: " + resultado);
+        System.out.println("Casting explícito: " + truncado);
+
+        // Constante
+        final double PI = 3.14159;
+        double area = PI * 5 * 5;
+        System.out.println("\\nÁrea (raio=5): " + area);
+
+        // Experimente alterar os valores!
     }
 }`,
-    tryItPrompt: 'Altere idade, preco e nome; execute e veja a saída.',
+    tryItPrompt: 'Experimente: troque os valores das variáveis, teste casting entre tipos diferentes, tente alterar uma constante final e veja o erro.',
+    codeFillExercises: [
+      {
+        instruction: 'Complete a declaração de uma variável inteira chamada idade com valor 25.',
+        snippetBefore: '',
+        snippetAfter: ' idade = 25;',
+        options: ['int', 'integer', 'Integer', 'number'],
+        correctIndex: 0,
+        explanation: 'Em Java, o tipo primitivo para números inteiros é int (minúsculo). Integer é a classe wrapper, integer e number não existem.',
+      },
+      {
+        instruction: 'Qual método compara corretamente o CONTEÚDO de duas Strings?',
+        snippetBefore: 'if (nome.',
+        snippetAfter: '("Maria")) { ... }',
+        options: ['==', 'equals', 'compare', 'matches'],
+        correctIndex: 1,
+        explanation: '.equals() compara o conteúdo das Strings. O == compara referências na memória (se são o mesmo objeto), não o texto.',
+      },
+      {
+        instruction: 'Qual sufixo é obrigatório ao declarar um literal do tipo long?',
+        snippetBefore: 'long distancia = 9999999999',
+        snippetAfter: ';',
+        options: ['L', 'l', 'D', 'F'],
+        correctIndex: 0,
+        explanation: 'Literais long precisam do sufixo L (maiúsculo por convenção). Sem ele, Java interpreta como int e dá erro se o valor for grande demais.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'Comparar String com ==',
+        description: 'O == compara referências na memória (se são o MESMO objeto), não o conteúdo do texto. Use .equals() para comparar conteúdo.',
+        code: `String a = new String("Java");
+String b = new String("Java");
+
+// ERRADO — compara referências, não conteúdo
+if (a == b) {
+    System.out.println("Iguais");  // NÃO imprime!
+}
+
+// CORRETO — compara o texto
+if (a.equals(b)) {
+    System.out.println("Iguais");  // Imprime "Iguais"!
+}`,
+      },
+      {
+        title: 'Esquecer o sufixo f em float ou L em long',
+        description: 'Literais decimais são double por padrão, e inteiros são int por padrão. Para float use f, para long use L.',
+        code: `// ERRO: "incompatible types: possible lossy conversion from double to float"
+// float preco = 29.99;
+
+// CORRETO:
+float preco = 29.99f;   // f indica que é float
+
+// ERRO: "integer number too large"
+// long grande = 9999999999;
+
+// CORRETO:
+long grande = 9999999999L;  // L indica que é long`,
+      },
+      {
+        title: 'Variável local não inicializada',
+        description: 'Java exige que variáveis locais (dentro de métodos) tenham valor atribuído antes de serem usadas. Variáveis de instância (da classe) recebem valor padrão automaticamente, mas locais não.',
+        code: `public static void main(String[] args) {
+    int idade;
+    // ERRO: "variable idade might not have been initialized"
+    // System.out.println(idade);
+
+    // CORRETO: inicialize antes de usar
+    idade = 25;
+    System.out.println(idade); // OK!
+
+    // Ou declare e inicialize junto:
+    int nota = 10; // OK!
+}`,
+      },
+    ],
+    summary: [
+      'Variáveis são espaços na memória com nome, tipo e valor',
+      'Java tem 8 tipos primitivos: byte, short, int, long, float, double, char, boolean',
+      'int e double são os mais usados no dia a dia (90% dos casos)',
+      'String é um tipo de referência (objeto), não primitivo, e é imutável',
+      'Compare Strings com .equals(), NUNCA com ==',
+      'Casting implícito (menor→maior) é automático; explícito (maior→menor) usa (tipo) e pode perder dados',
+      'Integer.parseInt() e Double.parseDouble() convertem String para número',
+      'Use final para criar constantes (valores que não mudam)',
+      'Convenções: camelCase para variáveis, SNAKE_CASE para constantes',
+      'Variáveis locais DEVEM ser inicializadas antes do uso',
+    ],
   },
 
   'm1-operators': {
-    id: 'm1-operators', moduleId: 1,
-    objectives: ['Dominar operadores aritméticos, relacionais e lógicos', 'Entender precedência de operadores', 'Usar operadores de atribuição compostos'],
+    id: 'm1-operators',
+    moduleId: 1,
+    objectives: [
+      'Dominar os operadores aritméticos (+, -, *, /, %)',
+      'Entender a armadilha da divisão inteira',
+      'Usar operadores relacionais para comparações',
+      'Combinar condições com operadores lógicos (&&, ||, !)',
+      'Conhecer operadores de atribuição compostos (+=, -=, etc.)',
+      'Entender precedência de operadores',
+    ],
     sections: [
-      { title: 'Operadores Aritméticos', body: 'Os operadores aritméticos são os mesmos da matemática: +, -, *, /. Em Java, o operador % (módulo) retorna o resto da divisão — muito útil para saber se um número é par (x % 2 == 0) ou para ciclos. Importante: a divisão entre dois inteiros resulta em inteiro (truncada); para obter decimal, use pelo menos um operando como double.',
-        code: `int a = 10, b = 3;
-System.out.println(a + b);  // 13 (soma)
-System.out.println(a - b);  // 7  (subtração)
-System.out.println(a * b);  // 30 (multiplicação)
-System.out.println(a / b);  // 3  (divisão INTEIRA!)
-System.out.println(a % b);  // 1  (resto da divisão)
+      // ────────── SEÇÃO 1: Operadores Aritméticos ──────────
+      {
+        title: 'Operadores Aritméticos',
+        body: 'Os operadores aritméticos são os mesmos da matemática: `+`, `-`, `*`, `/`. Mas Java tem uma peculiaridade importante: o operador `%` (módulo) retorna o **resto da divisão** — muito útil para saber se um número é par (`x % 2 == 0`) ou para criar ciclos.\n\nA maior **armadilha** de iniciantes: **divisão entre dois inteiros resulta em inteiro** (truncada). `10 / 3` dá `3`, não `3.33`. Para obter decimal, pelo menos um operando deve ser `double`.',
+        code: `public class OperadoresAritmeticos {
+    public static void main(String[] args) {
 
-// Divisão com decimais
-double c = 10.0 / 3; // 3.3333...
+        int a = 10, b = 3;
 
-// Incremento e decremento
-int x = 5;
-x++;  // x = 6
-x--;  // x = 5`,
-        codeExplanation: 'Cuidado: divisão entre inteiros resulta em inteiro! 10/3 = 3, não 3.33. Para resultado decimal, pelo menos um operando deve ser double.',
-        warning: 'Divisão inteira trunca o resultado! 10 / 3 = 3. Se precisa do decimal, use 10.0 / 3.',
+        // Operações básicas
+        System.out.println("Soma:      " + (a + b));  // 13
+        System.out.println("Subtração: " + (a - b));  // 7
+        System.out.println("Multiplic: " + (a * b));  // 30
+        System.out.println("Divisão:   " + (a / b));  // 3 ← INTEIRO!
+        System.out.println("Resto:     " + (a % b));  // 1
+
+        // ═══ A ARMADILHA DA DIVISÃO INTEIRA ═══
+        System.out.println(10 / 3);      // 3   (trunca!)
+        System.out.println(10.0 / 3);    // 3.333... (um é double)
+        System.out.println((double) 10 / 3); // 3.333... (casting)
+
+        // ═══ MÓDULO (%) — MUITO ÚTIL ═══
+        System.out.println(10 % 2);  // 0 → 10 é PAR
+        System.out.println(7 % 2);   // 1 → 7 é ÍMPAR
+        System.out.println(15 % 5);  // 0 → 15 é divisível por 5
+
+        // ═══ INCREMENTO E DECREMENTO ═══
+        int x = 5;
+        x++;  // x = 6 (incrementa 1)
+        x--;  // x = 5 (decrementa 1)
+
+        // Cuidado com pré vs pós:
+        int y = 5;
+        System.out.println(y++); // imprime 5, DEPOIS incrementa (y = 6)
+        System.out.println(++y); // PRIMEIRO incrementa (y = 7), depois imprime 7
+
+        // ═══ ATRIBUIÇÃO COMPOSTA ═══
+        int total = 100;
+        total += 50;  // total = total + 50 → 150
+        total -= 30;  // total = total - 30 → 120
+        total *= 2;   // total = total * 2  → 240
+        total /= 4;   // total = total / 4  → 60
+        total %= 7;   // total = total % 7  → 4
+        System.out.println("Total final: " + total); // 4
+    }
+}`,
+        codeExplanation: '**Linha 10** (`a / b` → 3): Divisão entre dois `int` resulta em `int`! O Java trunca (corta) a parte decimal. 10 dividido por 3 deveria ser 3.33, mas como ambos são int, resulta em 3.\n\n**Linha 15** (`10.0 / 3`): Se pelo menos um operando for double, o resultado é double. Basta colocar `.0` em um dos números.\n\n**Linhas 19-21** (módulo `%`): Retorna o resto da divisão. Se `x % 2 == 0`, o número é par. Se `x % n == 0`, o número é divisível por n.\n\n**Linha 30** (`y++` vs `++y`): Pós-incremento (`y++`) usa o valor ATUAL e só incrementa depois. Pré-incremento (`++y`) incrementa ANTES de usar. Na prática, use `y++` quando estiver sozinho na linha.\n\n**Linhas 34-38** (atribuição composta): `+=`, `-=`, `*=`, `/=`, `%=` são atalhos. `total += 50` é o mesmo que `total = total + 50` — mais curto e mais legível.',
+        warning: 'Divisão inteira trunca! 10 / 3 = 3. Para resultado decimal, use 10.0 / 3 ou faça casting: (double) 10 / 3.',
       },
-      { title: 'Operadores Relacionais', body: 'Comparam dois valores e retornam boolean (true/false).',
-        code: `int a = 10, b = 5;
-System.out.println(a == b);  // false (igual a?)
-System.out.println(a != b);  // true  (diferente de?)
-System.out.println(a > b);   // true  (maior que?)
-System.out.println(a < b);   // false (menor que?)
-System.out.println(a >= 10); // true  (maior ou igual?)
-System.out.println(a <= 5);  // false (menor ou igual?)`,
+
+      // ────────── SEÇÃO 2: Operadores Relacionais ──────────
+      {
+        title: 'Operadores Relacionais (Comparação)',
+        body: 'Operadores relacionais comparam dois valores e retornam **boolean** (`true` ou `false`). São essenciais para condições (`if`, `while`, `for`).\n\nSão 6 operadores: `==` (igual), `!=` (diferente), `>` (maior), `<` (menor), `>=` (maior ou igual), `<=` (menor ou igual).',
+        code: `public class OperadoresRelacionais {
+    public static void main(String[] args) {
+
+        int a = 10, b = 5;
+
+        System.out.println(a == b);   // false → são iguais?
+        System.out.println(a != b);   // true  → são diferentes?
+        System.out.println(a > b);    // true  → a é maior?
+        System.out.println(a < b);    // false → a é menor?
+        System.out.println(a >= 10);  // true  → a é maior OU igual a 10?
+        System.out.println(a <= 5);   // false → a é menor OU igual a 5?
+
+        // Exemplo prático: verificar aprovação
+        int nota = 7;
+        boolean aprovado = nota >= 7;
+        System.out.println("Aprovado? " + aprovado); // true
+
+        // Funciona com double também
+        double preco = 29.99;
+        boolean caro = preco > 50.0;
+        System.out.println("Caro? " + caro); // false
+
+        // Comparando char (compara código Unicode)
+        char letra = 'B';
+        System.out.println(letra > 'A');  // true ('B' = 66, 'A' = 65)
+    }
+}`,
+        codeExplanation: '**Linha 6** (`a == b`): Operador de igualdade — dois sinais de igual. Um único `=` é atribuição, não comparação!\n\n**Linha 7** (`a != b`): Diferente — retorna true quando os valores são diferentes.\n\n**Linhas 14-16**: O resultado de uma comparação pode ser armazenado diretamente em uma variável boolean. `nota >= 7` resulta em `true` e é guardado em `aprovado`.\n\n**Linha 24** (comparando char): Caracteres são comparados pelo código Unicode. \'A\' = 65, \'B\' = 66, então \'B\' > \'A\' é true.',
+        tip: 'Lembre: == é comparação, = é atribuição. Esse é um dos erros mais comuns em qualquer linguagem com sintaxe C.',
       },
-      { title: 'Operadores Lógicos', body: 'Combinam expressões booleanas.',
-        code: `boolean temIdade = true;
-boolean temDocumento = false;
 
-// AND (&&) - ambos devem ser true
-System.out.println(temIdade && temDocumento); // false
+      // ────────── SEÇÃO 3: Operadores Lógicos ──────────
+      {
+        title: 'Operadores Lógicos',
+        body: 'Operadores lógicos combinam expressões booleanas para criar condições mais complexas. São 3:\n\n- **`&&` (E / AND)**: Ambos devem ser true → resultado true\n- **`||` (OU / OR)**: Pelo menos um deve ser true → resultado true\n- **`!` (NÃO / NOT)**: Inverte o valor boolean\n\nJava usa **avaliação de curto-circuito**: em `&&`, se o primeiro for false, o segundo NEM é avaliado (já sabe que o resultado é false). Em `||`, se o primeiro for true, o segundo nem é avaliado.',
+        code: `public class OperadoresLogicos {
+    public static void main(String[] args) {
 
-// OR (||) - pelo menos um true
-System.out.println(temIdade || temDocumento); // true
+        boolean temIdade = true;
+        boolean temDocumento = false;
 
-// NOT (!) - inverte
-System.out.println(!temIdade); // false
+        // ═══ AND (&&) — ambos devem ser true ═══
+        System.out.println(temIdade && temDocumento); // false
+        // true && false → false
 
-// Exemplo prático
-int idade = 20;
-boolean podeVotar = idade >= 16 && idade <= 120; // true`,
-        tip: 'Java usa "curto-circuito": em &&, se o primeiro for false, não avalia o segundo. Em ||, se o primeiro for true, não avalia o segundo.',
+        // ═══ OR (||) — pelo menos um true ═══
+        System.out.println(temIdade || temDocumento); // true
+        // true || false → true
+
+        // ═══ NOT (!) — inverte ═══
+        System.out.println(!temIdade);    // false (inverte true)
+        System.out.println(!temDocumento); // true  (inverte false)
+
+        // ═══ COMBINANDO EM EXEMPLOS REAIS ═══
+
+        // Pode financiar um carro?
+        int idade = 25;
+        double renda = 3000;
+        boolean semNome = true;
+
+        boolean podeFinanciar = idade >= 18 && renda >= 2000 && semNome;
+        System.out.println("Financiar? " + podeFinanciar); // true
+
+        // Tem desconto? (idoso OU estudante)
+        boolean isIdoso = idade >= 65;
+        boolean isEstudante = idade <= 25;
+        boolean temDesconto = isIdoso || isEstudante;
+        System.out.println("Desconto? " + temDesconto); // true
+
+        // Número está em uma faixa?
+        int nota = 7;
+        boolean aprovado = nota >= 7 && nota <= 10;
+        System.out.println("Aprovado? " + aprovado); // true
+
+        // Curto-circuito: evita NullPointerException
+        String nome = null;
+        // Se nome for null, a segunda parte NEM é avaliada!
+        boolean valido = nome != null && nome.length() > 0;
+        System.out.println("Válido? " + valido); // false (sem erro!)
+    }
+}`,
+        codeExplanation: '**Linha 8** (`temIdade && temDocumento`): AND — só é true se AMBOS forem true. Como temDocumento é false, o resultado é false.\n\n**Linha 12** (`temIdade || temDocumento`): OR — basta UM ser true. Como temIdade é true, o resultado é true.\n\n**Linha 26** (condições compostas): Você pode encadear vários `&&`. Todas as condições devem ser true para o resultado ser true.\n\n**Linhas 42-43** (curto-circuito): Se `nome` for null e tentássemos `nome.length()`, daria NullPointerException. Mas como usamos `&&`, se `nome != null` for false, a segunda parte NEM é avaliada — o Java já sabe que o resultado é false.',
+        tip: 'O curto-circuito é uma técnica poderosa para evitar erros. Sempre coloque a verificação de null ANTES da condição que usa o objeto: `obj != null && obj.metodo()`.',
+      },
+
+      // ────────── SEÇÃO 4: Precedência de Operadores ──────────
+      {
+        title: 'Precedência de Operadores',
+        body: 'Assim como na matemática, Java tem uma ordem de prioridade para os operadores. Se você não tiver certeza, **use parênteses** — além de garantir a ordem correta, tornam o código mais legível.\n\nOrdem de precedência (maior para menor):\n1. `!` (negação), `++`, `--`, casting `(tipo)`\n2. `*`, `/`, `%`\n3. `+`, `-`\n4. `<`, `<=`, `>`, `>=`\n5. `==`, `!=`\n6. `&&`\n7. `||`\n8. `=`, `+=`, `-=` (atribuição)',
+        code: `public class Precedencia {
+    public static void main(String[] args) {
+
+        // Multiplicação antes de soma (como na matemática)
+        int resultado = 2 + 3 * 4;
+        System.out.println(resultado); // 14 (não 20!)
+
+        // Parênteses mudam a ordem
+        int comParenteses = (2 + 3) * 4;
+        System.out.println(comParenteses); // 20
+
+        // && tem prioridade sobre ||
+        boolean r1 = true || false && false;
+        System.out.println(r1); // true (avalia && primeiro)
+        // Equivale a: true || (false && false) → true || false → true
+
+        // Com parênteses para clareza:
+        boolean r2 = (true || false) && false;
+        System.out.println(r2); // false
+
+        // DICA: na dúvida, use parênteses!
+        int a = 10, b = 3;
+        double media = (double) (a + b) / 2;  // casting + parênteses
+        System.out.println("Média: " + media); // 6.5
+    }
+}`,
+        codeExplanation: '**Linha 5** (`2 + 3 * 4`): Multiplicação tem prioridade sobre soma. Primeiro faz 3 * 4 = 12, depois 2 + 12 = 14.\n\n**Linha 13** (`true || false && false`): O `&&` tem prioridade sobre `||`. Primeiro avalia `false && false` = false, depois `true || false` = true.\n\n**Linha 23** (`(double) (a + b) / 2`): Os parênteses garantem que a soma é feita antes da divisão, e o casting converte para double antes de dividir.',
+        warning: 'Na dúvida sobre precedência, USE PARÊNTESES. Seu código ficará mais claro e você evita bugs sutis. Código legível vale mais que código "esperto".',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual operador retorna o resto da divisão entre dois inteiros?', snippetBefore: 'int resto = 10 ', snippetAfter: ' 3; // resto = 1', options: ['/', '%', 'mod', 'rem'], correctIndex: 1, explanation: 'O operador % (módulo) retorna o resto da divisão inteira.' },
-    ],
-    summary: ['Operadores aritméticos: + - * / %', 'Divisão inteira trunca — use double para decimais', 'Operadores relacionais retornam boolean', 'Operadores lógicos: && (e), || (ou), ! (não)'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
         int a = 10, b = 3;
+
+        // Aritméticos
+        System.out.println("=== Aritméticos ===");
         System.out.println("a + b = " + (a + b));
-        System.out.println("a / b (inteiros) = " + (a / b));
-        System.out.println("a / b (decimal) = " + (10.0 / 3));
+        System.out.println("a / b (int) = " + (a / b));
+        System.out.println("a / b (double) = " + (10.0 / 3));
         System.out.println("a % b (resto) = " + (a % b));
-        System.out.println("a > b? " + (a > b));
+
+        // Relacionais
+        System.out.println("\\n=== Relacionais ===");
+        System.out.println("a == b? " + (a == b));
+        System.out.println("a > b?  " + (a > b));
+
+        // Lógicos
+        System.out.println("\\n=== Lógicos ===");
+        boolean par = (a % 2 == 0);
+        boolean positivo = (a > 0);
+        System.out.println("a é par E positivo? " + (par && positivo));
+
+        // Atribuição composta
+        int total = 100;
+        total += 50;
+        total *= 2;
+        System.out.println("\\nTotal: " + total);
     }
 }`,
-    tryItPrompt: 'Mude os valores de a e b e veja os resultados.',
-  },
-
-  'm1-ifelse': {
-    id: 'm1-ifelse', moduleId: 1,
-    objectives: ['Usar if, else if e else corretamente', 'Entender operadores ternários', 'Combinar condições com operadores lógicos'],
-    sections: [
-      { title: 'if / else Básico', body: 'A estrutura if/else permite executar código condicionalmente.',
-        code: `int idade = 18;
-
-if (idade >= 18) {
-    System.out.println("Maior de idade");
-} else {
-    System.out.println("Menor de idade");
-}
-
-// Com else if
-int nota = 7;
-if (nota >= 9) {
-    System.out.println("Excelente!");
-} else if (nota >= 7) {
-    System.out.println("Aprovado");
-} else if (nota >= 5) {
-    System.out.println("Recuperação");
-} else {
-    System.out.println("Reprovado");
-}`,
-        codeExplanation: 'O Java avalia as condições de cima para baixo. Quando encontra a primeira verdadeira, executa o bloco e ignora os demais.',
+    tryItPrompt: 'Mude os valores de a e b, teste operações diferentes, e veja como divisão inteira se comporta. Experimente os operadores compostos (+=, -=, *=).',
+    codeFillExercises: [
+      {
+        instruction: 'Qual operador retorna o resto da divisão entre dois inteiros?',
+        snippetBefore: 'int resto = 10 ',
+        snippetAfter: ' 3; // resto = 1',
+        options: ['/', '%', 'mod', '//'],
+        correctIndex: 1,
+        explanation: 'O operador % (módulo) retorna o resto da divisão inteira. 10 % 3 = 1 porque 10 = 3*3 + 1.',
       },
-      { title: 'Operador Ternário', body: 'Uma forma resumida do if/else para atribuição simples.',
-        code: `int idade = 20;
-String status = (idade >= 18) ? "Maior" : "Menor";
-// Equivale a:
-// if (idade >= 18) status = "Maior"; else status = "Menor";`,
-        tip: 'Use ternário apenas para expressões simples. Para lógica complexa, prefira if/else.',
+      {
+        instruction: 'Qual operador lógico exige que AMBAS as condições sejam verdadeiras?',
+        snippetBefore: 'if (idade >= 18 ',
+        snippetAfter: ' temDocumento) { ... }',
+        options: ['||', '&&', '!', '&'],
+        correctIndex: 1,
+        explanation: '&& (AND) só retorna true se ambos os lados forem true. || (OR) basta um ser true.',
       },
-      { title: 'Combinando Condições', body: 'Use operadores lógicos para condições complexas.',
-        code: `int idade = 25;
-double renda = 3000;
-boolean temNome = true;
-
-// Pode financiar?
-if (idade >= 18 && renda >= 2000 && temNome) {
-    System.out.println("Aprovado para financiamento!");
-}
-
-// Desconto para idoso OU estudante
-boolean isIdoso = idade >= 65;
-boolean isEstudante = idade <= 25;
-if (isIdoso || isEstudante) {
-    System.out.println("Tem direito a desconto!");
-}`,
+      {
+        instruction: 'Complete o operador de atribuição composta que SOMA 10 ao total.',
+        snippetBefore: 'int total = 100;\ntotal ',
+        snippetAfter: ' 10; // total = 110',
+        options: ['+=', '=+', '+ =', 'add'],
+        correctIndex: 0,
+        explanation: '+= é o operador de atribuição composta para soma. total += 10 equivale a total = total + 10.',
       },
     ],
     commonErrors: [
-      { title: 'Usar = ao invés de ==', description: 'if (x = 5) é atribuição, não comparação. Use if (x == 5).' },
-      { title: 'Esquecer as chaves {}', description: 'Sem chaves, apenas a próxima linha pertence ao if. Sempre use chaves!' },
+      {
+        title: 'Divisão inteira inesperada',
+        description: 'Dividir dois inteiros resulta em inteiro (truncado). Se precisa de decimal, pelo menos um operando deve ser double.',
+        code: `// ERRADO: resultado truncado
+int a = 10, b = 3;
+double resultado = a / b;
+System.out.println(resultado); // 3.0 (não 3.33!)
+// Java faz 10/3 = 3 (inteiro), DEPOIS converte para 3.0
+
+// CORRETO: force um dos operandos para double
+double correto1 = (double) a / b;     // 3.333...
+double correto2 = a / (double) b;     // 3.333...
+double correto3 = 10.0 / 3;           // 3.333...`,
+      },
+      {
+        title: 'Confundir = com ==',
+        description: 'Um único = é atribuição (coloca valor na variável). Dois == é comparação (verifica se são iguais). Usar = dentro de um if causa erro de compilação ou bug.',
+        code: `int x = 10;
+
+// ERRADO: isso é atribuição, não comparação!
+// if (x = 5) {  // erro de compilação em Java!
+//     System.out.println("x é 5");
+// }
+
+// CORRETO: use == para comparar
+if (x == 5) {
+    System.out.println("x é 5");
+}`,
+      },
+      {
+        title: 'Confundir pré e pós incremento',
+        description: 'y++ usa o valor ATUAL e incrementa depois. ++y incrementa ANTES de usar. Em expressões, isso muda o resultado.',
+        code: `int a = 5;
+int b = a++; // b recebe 5, DEPOIS a vira 6
+System.out.println("a=" + a + " b=" + b); // a=6 b=5
+
+int c = 5;
+int d = ++c; // PRIMEIRO c vira 6, DEPOIS d recebe 6
+System.out.println("c=" + c + " d=" + d); // c=6 d=6
+
+// DICA: quando sozinho na linha, tanto faz:
+int x = 10;
+x++;  // OK
+++x;  // OK (mesmo resultado)`,
+      },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual operador deve ser usado para comparar dois valores em uma condição?', snippetBefore: 'if (idade ', snippetAfter: ' 18) { ... }', options: ['=', '==', 'equals', ':='], correctIndex: 1, explanation: '== é o operador de igualdade; = é atribuição.' },
+    summary: [
+      'Operadores aritméticos: + (soma), - (subtração), * (multiplicação), / (divisão), % (resto)',
+      'Divisão entre inteiros TRUNCA o resultado — use double para decimais',
+      'O operador % (módulo) retorna o resto — útil para verificar par/ímpar',
+      'Operadores relacionais (==, !=, >, <, >=, <=) retornam boolean',
+      'Operadores lógicos: && (AND), || (OR), ! (NOT)',
+      'Java usa avaliação de curto-circuito em && e ||',
+      'Operadores compostos (+=, -=, *=, /=, %=) são atalhos para atribuição com operação',
+      '++ e -- incrementam/decrementam; cuidado com pré vs pós em expressões',
+      'Na dúvida sobre precedência, use parênteses para garantir a ordem',
     ],
-    summary: ['if/else permite executar código condicionalmente', 'else if encadeia múltiplas condições', 'Operador ternário: condição ? valorTrue : valorFalse', 'Combine condições com && e ||'],
-    tryItCode: `public class Main {
+  },
+
+  'm1-ifelse': {
+    id: 'm1-ifelse',
+    moduleId: 1,
+    objectives: [
+      'Entender o conceito de execução condicional',
+      'Usar if, else if e else corretamente',
+      'Encadear múltiplas condições com else if',
+      'Simplificar atribuições com o operador ternário',
+      'Combinar condições com operadores lógicos (&& e ||)',
+      'Evitar armadilhas comuns com condicionais',
+    ],
+    sections: [
+      // ────────── SEÇÃO 1: if / else ──────────
+      {
+        title: 'if / else — Tomando Decisões',
+        body: 'Até agora, seus programas executam todas as linhas de cima para baixo, sem desvios. Mas programas reais precisam **tomar decisões**: se o aluno passou, mostre "Aprovado"; se não, mostre "Reprovado".\n\nA estrutura `if/else` permite **executar código condicionalmente**. A condição entre parênteses deve resultar em `boolean` (true ou false). Se for `true`, o bloco do `if` executa. Se for `false`, o bloco do `else` executa (se existir).\n\nRegras importantes:\n- A condição DEVE estar entre **parênteses**: `if (condição)`\n- O bloco de código fica entre **chaves** `{ }`\n- O `else` é opcional — você pode ter um `if` sozinho\n- Java avalia as condições de cima para baixo e para na **primeira** verdadeira',
+        code: `public class ExemploIfElse {
     public static void main(String[] args) {
+
+        // ═══ IF SIMPLES (sem else) ═══
+        int temperatura = 35;
+        if (temperatura > 30) {
+            System.out.println("Está muito quente!");
+        }
+        // Se temperatura <= 30, nada acontece
+
+        // ═══ IF / ELSE ═══
+        int idade = 17;
+        if (idade >= 18) {
+            System.out.println("Maior de idade");
+            System.out.println("Pode dirigir");
+        } else {
+            System.out.println("Menor de idade");
+            System.out.println("Não pode dirigir ainda");
+        }
+
+        // ═══ IF / ELSE IF / ELSE (múltiplas condições) ═══
         int nota = 7;
         if (nota >= 9) {
             System.out.println("Excelente!");
@@ -367,574 +965,3045 @@ if (isIdoso || isEstudante) {
         } else {
             System.out.println("Reprovado");
         }
-        // Altere o valor de nota e execute.
+        // nota = 7 → entra no "else if (nota >= 7)" e PARA ali
+        // NÃO avalia o "else if (nota >= 5)" mesmo sendo true
     }
 }`,
-    tryItPrompt: 'Altere o valor de nota (0 a 10) e veja a mensagem.',
+        codeExplanation: '**Linhas 6-8** (if simples): Se a temperatura for maior que 30, imprime a mensagem. Se não for, o programa simplesmente pula o bloco e continua.\n\n**Linhas 12-20** (if/else): Exatamente UM dos dois blocos será executado — nunca ambos, nunca nenhum. É uma bifurcação: ou vai por um caminho ou pelo outro.\n\n**Linhas 23-34** (if/else if/else): Java avalia de cima para baixo. Com nota = 7: primeiro testa `nota >= 9` (7 >= 9 = false), depois `nota >= 7` (7 >= 7 = true) → entra nesse bloco e PARA. Não testa os de baixo.\n\n**Linha 34** (else final): O else "pega" tudo que nenhuma condição anterior pegou. É a "rede de segurança" — garante que sempre alguma coisa acontece.',
+        tip: 'A ordem das condições importa! Coloque a mais restritiva primeiro. Se trocar e colocar "nota >= 5" antes de "nota >= 7", um aluno com nota 8 cairia em "Recuperação" (porque 8 >= 5 é true).',
+      },
+
+      // ────────── SEÇÃO 2: Operador Ternário ──────────
+      {
+        title: 'Operador Ternário — If/Else em Uma Linha',
+        body: 'O operador ternário é uma forma **compacta** de if/else para **atribuição simples**. A sintaxe é:\n\n`tipo variavel = (condição) ? valorSeTrue : valorSeFalse;`\n\nUse quando o if/else apenas escolhe entre dois valores para atribuir. Para lógica complexa (múltiplas linhas, efeitos colaterais), prefira if/else normal.',
+        code: `public class ExemploTernario {
+    public static void main(String[] args) {
+
+        int idade = 20;
+
+        // Com if/else (4 linhas):
+        String status1;
+        if (idade >= 18) {
+            status1 = "Maior";
+        } else {
+            status1 = "Menor";
+        }
+
+        // Com ternário (1 linha):
+        String status2 = (idade >= 18) ? "Maior" : "Menor";
+
+        // Ambos produzem o mesmo resultado!
+        System.out.println(status1); // "Maior"
+        System.out.println(status2); // "Maior"
+
+        // Mais exemplos:
+        int nota = 7;
+        String resultado = (nota >= 7) ? "Aprovado" : "Reprovado";
+
+        double preco = 150.0;
+        double desconto = (preco > 100) ? preco * 0.10 : 0;
+        System.out.println("Desconto: R$ " + desconto); // 15.0
+
+        // Pode usar em println diretamente:
+        int numero = 7;
+        System.out.println(numero + " é " + ((numero % 2 == 0) ? "par" : "ímpar"));
+    }
+}`,
+        codeExplanation: '**Linha 15** (`(idade >= 18) ? "Maior" : "Menor"`): Se a condição é true, retorna "Maior". Se false, retorna "Menor". O resultado é atribuído a `status2`.\n\n**Linha 26** (`(preco > 100) ? preco * 0.10 : 0`): Se o preço for acima de 100, calcula 10% de desconto. Senão, desconto é 0.\n\n**Linha 31**: Ternário usado diretamente dentro de uma expressão. Os parênteses extras ajudam na legibilidade.',
+        warning: 'Não aninhe ternários! `a ? b : (c ? d : e)` é difícil de ler. Use if/else para condições complexas.',
+      },
+
+      // ────────── SEÇÃO 3: Combinando Condições ──────────
+      {
+        title: 'Combinando Condições — Lógica do Mundo Real',
+        body: 'No mundo real, decisões raramente dependem de UMA condição. "Pode financiar se tiver 18+ E renda >= 2000 E nome limpo". Use operadores lógicos `&&` (E), `||` (OU) e `!` (NÃO) para combinar condições dentro do `if`.\n\nDica de legibilidade: para condições complexas, salve cada parte em uma variável `boolean` com nome descritivo antes do `if`.',
+        code: `public class CondicoesCompostas {
+    public static void main(String[] args) {
+
+        int idade = 25;
+        double renda = 3000;
+        boolean nomeLimpo = true;
+
+        // ═══ AND (&&): TODAS devem ser true ═══
+        if (idade >= 18 && renda >= 2000 && nomeLimpo) {
+            System.out.println("Aprovado para financiamento!");
+        } else {
+            System.out.println("Não aprovado.");
+        }
+
+        // ═══ OR (||): PELO MENOS UMA true ═══
+        boolean isIdoso = idade >= 65;
+        boolean isEstudante = idade <= 25;
+        if (isIdoso || isEstudante) {
+            System.out.println("Tem direito a desconto!");
+        }
+
+        // ═══ NOT (!): inverte a condição ═══
+        boolean chovendo = false;
+        if (!chovendo) {
+            System.out.println("Pode sair sem guarda-chuva");
+        }
+
+        // ═══ CONDIÇÕES COMPLEXAS COM VARIÁVEIS AUXILIARES ═══
+        // (mais legível que colocar tudo no if)
+        int nota = 8;
+        int faltas = 5;
+        int maxFaltas = 20;
+
+        boolean notaSuficiente = nota >= 7;
+        boolean frequenciaOk = faltas <= maxFaltas;
+        boolean aprovado = notaSuficiente && frequenciaOk;
+
+        if (aprovado) {
+            System.out.println("Aluno aprovado!");
+        } else if (notaSuficiente && !frequenciaOk) {
+            System.out.println("Reprovado por falta!");
+        } else {
+            System.out.println("Reprovado por nota.");
+        }
+
+        // ═══ VERIFICANDO FAIXAS (valor entre X e Y) ═══
+        int temp = 25;
+        if (temp >= 20 && temp <= 30) {
+            System.out.println("Temperatura agradável");
+        }
+    }
+}`,
+        codeExplanation: '**Linha 9**: Três condições com `&&` — TODAS precisam ser true. Se qualquer uma for false, vai para o else.\n\n**Linhas 16-20**: Variáveis boolean com nomes descritivos tornam o código muito mais legível. `if (isIdoso || isEstudante)` é mais claro que `if (idade >= 65 || idade <= 25)`.\n\n**Linhas 34-37**: Quando a condição é complexa, separe cada parte em uma variável boolean. Isso facilita debug (você pode imprimir cada variável) e manutenção.\n\n**Linhas 48-50**: Para verificar se um valor está em uma faixa, use `&&`: `valor >= min && valor <= max`.',
+        tip: 'Para condições complexas, use variáveis boolean com nomes descritivos. `boolean elegivel = idade >= 18 && renda >= 2000;` é muito mais legível que colocar tudo dentro do if.',
+      },
+    ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        // Altere esses valores e veja como as condições mudam
+        int nota = 7;
+        int faltas = 5;
+        int maxFaltas = 20;
+
+        // Sistema de notas com if/else if
+        System.out.println("=== Sistema de Notas ===");
+        if (nota >= 9) {
+            System.out.println("Conceito: A (Excelente!)");
+        } else if (nota >= 7) {
+            System.out.println("Conceito: B (Aprovado)");
+        } else if (nota >= 5) {
+            System.out.println("Conceito: C (Recuperação)");
+        } else {
+            System.out.println("Conceito: D (Reprovado)");
+        }
+
+        // Verificação de aprovação com condições compostas
+        boolean notaOk = nota >= 7;
+        boolean frequenciaOk = faltas <= maxFaltas;
+
+        System.out.println("\\n=== Aprovação Final ===");
+        String resultado = (notaOk && frequenciaOk) ? "APROVADO" : "REPROVADO";
+        System.out.println("Situação: " + resultado);
+
+        // Ternário para par/ímpar
+        int numero = 42;
+        System.out.println("\\n" + numero + " é " + ((numero % 2 == 0) ? "par" : "ímpar"));
+    }
+}`,
+    tryItPrompt: 'Altere nota, faltas e numero para testar diferentes caminhos. Tente nota = 10, depois nota = 3, e veja como o fluxo muda.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual operador é usado para comparar igualdade em um if?',
+        snippetBefore: 'if (idade ',
+        snippetAfter: ' 18) { ... }',
+        options: ['=', '==', '===', 'equals'],
+        correctIndex: 1,
+        explanation: '== é o operador de igualdade para tipos primitivos. = é atribuição. === não existe em Java. equals é para objetos (String).',
+      },
+      {
+        instruction: 'Complete o operador ternário que atribui "Par" ou "Ímpar".',
+        snippetBefore: 'String tipo = (n % 2 == 0) ',
+        snippetAfter: ' "Par" : "Ímpar";',
+        options: ['?', 'then', 'if', '&&'],
+        correctIndex: 0,
+        explanation: 'O operador ternário usa ? para separar a condição do valor true, e : para separar do valor false: condição ? valorTrue : valorFalse.',
+      },
+      {
+        instruction: 'Qual palavra-chave permite testar uma condição alternativa quando o if é falso?',
+        snippetBefore: 'if (nota >= 9) {\n    // ...\n} ',
+        snippetAfter: ' (nota >= 7) {\n    // ...\n}',
+        options: ['elif', 'else if', 'elseif', 'or if'],
+        correctIndex: 1,
+        explanation: 'Em Java, usa-se "else if" (duas palavras separadas) para encadear condições. "elif" é Python, "elseif" é PHP.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'Usar = em vez de == no if',
+        description: 'Um único = é atribuição (coloca valor na variável). Dois == é comparação. Em Java, isso geralmente causa erro de compilação — mas com boolean pode compilar e causar um bug silencioso!',
+        code: `int x = 10;
+
+// ERRADO: atribuição dentro do if (não compila com int)
+// if (x = 5) { ... }  // erro: incompatible types
+
+// PERIGO com boolean (compila mas é bug!):
+boolean ativo = true;
+// if (ativo = false) { ... }  // ATRIBUI false a ativo!
+// Isso é equivalente a: ativo = false; if (false) { ... }
+
+// CORRETO:
+if (x == 5) { System.out.println("x é 5"); }
+if (ativo == false) { System.out.println("inativo"); }
+// Ou melhor: if (!ativo) { ... }`,
+      },
+      {
+        title: 'Esquecer as chaves {}',
+        description: 'Sem chaves, apenas a PRÓXIMA LINHA pertence ao if. As demais linhas SEMPRE executam, independente da condição. Isso causa bugs muito difíceis de encontrar.',
+        code: `int idade = 15;
+
+// ERRADO (sem chaves): a segunda linha SEMPRE executa!
+if (idade >= 18)
+    System.out.println("Maior de idade");
+    System.out.println("Pode dirigir");  // ← SEMPRE executa!
+// Saída: "Pode dirigir" (mesmo com idade 15!)
+
+// CORRETO (com chaves):
+if (idade >= 18) {
+    System.out.println("Maior de idade");
+    System.out.println("Pode dirigir");
+}
+// Com idade 15, nada é impresso`,
+      },
+      {
+        title: 'Ordem errada das condições no else if',
+        description: 'As condições são avaliadas de cima para baixo, e Java para na primeira verdadeira. Se a condição mais ampla vier primeiro, as de baixo nunca serão alcançadas.',
+        code: `int nota = 10;
+
+// ERRADO: nota >= 5 é true para notas 7, 8, 9, 10 também!
+if (nota >= 5) {
+    System.out.println("Recuperação");  // nota 10 cai aqui!
+} else if (nota >= 7) {
+    System.out.println("Aprovado");     // nunca alcançado!
+} else if (nota >= 9) {
+    System.out.println("Excelente");    // nunca alcançado!
+}
+
+// CORRETO: mais restritivo primeiro
+if (nota >= 9) {
+    System.out.println("Excelente");    // nota 10 cai aqui ✓
+} else if (nota >= 7) {
+    System.out.println("Aprovado");
+} else if (nota >= 5) {
+    System.out.println("Recuperação");
+}`,
+      },
+    ],
+    summary: [
+      'if/else permite executar código condicionalmente baseado em expressões boolean',
+      'A condição do if DEVE estar entre parênteses e resultar em boolean',
+      'else if encadeia múltiplas condições — Java avalia de cima para baixo e para na primeira true',
+      'else é a "rede de segurança" — executa quando nenhuma condição anterior foi true',
+      'Operador ternário: condição ? valorTrue : valorFalse (para atribuição simples)',
+      'Use && (AND) quando TODAS as condições devem ser true',
+      'Use || (OR) quando PELO MENOS UMA condição deve ser true',
+      'Sempre use chaves {} nos blocos if/else para evitar bugs',
+      'Coloque condições mais restritivas primeiro no else if',
+      'Variáveis boolean com nomes descritivos melhoram a legibilidade',
+    ],
   },
 
   'm1-switch': {
-    id: 'm1-switch', moduleId: 1,
-    objectives: ['Usar switch como alternativa ao if/else', 'Entender break e default', 'Saber quando usar switch vs if/else'],
+    id: 'm1-switch',
+    moduleId: 1,
+    objectives: [
+      'Entender quando usar switch em vez de if/else',
+      'Dominar a estrutura switch/case/break/default',
+      'Compreender o conceito de fall-through',
+      'Usar switch com int, char, String e enum',
+      'Saber quando switch é melhor que if/else e vice-versa',
+    ],
     sections: [
-      { title: 'switch case', body: 'O switch é ideal quando você compara UMA variável com MÚLTIPLOS valores fixos.',
-        code: `int diaSemana = 3;
+      // ────────── SEÇÃO 1: switch/case básico ──────────
+      {
+        title: 'switch/case — Múltiplas Opções para Uma Variável',
+        body: 'O `switch` é ideal quando você compara **UMA variável** com **MÚLTIPLOS valores fixos**. Em vez de escrever vários `if/else if` comparando a mesma variável, o switch organiza isso de forma mais limpa.\n\nA estrutura é: `switch(variável)` seguido de blocos `case valor:`. Quando o valor bate, o código daquele case executa. O `break` encerra o switch — **sem break, a execução "cai" para o próximo case** (fall-through). O `default` é como o `else` — executa quando nenhum case corresponde.\n\nSwitch funciona com: `int`, `byte`, `short`, `char`, `String` (Java 7+) e `enum`.',
+        code: `public class ExemploSwitch {
+    public static void main(String[] args) {
 
-switch (diaSemana) {
-    case 1:
-        System.out.println("Domingo");
-        break;
-    case 2:
-        System.out.println("Segunda");
-        break;
-    case 3:
-        System.out.println("Terça");
-        break;
-    case 4:
-        System.out.println("Quarta");
-        break;
-    default:
-        System.out.println("Outro dia");
-        break;
+        int diaSemana = 3;
+
+        switch (diaSemana) {
+            case 1:
+                System.out.println("Domingo");
+                break;  // ← ESSENCIAL! Sem break, cai no case 2
+            case 2:
+                System.out.println("Segunda-feira");
+                break;
+            case 3:
+                System.out.println("Terça-feira");
+                break;
+            case 4:
+                System.out.println("Quarta-feira");
+                break;
+            case 5:
+                System.out.println("Quinta-feira");
+                break;
+            case 6:
+                System.out.println("Sexta-feira");
+                break;
+            case 7:
+                System.out.println("Sábado");
+                break;
+            default:
+                System.out.println("Dia inválido!");
+                break;
+        }
+        // diaSemana = 3 → imprime "Terça-feira"
+
+        // ═══ COMPARAÇÃO COM IF/ELSE ═══
+        // O mesmo código com if/else seria:
+        // if (diaSemana == 1) { ... }
+        // else if (diaSemana == 2) { ... }
+        // else if (diaSemana == 3) { ... }
+        // ... mais verboso, mas funcionalmente igual
+    }
 }`,
-        codeExplanation: 'O break encerra o switch. Sem break, a execução "cai" para o próximo case (fall-through). default é executado quando nenhum case corresponde.',
-        warning: 'Esquecer o break é um erro MUITO comum. Sem ele, todos os cases seguintes são executados!',
+        codeExplanation: '**Linha 6** (`switch (diaSemana)`): Avalia o valor da variável e procura o case correspondente.\n\n**Linha 7** (`case 1:`): Se diaSemana for 1, a execução entra aqui. Os dois-pontos (`:`) são obrigatórios.\n\n**Linha 9** (`break`): Encerra o switch. Sem ele, a execução continua no case seguinte (fall-through) — um dos bugs mais comuns em Java!\n\n**Linha 28** (`default`): Executa quando nenhum case corresponde. É a "rede de segurança" — sempre inclua para tratar valores inesperados.',
+        warning: 'Esquecer o break é um dos bugs mais comuns! Sem break, a execução "cai" nos cases seguintes até encontrar um break ou o fim do switch.',
       },
-      { title: 'switch com String', body: 'A partir do Java 7, switch funciona com Strings.',
-        code: `String cor = "verde";
 
-switch (cor.toLowerCase()) {
-    case "vermelho":
-        System.out.println("Pare!");
-        break;
-    case "amarelo":
-        System.out.println("Atenção!");
-        break;
-    case "verde":
-        System.out.println("Siga!");
-        break;
-    default:
-        System.out.println("Cor inválida");
+      // ────────── SEÇÃO 2: switch com String e fall-through ──────────
+      {
+        title: 'Switch com String e Fall-Through Intencional',
+        body: 'A partir do Java 7, `switch` funciona com **String**. Isso é muito útil para menus, comandos e categorias.\n\nO fall-through (execução caindo para o próximo case) é geralmente um bug, mas pode ser **intencional** quando múltiplos valores devem executar o mesmo código. Para isso, empilhe os cases sem break entre eles.',
+        code: `public class SwitchAvancado {
+    public static void main(String[] args) {
+
+        // ═══ SWITCH COM STRING ═══
+        String cor = "verde";
+
+        switch (cor.toLowerCase()) {  // toLowerCase evita "Verde" ≠ "verde"
+            case "vermelho":
+                System.out.println("Pare!");
+                break;
+            case "amarelo":
+                System.out.println("Atenção!");
+                break;
+            case "verde":
+                System.out.println("Siga!");
+                break;
+            default:
+                System.out.println("Cor desconhecida: " + cor);
+        }
+
+        // ═══ FALL-THROUGH INTENCIONAL ═══
+        // Múltiplos cases executando o mesmo código
+        int mes = 3;
+        String estacao;
+
+        switch (mes) {
+            case 12: case 1: case 2:
+                estacao = "Verão";
+                break;
+            case 3: case 4: case 5:
+                estacao = "Outono";
+                break;
+            case 6: case 7: case 8:
+                estacao = "Inverno";
+                break;
+            case 9: case 10: case 11:
+                estacao = "Primavera";
+                break;
+            default:
+                estacao = "Mês inválido";
+        }
+        System.out.println("Mês " + mes + " → " + estacao); // Outono
+
+        // ═══ SWITCH COM CHAR ═══
+        char operacao = '+';
+        int a = 10, b = 5;
+
+        switch (operacao) {
+            case '+': System.out.println(a + b); break;  // 15
+            case '-': System.out.println(a - b); break;  // 5
+            case '*': System.out.println(a * b); break;  // 50
+            case '/': System.out.println(a / b); break;  // 2
+            default: System.out.println("Operação inválida");
+        }
+    }
 }`,
+        codeExplanation: '**Linha 7** (`cor.toLowerCase()`): Converte para minúsculas antes de comparar. Assim, "Verde", "VERDE" e "verde" são todos tratados corretamente.\n\n**Linhas 27-28** (`case 12: case 1: case 2:`): Cases empilhados — se o mês for 12, 1 OU 2, todos executam o mesmo código (estacao = "Verão"). O break no final impede que caia no próximo grupo.\n\n**Linhas 49-53** (switch com char): Calculadora simples usando switch com caractere. Cada case trata uma operação diferente.',
+        tip: 'Quando usar switch vs if/else? Use switch quando comparar UMA variável com valores FIXOS (1, 2, 3 ou "a", "b", "c"). Use if/else para faixas (nota >= 7), múltiplas variáveis, ou condições complexas.',
+      },
+
+      // ────────── SEÇÃO 3: Switch vs if/else ──────────
+      {
+        title: 'Switch vs If/Else — Quando Usar Cada Um?',
+        body: '**Use switch quando:**\n- Comparar UMA variável com valores FIXOS e CONHECIDOS\n- Há muitas opções (menus, dias da semana, meses, etc.)\n- O código fica mais organizado que vários else if\n\n**Use if/else quando:**\n- A condição envolve **faixas** (nota >= 7, idade < 18)\n- A condição combina **múltiplas variáveis** (idade >= 18 && renda >= 2000)\n- A condição usa **expressões complexas** (str.contains("abc"))\n\nSwitch NÃO funciona com: `double`, `float`, `long`, `boolean`, objetos genéricos.',
+        code: `public class SwitchVsIfElse {
+    public static void main(String[] args) {
+
+        // ═══ SWITCH É MELHOR AQUI: valores fixos ═══
+        int opcaoMenu = 2;
+        switch (opcaoMenu) {
+            case 1: System.out.println("Novo Jogo"); break;
+            case 2: System.out.println("Carregar"); break;
+            case 3: System.out.println("Configurações"); break;
+            case 0: System.out.println("Sair"); break;
+            default: System.out.println("Opção inválida");
+        }
+
+        // ═══ IF/ELSE É MELHOR AQUI: faixas e condições ═══
+        int nota = 7;
+        // Não dá para fazer switch com faixas!
+        // switch não aceita: case >= 7  (precisa de valor fixo)
+        if (nota >= 9) {
+            System.out.println("A");
+        } else if (nota >= 7) {
+            System.out.println("B");
+        } else {
+            System.out.println("C");
+        }
+
+        // ═══ SWITCH NÃO FUNCIONA COM: ═══
+        // double preco = 9.99;
+        // switch (preco) { ... }  // ERRO! double não é suportado
+
+        // long id = 999L;
+        // switch (id) { ... }     // ERRO! long não é suportado
+    }
+}`,
+        codeExplanation: '**Linhas 6-12** (switch ideal): Menu com opções fixas (1, 2, 3, 0). Cada case é um valor exato — perfeito para switch.\n\n**Linhas 16-24** (if/else necessário): Faixas de notas (>= 9, >= 7). Switch não aceita `case >= 7` — cada case precisa de um valor fixo.\n\n**Linhas 28-32** (limitações): Switch NÃO funciona com double, float ou long. Apenas int, byte, short, char, String e enum.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual palavra-chave encerra cada case no switch para evitar fall-through?', snippetBefore: 'case 1:\n    System.out.println("Domingo");\n    ', snippetAfter: ';\n    break;', options: ['break', 'exit', 'stop', 'end'], correctIndex: 0, explanation: 'break encerra o case e impede que a execução caia nos cases seguintes.' },
-    ],
-    summary: ['switch compara uma variável com valores fixos', 'Sempre use break para evitar fall-through', 'default é o "else" do switch', 'Funciona com int, char, String, enum'],
     tryItCode: `public class Main {
     public static void main(String[] args) {
-        int diaSemana = 3;
-        switch (diaSemana) {
+        // Teste 1: dias da semana
+        int dia = 5;
+        System.out.println("=== Dia da Semana ===");
+        switch (dia) {
             case 1: System.out.println("Domingo"); break;
             case 2: System.out.println("Segunda"); break;
             case 3: System.out.println("Terça"); break;
             case 4: System.out.println("Quarta"); break;
-            default: System.out.println("Outro dia"); break;
+            case 5: System.out.println("Quinta"); break;
+            case 6: System.out.println("Sexta"); break;
+            case 7: System.out.println("Sábado"); break;
+            default: System.out.println("Inválido!");
         }
-        // Mude diaSemana de 1 a 7 e execute.
+
+        // Teste 2: calculadora
+        char op = '*';
+        int a = 8, b = 3;
+        System.out.println("\\n=== Calculadora ===");
+        switch (op) {
+            case '+': System.out.println(a + " + " + b + " = " + (a + b)); break;
+            case '-': System.out.println(a + " - " + b + " = " + (a - b)); break;
+            case '*': System.out.println(a + " * " + b + " = " + (a * b)); break;
+            case '/': System.out.println(a + " / " + b + " = " + (a / b)); break;
+            default: System.out.println("Operação inválida");
+        }
     }
 }`,
-    tryItPrompt: 'Altere diaSemana (1 a 7) e execute.',
-  },
-
-  'm1-loops': {
-    id: 'm1-loops', moduleId: 1,
-    objectives: ['Dominar for, while e do-while', 'Saber quando usar cada tipo de laço', 'Usar break e continue'],
-    sections: [
-      { title: 'for — Quando você sabe quantas vezes', body: 'O for é ideal quando você sabe o número de repetições.',
-        code: `// Contar de 1 a 10
-for (int i = 1; i <= 10; i++) {
-    System.out.println(i);
-}
-
-// Contar de 10 a 1
-for (int i = 10; i >= 1; i--) {
-    System.out.print(i + " ");
-}
-// Saída: 10 9 8 7 6 5 4 3 2 1
-
-// Tabuada do 5
-for (int i = 1; i <= 10; i++) {
-    System.out.println("5 x " + i + " = " + (5 * i));
-}`,
-        codeExplanation: 'A estrutura é: for (inicialização; condição; incremento). Primeiro inicializa, depois verifica a condição, executa o bloco e incrementa. Repete enquanto a condição for true.',
-      },
-      { title: 'while — Quando não sabe quantas vezes', body: 'O while repete enquanto a condição for verdadeira.',
-        code: `// Exemplo: dividir por 2 até chegar em 1
-int numero = 64;
-while (numero > 1) {
-    System.out.println(numero);
-    numero = numero / 2;
-}
-// Saída: 64, 32, 16, 8, 4, 2`,
-      },
-      { title: 'do-while — Executa pelo menos uma vez', body: 'Semelhante ao while, mas garante pelo menos uma execução.',
-        code: `// Menu que repete até o usuário sair
-int opcao;
-do {
-    System.out.println("1 - Jogar");
-    System.out.println("2 - Configurações");
-    System.out.println("0 - Sair");
-    opcao = 0; // simulando entrada
-} while (opcao != 0);`,
-        tip: 'Use do-while para menus ou validações onde precisa executar pelo menos uma vez.',
-      },
-      { title: 'break e continue', body: 'break sai do laço. continue pula para a próxima iteração.',
-        code: `// break: para quando encontrar o 5
-for (int i = 1; i <= 10; i++) {
-    if (i == 5) break;
-    System.out.print(i + " "); // 1 2 3 4
-}
-
-// continue: pula números pares
-for (int i = 1; i <= 10; i++) {
-    if (i % 2 == 0) continue;
-    System.out.print(i + " "); // 1 3 5 7 9
-}`,
-      },
-    ],
+    tryItPrompt: 'Mude o valor de dia (1-7) e a operação (op). Tente remover um break para ver o fall-through!',
     codeFillExercises: [
-      { instruction: 'Complete o laço for que repete de 1 a 10. Qual palavra-chave inicia um laço for?', snippetBefore: 'for (int i = 1; i <= 10; i', snippetAfter: ') { ... }', options: ['++', 'i++', '+= 1', '+ 1'], correctIndex: 1, explanation: 'i++ incrementa a variável i em 1 a cada iteração. ++ sozinho não é válido no lugar do incremento.' },
-    ],
-    summary: ['for: quando sabe o número de repetições', 'while: quando depende de uma condição', 'do-while: garante pelo menos uma execução', 'break sai do laço, continue pula a iteração'],
-    tryItCode: `public class Main {
-    public static void main(String[] args) {
-        System.out.println("Contando de 1 a 5:");
-        for (int i = 1; i <= 5; i++) {
-            System.out.println(i);
-        }
-        System.out.println("Tabuada do 3:");
-        for (int i = 1; i <= 5; i++) {
-            System.out.println("3 x " + i + " = " + (3 * i));
-        }
-    }
-}`,
-    tryItPrompt: 'Altere o limite do for ou a tabuada e execute.',
-  },
-
-  'm1-arrays': {
-    id: 'm1-arrays', moduleId: 1,
-    objectives: ['Criar e manipular arrays', 'Percorrer arrays com for e for-each', 'Evitar erros comuns como IndexOutOfBounds'],
-    sections: [
-      { title: 'O que são Arrays?', body: 'Arrays são estruturas que armazenam múltiplos valores do mesmo tipo em posições numeradas (índices). O primeiro índice é 0.',
-        code: `// Formas de criar arrays
-int[] numeros = new int[5]; // array de 5 inteiros (inicializa com 0)
-int[] notas = {10, 8, 7, 9, 6}; // com valores iniciais
-String[] nomes = {"Ana", "Bruno", "Carlos"};
-
-// Acessar e modificar
-System.out.println(notas[0]); // 10 (primeiro elemento)
-System.out.println(notas[4]); // 6  (último elemento)
-notas[2] = 10; // alterando o terceiro elemento
-
-// Tamanho do array
-System.out.println(notas.length); // 5`,
-        warning: 'Arrays começam no índice 0! Um array de tamanho 5 vai do índice 0 ao 4.',
+      {
+        instruction: 'Qual palavra-chave encerra a execução de um case no switch?',
+        snippetBefore: 'case 1:\n    System.out.println("Um");\n    ',
+        snippetAfter: ';',
+        options: ['break', 'exit', 'stop', 'return'],
+        correctIndex: 0,
+        explanation: 'break encerra o case e sai do switch. Sem break, a execução cai no case seguinte (fall-through).',
       },
-      { title: 'Percorrendo Arrays', body: 'Existem duas formas principais de percorrer arrays.',
-        code: `int[] valores = {10, 20, 30, 40, 50};
-
-// 1. for clássico (quando precisa do índice)
-for (int i = 0; i < valores.length; i++) {
-    System.out.println("Índice " + i + ": " + valores[i]);
-}
-
-// 2. for-each (quando só precisa do valor)
-for (int valor : valores) {
-    System.out.println(valor);
-}
-
-// Exemplo prático: calcular média
-int soma = 0;
-for (int v : valores) {
-    soma += v;
-}
-double media = (double) soma / valores.length;
-System.out.println("Média: " + media); // 30.0`,
-        tip: 'Use for-each quando não precisar do índice. É mais limpo e menos propenso a erros.',
+      {
+        instruction: 'Qual bloco é executado quando NENHUM case corresponde ao valor?',
+        snippetBefore: 'switch (x) {\n    case 1: ... break;\n    case 2: ... break;\n    ',
+        snippetAfter: ': System.out.println("Outro");\n}',
+        options: ['default', 'else', 'other', 'finally'],
+        correctIndex: 0,
+        explanation: 'default é o equivalente ao else no switch — executa quando nenhum case corresponde.',
+      },
+      {
+        instruction: 'Qual tipo NÃO é aceito pelo switch em Java?',
+        snippetBefore: '// Qual destes causa erro?\nswitch (',
+        snippetAfter: ') { ... }',
+        options: ['int dia', 'String nome', 'double preco', 'char letra'],
+        correctIndex: 2,
+        explanation: 'Switch NÃO funciona com double (nem float ou long). Funciona com int, byte, short, char, String e enum.',
       },
     ],
     commonErrors: [
-      { title: 'ArrayIndexOutOfBoundsException', description: 'Acessar um índice que não existe. Ex: array[5] em um array de tamanho 5 (máximo é 4).' },
-      { title: 'Confundir length com length()', description: 'Arrays usam .length (sem parênteses). Strings usam .length() (com parênteses).' },
-    ],
-    codeFillExercises: [
-      { instruction: 'Como obter o tamanho de um array em Java?', snippetBefore: 'int[] notas = {10, 8, 7};\nint n = notas.', snippetAfter: ';', options: ['length', 'length()', 'size', 'size()'], correctIndex: 0, explanation: 'Arrays usam o atributo .length (sem parênteses). Strings usam .length().' },
-    ],
-    summary: ['Arrays armazenam múltiplos valores do mesmo tipo', 'Índices começam em 0', 'Use .length para saber o tamanho', 'for-each é mais limpo quando não precisa do índice', 'Cuidado com IndexOutOfBoundsException'],
-    tryItCode: `public class Main {
-    public static void main(String[] args) {
-        int[] notas = {10, 8, 7, 9, 6};
-        System.out.println("Primeira nota: " + notas[0]);
-        System.out.println("Quantidade: " + notas.length);
-        int soma = 0;
-        for (int n : notas) soma += n;
-        double media = (double) soma / notas.length;
-        System.out.println("Media: " + media);
-    }
+      {
+        title: 'Esquecer o break (fall-through acidental)',
+        description: 'Sem break, a execução "cai" para o próximo case, executando código que não deveria. É o bug mais comum com switch.',
+        code: `int dia = 1;
+
+// ERRADO: sem break, todos os cases executam!
+switch (dia) {
+    case 1:
+        System.out.println("Domingo");
+        // faltou break! cai no case 2...
+    case 2:
+        System.out.println("Segunda");
+        // faltou break! cai no case 3...
+    case 3:
+        System.out.println("Terça");
+        break;  // só para aqui
+}
+// Saída: "Domingo", "Segunda", "Terça" (os três!)
+
+// CORRETO: break em cada case
+switch (dia) {
+    case 1:
+        System.out.println("Domingo");
+        break;  // ← para aqui!
+    case 2:
+        System.out.println("Segunda");
+        break;
+}
+// Saída: "Domingo" (apenas)`,
+      },
+      {
+        title: 'Usar switch com tipos não suportados',
+        description: 'Switch funciona apenas com int, byte, short, char, String e enum. Usar double, float, long ou boolean causa erro de compilação.',
+        code: `// ERRO: "incompatible types: possible lossy conversion"
+double preco = 9.99;
+// switch (preco) {  // NÃO COMPILA!
+//     case 9.99: ...
+// }
+
+// ERRO: long também não funciona
+long id = 999L;
+// switch (id) {  // NÃO COMPILA!
+//     case 999L: ...
+// }
+
+// CORRETO: use if/else para esses tipos
+if (preco > 10.0) {
+    System.out.println("Caro");
 }`,
-    tryItPrompt: 'Altere os valores do array ou adicione mais elementos.',
-  },
+      },
+      {
+        title: 'Esquecer o default',
+        description: 'Sem default, se nenhum case corresponder, nada acontece — o que pode mascarar bugs. Sempre inclua default para tratar valores inesperados.',
+        code: `int opcao = 99;
 
-  'm1-matrices': {
-    id: 'm1-matrices', moduleId: 1,
-    objectives: ['Criar e manipular matrizes (arrays 2D)', 'Usar loops aninhados para percorrer matrizes'],
-    sections: [
-      { title: 'Matrizes (Arrays 2D)', body: 'Uma matriz é um "array de arrays" — como uma tabela com linhas e colunas.',
-        code: `// Criar uma matriz 3x3
-int[][] matriz = {
-    {1, 2, 3},
-    {4, 5, 6},
-    {7, 8, 9}
-};
+// RUIM: sem default, nenhum feedback ao usuário
+switch (opcao) {
+    case 1: System.out.println("Opção 1"); break;
+    case 2: System.out.println("Opção 2"); break;
+    // opcao = 99 → nada acontece... silêncio!
+}
 
-// Acessar elemento: matriz[linha][coluna]
-System.out.println(matriz[0][0]); // 1 (primeira linha, primeira coluna)
-System.out.println(matriz[1][2]); // 6 (segunda linha, terceira coluna)
-
-// Percorrer com loops aninhados
-for (int i = 0; i < matriz.length; i++) {
-    for (int j = 0; j < matriz[i].length; j++) {
-        System.out.print(matriz[i][j] + " ");
-    }
-    System.out.println(); // pula linha
+// BOM: default informa o problema
+switch (opcao) {
+    case 1: System.out.println("Opção 1"); break;
+    case 2: System.out.println("Opção 2"); break;
+    default: System.out.println("Opção inválida: " + opcao);
 }`,
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Como declarar uma matriz (array 2D) de inteiros em Java?', snippetBefore: '', snippetAfter: '[][] matriz = new int[3][4];', options: ['int', 'array', 'matrix', 'Integer'], correctIndex: 0, explanation: 'Matrizes são declaradas com dois pares de colchetes: int[][] para inteiros.' },
+    summary: [
+      'switch compara UMA variável com MÚLTIPLOS valores fixos',
+      'Cada case termina com break para evitar fall-through',
+      'Sem break, a execução cai para o case seguinte (fall-through)',
+      'default é o "else" do switch — execute quando nenhum case bate',
+      'Funciona com: int, byte, short, char, String (Java 7+) e enum',
+      'NÃO funciona com: double, float, long, boolean',
+      'Fall-through intencional: empilhe cases sem break (case 1: case 2: case 3:)',
+      'Use switch para valores fixos; use if/else para faixas e condições complexas',
     ],
-    summary: ['Matrizes são arrays de arrays (2D)', 'Acesse com [linha][coluna]', 'Use loops aninhados para percorrer'],
+  },
+
+  'm1-loops': {
+    id: 'm1-loops',
+    moduleId: 1,
+    objectives: [
+      'Entender o conceito de repetição (laços/loops)',
+      'Dominar o laço for e sua estrutura de 3 partes',
+      'Usar while para repetições baseadas em condição',
+      'Conhecer do-while e quando ele é necessário',
+      'Controlar laços com break e continue',
+      'Saber escolher o laço certo para cada situação',
+    ],
+    sections: [
+      // ────────── SEÇÃO 1: for ──────────
+      {
+        title: 'for — Quando Você Sabe Quantas Vezes Repetir',
+        body: 'O laço `for` é ideal quando você **sabe quantas repetições** precisa. Ele tem 3 partes em uma linha:\n\n`for (inicialização; condição; incremento) { corpo }`\n\n1. **Inicialização**: executada UMA vez antes do loop começar\n2. **Condição**: verificada ANTES de cada iteração — se false, o loop para\n3. **Incremento**: executado APÓS cada iteração\n\nO fluxo é: inicializa → verifica condição → executa corpo → incrementa → verifica condição → executa corpo → incrementa → ... até a condição ser false.',
+        code: `public class ExemploFor {
+    public static void main(String[] args) {
+
+        // ═══ CONTANDO DE 1 A 10 ═══
+        for (int i = 1; i <= 10; i++) {
+            System.out.print(i + " ");
+        }
+        System.out.println(); // 1 2 3 4 5 6 7 8 9 10
+
+        // ═══ CONTAGEM REGRESSIVA ═══
+        for (int i = 10; i >= 1; i--) {
+            System.out.print(i + " ");
+        }
+        System.out.println(); // 10 9 8 7 6 5 4 3 2 1
+
+        // ═══ PULANDO DE 2 EM 2 ═══
+        for (int i = 0; i <= 20; i += 2) {
+            System.out.print(i + " ");
+        }
+        System.out.println(); // 0 2 4 6 8 10 12 14 16 18 20
+
+        // ═══ TABUADA ═══
+        int numero = 7;
+        System.out.println("\\nTabuada do " + numero + ":");
+        for (int i = 1; i <= 10; i++) {
+            System.out.println(numero + " x " + i + " = " + (numero * i));
+        }
+
+        // ═══ SOMANDO NÚMEROS ═══
+        int soma = 0;
+        for (int i = 1; i <= 100; i++) {
+            soma += i;
+        }
+        System.out.println("\\nSoma de 1 a 100: " + soma); // 5050
+    }
+}`,
+        codeExplanation: '**Linha 5** (`for (int i = 1; i <= 10; i++)`): `int i = 1` cria e inicializa o contador. `i <= 10` é testado antes de cada iteração. `i++` incrementa após cada iteração. O `i` só existe dentro do for.\n\n**Linha 11** (`i--`): Decremento — o contador diminui a cada iteração. Útil para contagem regressiva.\n\n**Linha 17** (`i += 2`): Incremento de 2 — pula de 2 em 2. Pode ser qualquer expressão: `i += 3`, `i *= 2`, etc.\n\n**Linhas 30-33** (acumulador): Padrão muito comum — usar uma variável fora do loop para acumular valores. `soma += i` soma cada número de 1 a 100.',
+        tip: 'A variável do for (ex: `int i`) só existe DENTRO do loop. Após o for, `i` não existe mais. Se precisar do valor final, declare a variável ANTES do for.',
+      },
+
+      // ────────── SEÇÃO 2: while ──────────
+      {
+        title: 'while — Quando Depende de Uma Condição',
+        body: 'O laço `while` repete enquanto a condição for `true`. É ideal quando **não sabe quantas vezes** vai repetir — depende de algo que muda durante a execução.\n\nCuidado: se a condição NUNCA se tornar false, o loop roda para sempre (loop infinito)! Sempre garanta que algo dentro do loop muda a condição.',
+        code: `public class ExemploWhile {
+    public static void main(String[] args) {
+
+        // ═══ DIVIDIR POR 2 ATÉ CHEGAR EM 1 ═══
+        int numero = 128;
+        System.out.println("Dividindo " + numero + " por 2:");
+        while (numero > 1) {
+            System.out.print(numero + " → ");
+            numero = numero / 2;
+        }
+        System.out.println(numero);
+        // 128 → 64 → 32 → 16 → 8 → 4 → 2 → 1
+
+        // ═══ SOMA DOS DÍGITOS DE UM NÚMERO ═══
+        int n = 12345;
+        int somaDigitos = 0;
+        int original = n;
+        while (n > 0) {
+            somaDigitos += n % 10;  // pega o último dígito
+            n = n / 10;             // remove o último dígito
+        }
+        System.out.println("\\nSoma dos dígitos de " + original + ": " + somaDigitos);
+        // 1+2+3+4+5 = 15
+
+        // ═══ ENCONTRAR A POTÊNCIA DE 2 MAIS PRÓXIMA ═══
+        int valor = 100;
+        int potencia = 1;
+        while (potencia < valor) {
+            potencia *= 2;
+        }
+        System.out.println("Potência de 2 >= " + valor + ": " + potencia);
+        // 128
+    }
+}`,
+        codeExplanation: '**Linhas 7-10**: O while testa `numero > 1` antes de cada iteração. Dentro do loop, `numero` é dividido por 2 — eventualmente chega a 1 e o loop para.\n\n**Linhas 17-21** (soma de dígitos): `n % 10` retorna o último dígito (12345 % 10 = 5). `n / 10` remove o último dígito (12345 / 10 = 1234). Repete até n ser 0.\n\n**Linhas 26-29**: Começa com 1 e dobra até ultrapassar 100. O while é perfeito aqui — não sabemos quantas vezes vai dobrar.',
+        warning: 'Cuidado com loop infinito! Se a condição nunca se tornar false, o programa trava. Sempre garanta que algo dentro do loop muda a condição.',
+      },
+
+      // ────────── SEÇÃO 3: do-while ──────────
+      {
+        title: 'do-while — Garante Pelo Menos Uma Execução',
+        body: 'O `do-while` é como o while, mas a condição é verificada **DEPOIS** da execução. Isso garante que o bloco execute **pelo menos uma vez**, mesmo se a condição for false desde o início.\n\nUso clássico: **menus interativos** e **validação de entrada** — você precisa mostrar o menu (ou pedir o dado) antes de verificar se deve continuar.',
+        code: `public class ExemploDoWhile {
+    public static void main(String[] args) {
+
+        // ═══ MENU INTERATIVO ═══
+        int opcao;
+        do {
+            System.out.println("\\n=== MENU ===");
+            System.out.println("1 - Novo Jogo");
+            System.out.println("2 - Carregar");
+            System.out.println("3 - Configurações");
+            System.out.println("0 - Sair");
+            opcao = 0; // simulando entrada do usuário
+        } while (opcao != 0);
+        System.out.println("Até logo!");
+
+        // ═══ VALIDAÇÃO DE ENTRADA ═══
+        int nota;
+        do {
+            nota = 7; // simulando: usuário digita um valor
+            // Em um programa real, usaria Scanner
+        } while (nota < 0 || nota > 10);
+        // Repete até o usuário digitar um valor entre 0 e 10
+
+        // ═══ DIFERENÇA: while vs do-while ═══
+        // while: pode executar 0 vezes
+        int x = 10;
+        while (x < 5) {
+            System.out.println("while: " + x); // NUNCA executa
+            x++;
+        }
+
+        // do-while: executa pelo menos 1 vez
+        int y = 10;
+        do {
+            System.out.println("do-while: " + y); // executa 1 vez!
+            y++;
+        } while (y < 5);
+    }
+}`,
+        codeExplanation: '**Linhas 6-13** (menu): O bloco do é executado primeiro (mostra o menu), depois a condição é verificada. Se opcao != 0, repete. Perfeito para menus — precisa mostrar as opções antes de ler a escolha.\n\n**Linhas 18-22** (validação): Repete a leitura enquanto o valor for inválido. O do-while garante que a leitura acontece pelo menos uma vez.\n\n**Linhas 26-37** (comparação): O while com x = 10 nunca executa (10 < 5 é false). O do-while com y = 10 executa uma vez (imprime "do-while: 10") e depois verifica a condição.',
+        tip: 'Use do-while quando PRECISA executar pelo menos uma vez (menus, validação de entrada). Use while quando pode ser que não execute nenhuma vez.',
+      },
+
+      // ────────── SEÇÃO 4: break e continue ──────────
+      {
+        title: 'break e continue — Controlando o Fluxo do Loop',
+        body: '`break` e `continue` dão controle extra sobre os laços:\n\n- **`break`**: **sai** do loop imediatamente. Nenhuma iteração seguinte executa.\n- **`continue`**: **pula** para a próxima iteração. O resto do corpo é ignorado, mas o loop continua.\n\nUse com moderação — loops com muitos break/continue ficam difíceis de ler.',
+        code: `public class BreakContinue {
+    public static void main(String[] args) {
+
+        // ═══ BREAK: sai do loop quando encontra o 5 ═══
+        System.out.print("Break: ");
+        for (int i = 1; i <= 10; i++) {
+            if (i == 5) break;  // sai do loop!
+            System.out.print(i + " ");
+        }
+        System.out.println(); // 1 2 3 4
+
+        // ═══ CONTINUE: pula números pares ═══
+        System.out.print("Continue: ");
+        for (int i = 1; i <= 10; i++) {
+            if (i % 2 == 0) continue;  // pula para próxima iteração
+            System.out.print(i + " ");
+        }
+        System.out.println(); // 1 3 5 7 9
+
+        // ═══ BUSCA EM LISTA: break para parar quando achar ═══
+        int[] numeros = {3, 7, 2, 9, 4, 1, 8};
+        int alvo = 9;
+        boolean encontrado = false;
+
+        for (int i = 0; i < numeros.length; i++) {
+            if (numeros[i] == alvo) {
+                System.out.println("\\nEncontrou " + alvo + " no índice " + i);
+                encontrado = true;
+                break;  // não precisa continuar procurando
+            }
+        }
+        if (!encontrado) {
+            System.out.println(alvo + " não encontrado");
+        }
+
+        // ═══ PROCESSAR APENAS VÁLIDOS ═══
+        int[] notas = {8, -1, 7, 10, -5, 9, 6};
+        int soma = 0, contagem = 0;
+
+        for (int nota : notas) {
+            if (nota < 0) continue;  // pula notas inválidas
+            soma += nota;
+            contagem++;
+        }
+        System.out.println("Média (válidas): " + ((double) soma / contagem));
+    }
+}`,
+        codeExplanation: '**Linhas 6-9** (break): Quando i chega a 5, o `break` sai do for imediatamente. Os números 5 a 10 nunca são processados.\n\n**Linhas 14-17** (continue): Quando i é par, o `continue` pula o `System.out.print` e vai direto para o `i++`. Resultado: só imprime ímpares.\n\n**Linhas 24-33** (busca com break): Procura o alvo no array. Quando encontra, define `encontrado = true`, imprime e sai com break — não precisa verificar o resto.\n\n**Linhas 39-44** (continue para filtrar): Notas negativas são inválidas — o continue pula para a próxima. Só notas válidas são somadas e contadas.',
+        warning: 'Use break e continue com moderação. Muitos em um loop tornam o código difícil de entender. Geralmente dá para reorganizar a lógica sem eles.',
+      },
+    ],
     tryItCode: `public class Main {
     public static void main(String[] args) {
-        int[][] m = { {1, 2}, {3, 4} };
-        System.out.println("matriz[0][0] = " + m[0][0]);
-        System.out.println("matriz[1][1] = " + m[1][1]);
-        for (int i = 0; i < m.length; i++) {
-            for (int j = 0; j < m[i].length; j++) {
-                System.out.print(m[i][j] + " ");
+        // For: tabuada
+        int n = 5;
+        System.out.println("=== Tabuada do " + n + " ===");
+        for (int i = 1; i <= 10; i++) {
+            System.out.println(n + " x " + i + " = " + (n * i));
+        }
+
+        // While: contagem regressiva
+        System.out.println("\\n=== Contagem Regressiva ===");
+        int contagem = 5;
+        while (contagem > 0) {
+            System.out.println(contagem + "...");
+            contagem--;
+        }
+        System.out.println("Go!");
+
+        // Continue: apenas ímpares
+        System.out.print("\\nÍmpares de 1 a 20: ");
+        for (int i = 1; i <= 20; i++) {
+            if (i % 2 == 0) continue;
+            System.out.print(i + " ");
+        }
+        System.out.println();
+    }
+}`,
+    tryItPrompt: 'Altere n para outra tabuada, mude a contagem regressiva, ou troque o continue para filtrar apenas pares.',
+    codeFillExercises: [
+      {
+        instruction: 'Complete a estrutura do for que conta de 1 a 10.',
+        snippetBefore: 'for (int i = 1; ',
+        snippetAfter: '; i++) { ... }',
+        options: ['i <= 10', 'i < 10', 'i == 10', 'i != 10'],
+        correctIndex: 0,
+        explanation: 'i <= 10 garante que o loop executa com i = 1, 2, 3, ..., 10. i < 10 pararia no 9. i == 10 nunca seria true na primeira iteração.',
+      },
+      {
+        instruction: 'Qual laço garante pelo menos UMA execução do bloco?',
+        snippetBefore: '',
+        snippetAfter: ' {\n    // executa pelo menos 1 vez\n} while (condicao);',
+        options: ['do', 'while', 'for', 'repeat'],
+        correctIndex: 0,
+        explanation: 'O do-while executa o bloco ANTES de verificar a condição, garantindo pelo menos uma execução.',
+      },
+      {
+        instruction: 'Qual palavra-chave PULA para a próxima iteração sem sair do loop?',
+        snippetBefore: 'for (int i = 0; i < 10; i++) {\n    if (i % 2 == 0) ',
+        snippetAfter: ';\n    System.out.println(i);\n}',
+        options: ['break', 'continue', 'skip', 'next'],
+        correctIndex: 1,
+        explanation: 'continue pula o resto do corpo e vai para a próxima iteração. break sairia do loop completamente.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'Loop infinito (condição nunca se torna false)',
+        description: 'Se a condição do while nunca se tornar false, o programa trava (loop infinito). Sempre garanta que algo dentro do loop muda a condição.',
+        code: `// ERRADO: loop infinito! x nunca muda
+int x = 1;
+while (x <= 10) {
+    System.out.println(x);
+    // esqueceu x++! → x é sempre 1, loop infinito
+}
+
+// CORRETO: x é incrementado a cada iteração
+int y = 1;
+while (y <= 10) {
+    System.out.println(y);
+    y++;  // ← essencial!
+}`,
+      },
+      {
+        title: 'Erro de off-by-one (um a mais ou a menos)',
+        description: 'Usar < em vez de <= (ou vice-versa) faz o loop executar uma vez a mais ou a menos. Sempre teste com os valores limite.',
+        code: `// Queremos imprimir 1, 2, 3, 4, 5
+
+// ERRADO: imprime 1, 2, 3, 4 (faltou o 5!)
+for (int i = 1; i < 5; i++) {     // < 5 não inclui o 5
+    System.out.print(i + " ");
+}
+
+// CORRETO: imprime 1, 2, 3, 4, 5
+for (int i = 1; i <= 5; i++) {    // <= 5 inclui o 5
+    System.out.print(i + " ");
+}
+
+// DICA: ao percorrer array, use < length (não <=)
+// int[] arr = {10, 20, 30};  // length = 3, índices 0, 1, 2
+// for (int i = 0; i < arr.length; i++) {  // 0 a 2 ✓`,
+      },
+      {
+        title: 'Ponto-e-vírgula após o for ou while',
+        description: 'Colocar ; logo após o for() ou while() cria um loop com corpo VAZIO. O bloco { } abaixo executa apenas uma vez, fora do loop.',
+        code: `// ERRADO: ponto-e-vírgula cria loop vazio!
+for (int i = 0; i < 5; i++);  // ← ; aqui é o corpo (vazio)
+{
+    System.out.println("Só imprime 1 vez!");
+}
+
+// CORRETO: sem ; após o for
+for (int i = 0; i < 5; i++) {  // ← sem ;
+    System.out.println("Imprime 5 vezes! i=" + i);
+}`,
+      },
+    ],
+    summary: [
+      'for é ideal quando sabe o número de repetições: for (init; condição; incremento)',
+      'while repete enquanto a condição for true — pode executar 0 vezes',
+      'do-while garante pelo menos UMA execução — verifica a condição DEPOIS',
+      'break sai do loop imediatamente',
+      'continue pula para a próxima iteração (ignora o resto do corpo)',
+      'Cuidado com loop infinito: garanta que algo muda a condição dentro do loop',
+      'Cuidado com off-by-one: < e <= fazem diferença no número de iterações',
+      'A variável do for (int i) só existe dentro do loop',
+      'Use for para contagens, while para condições dinâmicas, do-while para menus/validação',
+    ],
+  },
+
+  'm1-arrays': {
+    id: 'm1-arrays',
+    moduleId: 1,
+    objectives: [
+      'Entender o que são arrays e por que são necessários',
+      'Criar arrays de diferentes formas (com new e com inicializador)',
+      'Acessar e modificar elementos por índice',
+      'Percorrer arrays com for clássico e for-each',
+      'Realizar operações comuns: soma, média, busca, maior/menor',
+      'Evitar erros clássicos como ArrayIndexOutOfBoundsException',
+    ],
+    sections: [
+      // ────────── SEÇÃO 1: O que são Arrays ──────────
+      {
+        title: 'O que são Arrays?',
+        body: 'Imagine que você precisa guardar as notas de 40 alunos. Criar 40 variáveis (`nota1`, `nota2`, ..., `nota40`) seria impraticável. **Arrays** resolvem isso: são estruturas que armazenam **múltiplos valores do mesmo tipo** em posições numeradas chamadas **índices**.\n\nCaracterísticas importantes:\n- O **tamanho é fixo**: definido na criação e não pode mudar depois\n- **Índices começam em 0**: o primeiro elemento é `array[0]`, o último é `array[length - 1]`\n- Todos os elementos são do **mesmo tipo** (int[], String[], double[])\n- Valores padrão ao criar com `new`: `0` para int, `0.0` para double, `false` para boolean, `null` para objetos',
+        code: `public class ExemploArrays {
+    public static void main(String[] args) {
+
+        // ═══ FORMA 1: Criar com tamanho (valores padrão) ═══
+        int[] numeros = new int[5];     // 5 inteiros, todos 0
+        String[] nomes = new String[3]; // 3 strings, todas null
+
+        // ═══ FORMA 2: Criar com valores iniciais ═══
+        int[] notas = {10, 8, 7, 9, 6};
+        String[] frutas = {"Maçã", "Banana", "Laranja"};
+        double[] precos = {29.90, 15.50, 42.00};
+
+        // ═══ ACESSAR ELEMENTOS (por índice) ═══
+        System.out.println(notas[0]);     // 10 (primeiro)
+        System.out.println(notas[4]);     // 6  (último)
+        System.out.println(frutas[1]);    // "Banana"
+
+        // ═══ MODIFICAR ELEMENTOS ═══
+        notas[2] = 10;  // nota[2] era 7, agora é 10
+        System.out.println("Nova nota: " + notas[2]); // 10
+
+        // ═══ TAMANHO DO ARRAY ═══
+        System.out.println("Notas: " + notas.length);   // 5
+        System.out.println("Frutas: " + frutas.length);  // 3
+
+        // ═══ ÚLTIMO ELEMENTO ═══
+        int ultimo = notas[notas.length - 1];
+        System.out.println("Última nota: " + ultimo); // 6
+    }
+}`,
+        codeExplanation: '**Linha 4** (`new int[5]`): Cria um array com espaço para 5 inteiros. Todos começam com valor 0 (padrão de int).\n\n**Linha 8** (`{10, 8, 7, 9, 6}`): Atalho para criar e preencher ao mesmo tempo. O Java infere o tamanho automaticamente (5 elementos).\n\n**Linha 13** (`notas[0]`): Acessa o PRIMEIRO elemento. Lembre: índices começam em 0, não 1!\n\n**Linha 14** (`notas[4]`): Acessa o ÚLTIMO elemento de um array de tamanho 5. Índice máximo = length - 1 = 4.\n\n**Linha 22** (`.length`): Retorna o tamanho do array. Note: SEM parênteses — é um atributo, não um método.\n\n**Linha 25** (`notas[notas.length - 1]`): Padrão para acessar o último elemento: `array[array.length - 1]`.',
+        warning: 'Arrays começam no índice 0! Um array de tamanho 5 tem índices de 0 a 4. Acessar array[5] causa ArrayIndexOutOfBoundsException.',
+      },
+
+      // ────────── SEÇÃO 2: Percorrendo Arrays ──────────
+      {
+        title: 'Percorrendo Arrays — for e for-each',
+        body: 'Existem duas formas de percorrer arrays:\n\n**for clássico**: Use quando precisar do **índice** (posição) do elemento — para modificar, comparar posições ou acessar arrays paralelos.\n\n**for-each** (enhanced for): Use quando precisar apenas do **valor** — mais limpo, sem risco de erro de índice.',
+        code: `public class PercorrendoArrays {
+    public static void main(String[] args) {
+        int[] notas = {10, 8, 7, 9, 6};
+
+        // ═══ FOR CLÁSSICO (quando precisa do índice) ═══
+        System.out.println("=== Com for clássico ===");
+        for (int i = 0; i < notas.length; i++) {
+            System.out.println("Aluno " + (i + 1) + ": nota " + notas[i]);
+        }
+
+        // ═══ FOR-EACH (quando só precisa do valor) ═══
+        System.out.println("\\n=== Com for-each ===");
+        for (int nota : notas) {
+            System.out.println("Nota: " + nota);
+        }
+
+        // ═══ CALCULAR SOMA E MÉDIA ═══
+        int soma = 0;
+        for (int nota : notas) {
+            soma += nota;
+        }
+        double media = (double) soma / notas.length;
+        System.out.println("\\nSoma: " + soma);     // 40
+        System.out.println("Média: " + media);       // 8.0
+
+        // ═══ ENCONTRAR MAIOR E MENOR ═══
+        int maior = notas[0];  // começa com o primeiro
+        int menor = notas[0];
+        for (int nota : notas) {
+            if (nota > maior) maior = nota;
+            if (nota < menor) menor = nota;
+        }
+        System.out.println("Maior: " + maior);  // 10
+        System.out.println("Menor: " + menor);  // 6
+
+        // ═══ BUSCAR UM VALOR ═══
+        int alvo = 9;
+        int posicao = -1;
+        for (int i = 0; i < notas.length; i++) {
+            if (notas[i] == alvo) {
+                posicao = i;
+                break;
             }
-            System.out.println();
+        }
+        if (posicao >= 0) {
+            System.out.println("\\n" + alvo + " encontrado no índice " + posicao);
+        } else {
+            System.out.println("\\n" + alvo + " não encontrado");
         }
     }
 }`,
-    tryItPrompt: 'Altere os valores da matriz e execute.',
+        codeExplanation: '**Linha 7** (`i < notas.length`): Use `<` (não `<=`) porque o último índice é `length - 1`. Com `<=` acessaria um índice que não existe.\n\n**Linha 13** (`for (int nota : notas)`): Lê-se "para cada int nota em notas". A cada iteração, `nota` recebe o próximo valor do array. Não tem índice nem risco de IndexOutOfBounds.\n\n**Linhas 18-22** (soma e média): Padrão acumulador — variável `soma` fora do loop, `+=` dentro. A média usa casting `(double)` para não truncar.\n\n**Linhas 27-32** (maior/menor): Inicializa com o primeiro elemento e compara com os demais. Funciona para qualquer tamanho de array.\n\n**Linhas 36-44** (busca): Precisa do for clássico (não for-each) porque queremos saber a POSIÇÃO. Usa `break` para parar quando encontra.',
+        tip: 'Use for-each quando não precisar do índice — é mais limpo e não tem risco de erro de índice. Use for clássico quando precisar da posição ou modificar o array.',
+      },
+
+      // ────────── SEÇÃO 3: Arrays e Métodos Utilitários ──────────
+      {
+        title: 'java.util.Arrays — Métodos Prontos',
+        body: 'A classe `java.util.Arrays` oferece métodos prontos para operações comuns em arrays: ordenar, buscar, comparar, copiar e converter para String. Importe com `import java.util.Arrays;`.',
+        code: `import java.util.Arrays;
+
+public class MetodosArrays {
+    public static void main(String[] args) {
+
+        int[] notas = {7, 3, 10, 5, 8, 1, 9};
+
+        // ═══ IMPRIMIR ARRAY (toString) ═══
+        System.out.println(notas);                  // [I@15db9742 (inútil!)
+        System.out.println(Arrays.toString(notas));  // [7, 3, 10, 5, 8, 1, 9]
+
+        // ═══ ORDENAR ═══
+        Arrays.sort(notas);  // ordena IN-PLACE (modifica o array)
+        System.out.println(Arrays.toString(notas));  // [1, 3, 5, 7, 8, 9, 10]
+
+        // ═══ BUSCA BINÁRIA (array DEVE estar ordenado!) ═══
+        int indice = Arrays.binarySearch(notas, 8);
+        System.out.println("8 está no índice: " + indice); // 4
+
+        // ═══ COPIAR ═══
+        int[] copia = Arrays.copyOf(notas, notas.length);
+        int[] primeiros3 = Arrays.copyOf(notas, 3); // [1, 3, 5]
+
+        // ═══ PREENCHER ═══
+        int[] zeros = new int[5];
+        Arrays.fill(zeros, 42);  // todos viram 42
+        System.out.println(Arrays.toString(zeros)); // [42, 42, 42, 42, 42]
+
+        // ═══ COMPARAR ═══
+        int[] a = {1, 2, 3};
+        int[] b = {1, 2, 3};
+        System.out.println(a == b);              // false (referências!)
+        System.out.println(Arrays.equals(a, b)); // true (conteúdo!)
+    }
+}`,
+        codeExplanation: '**Linha 9** (`System.out.println(notas)`): Imprimir array diretamente mostra o endereço de memória, não os valores! Use `Arrays.toString()` para ver o conteúdo.\n\n**Linha 13** (`Arrays.sort(notas)`): Ordena o array in-place (modifica o array original). Usa um algoritmo eficiente (dual-pivot quicksort).\n\n**Linha 17** (`Arrays.binarySearch`): Busca eficiente, mas o array DEVE estar ordenado antes! Retorna o índice do elemento ou valor negativo se não encontrar.\n\n**Linha 30** (`Arrays.equals(a, b)`): Compara o CONTEÚDO de dois arrays. Usar `==` compara referências (se são o mesmo objeto na memória), não valores.',
+        tip: 'Assim como String, nunca compare arrays com ==. Use Arrays.equals() para comparar conteúdo.',
+      },
+    ],
+    tryItCode: `import java.util.Arrays;
+
+public class Main {
+    public static void main(String[] args) {
+        int[] notas = {7, 3, 10, 5, 8};
+
+        // Imprime
+        System.out.println("Array: " + Arrays.toString(notas));
+        System.out.println("Tamanho: " + notas.length);
+
+        // Soma e média
+        int soma = 0;
+        for (int n : notas) soma += n;
+        double media = (double) soma / notas.length;
+        System.out.println("Média: " + media);
+
+        // Maior e menor
+        int maior = notas[0], menor = notas[0];
+        for (int n : notas) {
+            if (n > maior) maior = n;
+            if (n < menor) menor = n;
+        }
+        System.out.println("Maior: " + maior + ", Menor: " + menor);
+
+        // Ordenar
+        Arrays.sort(notas);
+        System.out.println("Ordenado: " + Arrays.toString(notas));
+    }
+}`,
+    tryItPrompt: 'Altere os valores do array, adicione mais elementos, teste Arrays.sort() e Arrays.toString(). Tente buscar o maior e menor.',
+    codeFillExercises: [
+      {
+        instruction: 'Como obter o tamanho de um array em Java?',
+        snippetBefore: 'int[] notas = {10, 8, 7};\nint n = notas.',
+        snippetAfter: ';',
+        options: ['length', 'length()', 'size()', 'count()'],
+        correctIndex: 0,
+        explanation: 'Arrays usam .length (atributo, sem parênteses). Strings usam .length() (método, com parênteses). ArrayList usa .size().',
+      },
+      {
+        instruction: 'Complete o for-each que percorre um array de inteiros.',
+        snippetBefore: 'for (',
+        snippetAfter: ' : notas) { ... }',
+        options: ['int nota', 'nota', 'var i', 'each nota'],
+        correctIndex: 0,
+        explanation: 'No for-each, declare o tipo e nome da variável: "for (int nota : notas)". A cada iteração, nota recebe o próximo elemento.',
+      },
+      {
+        instruction: 'Qual método da classe Arrays converte um array para String legível?',
+        snippetBefore: 'System.out.println(Arrays.',
+        snippetAfter: '(numeros));',
+        options: ['toString', 'print', 'stringify', 'show'],
+        correctIndex: 0,
+        explanation: 'Arrays.toString() converte o array para uma String no formato [1, 2, 3]. Sem isso, imprimir um array mostra o endereço de memória.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'ArrayIndexOutOfBoundsException',
+        description: 'Acessar um índice que não existe — seja negativo ou >= length. O índice máximo é SEMPRE length - 1.',
+        code: `int[] notas = {10, 8, 7}; // length = 3, índices: 0, 1, 2
+
+// ERRO: índice 3 não existe (máximo é 2)!
+// System.out.println(notas[3]);
+// Exception: ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+
+// ERRO: índice negativo!
+// System.out.println(notas[-1]);
+
+// ERRO comum em loops: usar <= em vez de <
+// for (int i = 0; i <= notas.length; i++) { // BOOM no último!
+
+// CORRETO:
+for (int i = 0; i < notas.length; i++) { // < length, não <=
+    System.out.println(notas[i]);
+}`,
+      },
+      {
+        title: 'Confundir .length (array) com .length() (String) e .size() (ArrayList)',
+        description: 'Cada estrutura tem sua forma de obter o tamanho. Misturar causa erro de compilação.',
+        code: `int[] array = {1, 2, 3};
+String texto = "Java";
+// ArrayList<Integer> lista = new ArrayList<>();
+
+// CORRETO para cada tipo:
+System.out.println(array.length);    // 3 (atributo, SEM parênteses)
+System.out.println(texto.length());  // 4 (método, COM parênteses)
+// System.out.println(lista.size()); // método size()
+
+// ERRADO:
+// array.length()   → erro de compilação
+// texto.length     → erro de compilação
+// array.size()     → erro de compilação`,
+      },
+      {
+        title: 'Imprimir array diretamente mostra endereço de memória',
+        description: 'System.out.println(array) não imprime os valores — mostra algo como [I@15db9742. Use Arrays.toString() para ver o conteúdo.',
+        code: `import java.util.Arrays;
+
+int[] notas = {10, 8, 7};
+
+// ERRADO: mostra endereço de memória
+System.out.println(notas);  // [I@15db9742
+
+// CORRETO: mostra o conteúdo
+System.out.println(Arrays.toString(notas));  // [10, 8, 7]`,
+      },
+    ],
+    summary: [
+      'Arrays armazenam múltiplos valores do MESMO tipo em posições numeradas (índices)',
+      'O tamanho é FIXO — definido na criação e não muda depois',
+      'Índices começam em 0; o último é array[length - 1]',
+      '.length (sem parênteses!) retorna o tamanho do array',
+      'for clássico: quando precisa do índice. for-each: quando só precisa do valor',
+      'Use i < length (não i <= length) para evitar IndexOutOfBoundsException',
+      'Arrays.toString() para imprimir, Arrays.sort() para ordenar, Arrays.equals() para comparar',
+      'Nunca compare arrays com == — use Arrays.equals() para comparar conteúdo',
+      'Valores padrão: 0 (int), 0.0 (double), false (boolean), null (objetos)',
+    ],
+  },
+
+  'm1-matrices': {
+    id: 'm1-matrices',
+    moduleId: 1,
+    objectives: [
+      'Entender o conceito de arrays bidimensionais (matrizes)',
+      'Criar matrizes com new e com inicializador',
+      'Acessar e modificar elementos com [linha][coluna]',
+      'Percorrer matrizes com loops aninhados e for-each',
+      'Aplicar matrizes em problemas práticos (tabelas, grades)',
+    ],
+    sections: [
+      // ────────── SEÇÃO 1: O que são Matrizes ──────────
+      {
+        title: 'Matrizes — Arrays de Arrays',
+        body: 'Uma matriz é um **"array de arrays"** — como uma tabela com **linhas** e **colunas**. Cada posição é acessada com dois índices: `matriz[linha][coluna]`.\n\nCasos de uso comuns:\n- Tabuleiros de jogos (xadrez, jogo da velha)\n- Tabelas de dados (notas de alunos × matérias)\n- Imagens (pixels organizados em grade)\n- Mapas (coordenadas X × Y)',
+        code: `public class ExemploMatrizes {
+    public static void main(String[] args) {
+
+        // ═══ FORMA 1: Criar com tamanho fixo ═══
+        int[][] tabela = new int[3][4]; // 3 linhas, 4 colunas (tudo 0)
+
+        // ═══ FORMA 2: Criar com valores iniciais ═══
+        int[][] matriz = {
+            {1, 2, 3},     // linha 0
+            {4, 5, 6},     // linha 1
+            {7, 8, 9}      // linha 2
+        };
+
+        // ═══ ACESSAR ELEMENTOS ═══
+        System.out.println(matriz[0][0]); // 1 (linha 0, coluna 0)
+        System.out.println(matriz[1][2]); // 6 (linha 1, coluna 2)
+        System.out.println(matriz[2][1]); // 8 (linha 2, coluna 1)
+
+        // ═══ MODIFICAR ELEMENTOS ═══
+        matriz[1][1] = 99;  // muda o 5 para 99
+        System.out.println("Modificado: " + matriz[1][1]); // 99
+
+        // ═══ DIMENSÕES ═══
+        System.out.println("Linhas: " + matriz.length);      // 3
+        System.out.println("Colunas: " + matriz[0].length);   // 3
+
+        // ═══ TABELA DE NOTAS ═══
+        String[] alunos = {"Ana", "Bruno", "Carla"};
+        String[] materias = {"Mat", "Port", "Hist"};
+        int[][] notas = {
+            {8, 7, 9},   // notas da Ana
+            {6, 8, 7},   // notas do Bruno
+            {9, 9, 10}   // notas da Carla
+        };
+
+        // Nota da Ana em Português:
+        System.out.println(alunos[0] + " em " + materias[1] + ": " + notas[0][1]);
+    }
+}`,
+        codeExplanation: '**Linha 5** (`new int[3][4]`): Cria uma matriz 3×4 (3 linhas, 4 colunas). Todos os valores iniciam em 0.\n\n**Linhas 8-12** (inicializador): Cada `{...}` interno é uma linha da matriz. A matriz tem 3 linhas × 3 colunas.\n\n**Linha 15** (`matriz[0][0]`): Primeiro índice = linha, segundo = coluna. Ambos começam em 0.\n\n**Linha 23** (`matriz.length`): Retorna o número de LINHAS. Para o número de COLUNAS, use `matriz[0].length` (length da primeira linha).\n\n**Linhas 27-35** (exemplo prático): Matriz de notas onde cada linha é um aluno e cada coluna é uma matéria. `notas[0][1]` = nota da Ana (linha 0) em Português (coluna 1).',
+        warning: 'Cuidado com os índices! matriz[linha][coluna] — o primeiro índice é a LINHA, o segundo é a COLUNA. Inverter causa IndexOutOfBoundsException.',
+      },
+
+      // ────────── SEÇÃO 2: Percorrendo Matrizes ──────────
+      {
+        title: 'Percorrendo Matrizes com Loops Aninhados',
+        body: 'Para percorrer uma matriz, você precisa de **dois loops**: um para as linhas (externo) e outro para as colunas (interno). O loop externo avança de linha em linha; o interno percorre todas as colunas daquela linha.',
+        code: `import java.util.Arrays;
+
+public class PercorrendoMatrizes {
+    public static void main(String[] args) {
+
+        int[][] matriz = {
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 9}
+        };
+
+        // ═══ FOR CLÁSSICO (quando precisa dos índices) ═══
+        System.out.println("=== For clássico ===");
+        for (int i = 0; i < matriz.length; i++) {           // linhas
+            for (int j = 0; j < matriz[i].length; j++) {    // colunas
+                System.out.print(matriz[i][j] + "\\t");
+            }
+            System.out.println();  // pula linha após cada linha
+        }
+
+        // ═══ FOR-EACH (quando só precisa dos valores) ═══
+        System.out.println("\\n=== For-each ===");
+        for (int[] linha : matriz) {         // cada "elemento" é uma linha (array)
+            for (int valor : linha) {        // cada valor da linha
+                System.out.print(valor + "\\t");
+            }
+            System.out.println();
+        }
+
+        // ═══ SOMA DE TODOS OS ELEMENTOS ═══
+        int soma = 0;
+        for (int[] linha : matriz) {
+            for (int val : linha) {
+                soma += val;
+            }
+        }
+        System.out.println("\\nSoma total: " + soma); // 45
+
+        // ═══ BUSCAR UM VALOR NA MATRIZ ═══
+        int alvo = 5;
+        for (int i = 0; i < matriz.length; i++) {
+            for (int j = 0; j < matriz[i].length; j++) {
+                if (matriz[i][j] == alvo) {
+                    System.out.println(alvo + " encontrado em [" + i + "][" + j + "]");
+                }
+            }
+        }
+    }
+}`,
+        codeExplanation: '**Linha 14** (`i < matriz.length`): O loop externo percorre as LINHAS. `matriz.length` retorna o número de linhas (3).\n\n**Linha 15** (`j < matriz[i].length`): O loop interno percorre as COLUNAS da linha `i`. `matriz[i].length` retorna o número de colunas daquela linha.\n\n**Linha 23** (`for (int[] linha : matriz)`): No for-each, cada elemento da matriz é um ARRAY (uma linha inteira). Por isso o tipo é `int[]`, não `int`.\n\n**Linhas 40-45** (busca): Precisa do for clássico para saber em QUAL posição [i][j] o valor está.',
+        tip: 'Em Java, matrizes podem ter linhas de tamanhos diferentes (jagged arrays). Use matriz[i].length para cada linha em vez de assumir um tamanho fixo.',
+      },
+
+      // ────────── SEÇÃO 3: Exemplos Práticos ──────────
+      {
+        title: 'Exemplo Prático — Jogo da Velha',
+        body: 'Matrizes são perfeitas para representar **grades e tabuleiros**. Veja como um tabuleiro de jogo da velha pode ser modelado com uma matriz 3×3.',
+        code: `public class JogoDaVelha {
+    public static void main(String[] args) {
+
+        // Tabuleiro: ' ' = vazio, 'X' = jogador 1, 'O' = jogador 2
+        char[][] tabuleiro = {
+            {'X', 'O', 'X'},
+            {' ', 'X', 'O'},
+            {'O', ' ', 'X'}
+        };
+
+        // ═══ EXIBIR O TABULEIRO ═══
+        System.out.println("  0   1   2");
+        for (int i = 0; i < 3; i++) {
+            System.out.print(i + " ");
+            for (int j = 0; j < 3; j++) {
+                System.out.print("[" + tabuleiro[i][j] + "]");
+                if (j < 2) System.out.print(" ");
+            }
+            System.out.println();
+        }
+
+        // ═══ VERIFICAR DIAGONAL PRINCIPAL ═══
+        boolean diagonalIgual = true;
+        char primeiro = tabuleiro[0][0];
+        if (primeiro == ' ') diagonalIgual = false;
+        for (int i = 1; i < 3; i++) {
+            if (tabuleiro[i][i] != primeiro) {
+                diagonalIgual = false;
+                break;
+            }
+        }
+        if (diagonalIgual) {
+            System.out.println("\\n" + primeiro + " venceu na diagonal!");
+        }
+
+        // ═══ CONTAR POSIÇÕES VAZIAS ═══
+        int vazias = 0;
+        for (char[] linha : tabuleiro) {
+            for (char celula : linha) {
+                if (celula == ' ') vazias++;
+            }
+        }
+        System.out.println("Posições vazias: " + vazias);
+    }
+}`,
+        codeExplanation: '**Linhas 5-9**: Tabuleiro 3×3 de caracteres. Cada célula pode ser \'X\', \'O\' ou \' \' (vazio).\n\n**Linhas 12-20**: Exibe o tabuleiro formatado com índices de linha e coluna.\n\n**Linhas 23-30** (diagonal): `tabuleiro[i][i]` acessa a diagonal principal (0,0), (1,1), (2,2). Verifica se todos são iguais e não vazios.\n\n**Linhas 37-42** (contar vazias): For-each aninhado percorrendo todas as células para contar quantas estão vazias.',
+      },
+    ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        // Tabuleiro de jogo da velha
+        char[][] tab = {
+            {'X', ' ', 'O'},
+            {' ', 'X', ' '},
+            {'O', ' ', 'X'}
+        };
+
+        // Exibir
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                System.out.print("[" + tab[i][j] + "]");
+            }
+            System.out.println();
+        }
+
+        // Contar X, O e vazios
+        int x = 0, o = 0, vazio = 0;
+        for (char[] linha : tab) {
+            for (char c : linha) {
+                if (c == 'X') x++;
+                else if (c == 'O') o++;
+                else vazio++;
+            }
+        }
+        System.out.println("\\nX: " + x + " | O: " + o + " | Vazias: " + vazio);
+    }
+}`,
+    tryItPrompt: 'Modifique o tabuleiro colocando X e O em posições diferentes. Tente criar uma situação de vitória e verifique visualmente.',
+    codeFillExercises: [
+      {
+        instruction: 'Como declarar uma matriz (array 2D) de inteiros em Java?',
+        snippetBefore: '',
+        snippetAfter: '[][] notas = new int[3][4];',
+        options: ['int', 'array', 'matrix', 'Integer'],
+        correctIndex: 0,
+        explanation: 'Matrizes são declaradas com dois pares de colchetes: int[][] para inteiros. Não existe "matrix" ou "array" como tipo em Java.',
+      },
+      {
+        instruction: 'Como obter o número de LINHAS de uma matriz?',
+        snippetBefore: 'int[][] m = new int[3][4];\nint linhas = m.',
+        snippetAfter: ';',
+        options: ['length', 'rows', 'height', 'length()'],
+        correctIndex: 0,
+        explanation: 'matriz.length retorna o número de linhas (primeiro nível). Para colunas, use matriz[0].length.',
+      },
+      {
+        instruction: 'No for-each de uma matriz int[][], qual é o tipo de cada "elemento" externo?',
+        snippetBefore: 'for (',
+        snippetAfter: ' linha : matriz) { ... }',
+        options: ['int[]', 'int', 'int[][]', 'var'],
+        correctIndex: 0,
+        explanation: 'Cada "elemento" de uma int[][] é um array de uma dimensão (int[]) — ou seja, uma LINHA inteira da matriz.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'Confundir índice de linha com coluna',
+        description: 'O primeiro índice é a LINHA, o segundo é a COLUNA: matriz[linha][coluna]. Inverter pode acessar um índice inexistente.',
+        code: `int[][] m = new int[2][5]; // 2 linhas, 5 colunas
+
+// CORRETO: linha 0, coluna 4
+m[0][4] = 10;
+
+// ERRADO: linha 4 não existe! Só tem 2 linhas (0 e 1)
+// m[4][0] = 10;
+// ArrayIndexOutOfBoundsException: Index 4 out of bounds for length 2`,
+      },
+      {
+        title: 'Usar matriz.length para colunas',
+        description: 'matriz.length retorna o número de LINHAS. Para colunas, use matriz[i].length.',
+        code: `int[][] m = new int[3][4]; // 3 linhas, 4 colunas
+
+System.out.println(m.length);     // 3 (linhas)
+System.out.println(m[0].length);  // 4 (colunas da linha 0)
+
+// ERRADO: usar m.length como limite de colunas
+// for (int j = 0; j < m.length; j++) // Bug se linhas ≠ colunas!
+
+// CORRETO:
+for (int i = 0; i < m.length; i++) {        // linhas
+    for (int j = 0; j < m[i].length; j++) { // colunas
+        System.out.print(m[i][j] + " ");
+    }
+}`,
+      },
+      {
+        title: 'Esquecer que matrizes são arrays de referências',
+        description: 'Atribuir uma linha a outra com = copia a REFERÊNCIA, não os valores. Modificar uma altera a outra.',
+        code: `int[][] m = {{1, 2, 3}, {4, 5, 6}};
+
+// ERRADO: copia a referência! Mesma linha na memória
+int[] linha1 = m[0];
+linha1[0] = 99;
+System.out.println(m[0][0]); // 99! Alterou a original!
+
+// CORRETO: para cópia independente, use Arrays.copyOf
+import java.util.Arrays;
+int[] copia = Arrays.copyOf(m[0], m[0].length);
+copia[0] = 99;
+System.out.println(m[0][0]); // 1 (original intacta)`,
+      },
+    ],
+    summary: [
+      'Matrizes são arrays de arrays (bidimensionais): int[][]',
+      'Acesse elementos com [linha][coluna] — ambos começam em 0',
+      'matriz.length = número de linhas; matriz[i].length = número de colunas',
+      'Use loops aninhados: externo para linhas, interno para colunas',
+      'No for-each de matriz, cada elemento externo é um int[] (uma linha)',
+      'Matrizes podem ter linhas de tamanhos diferentes (jagged arrays)',
+      'Casos práticos: tabuleiros, tabelas de dados, grades de pixels',
+      'Cuidado com referências: atribuir linha com = copia a referência, não valores',
+    ],
   },
 
   'm1-functions': {
-    id: 'm1-functions', moduleId: 1,
-    objectives: ['Criar métodos com parâmetros e retorno', 'Entender void, return e escopo', 'Conhecer sobrecarga de métodos'],
+    id: 'm1-functions',
+    moduleId: 1,
+    objectives: [
+      'Entender por que métodos são essenciais para organizar código',
+      'Criar métodos com parâmetros e retorno',
+      'Diferenciar métodos void de métodos com return',
+      'Entender escopo de variáveis (locais vs parâmetros)',
+      'Conhecer e aplicar sobrecarga de métodos (overloading)',
+    ],
     sections: [
-      { title: 'O que são Métodos?', body: 'Métodos (funções) são blocos de código reutilizáveis. Eles organizam o código, evitam repetição e facilitam a manutenção.',
-        code: `public class Calculadora {
-    
-    // Método com retorno
+      // ────────── SEÇÃO 1: Por que Métodos? ──────────
+      {
+        title: 'Por que Usar Métodos?',
+        body: 'Métodos (funções) são **blocos de código reutilizáveis** com um nome. Em vez de copiar e colar o mesmo trecho várias vezes, você cria um método e **chama** ele quando precisar.\n\nVantagens:\n- **Reutilização**: escreva uma vez, use quantas vezes quiser\n- **Organização**: cada método faz UMA coisa — código mais limpo\n- **Manutenção**: precisa mudar a lógica? Mude em UM lugar só\n- **Legibilidade**: `calcularMedia(notas)` é mais claro que 5 linhas de cálculo\n\nEstrutura de um método:\n`tipoRetorno nomeMetodo(parâmetros) { corpo }`',
+        code: `public class SemMetodos {
+    public static void main(String[] args) {
+        // SEM métodos: código repetido!
+        int[] notasAna = {8, 7, 9};
+        int somaAna = 0;
+        for (int n : notasAna) somaAna += n;
+        double mediaAna = (double) somaAna / notasAna.length;
+        System.out.println("Ana: " + mediaAna);
+
+        int[] notasBruno = {6, 8, 7};
+        int somaBruno = 0;
+        for (int n : notasBruno) somaBruno += n;
+        double mediaBruno = (double) somaBruno / notasBruno.length;
+        System.out.println("Bruno: " + mediaBruno);
+
+        // Imagina fazer isso para 40 alunos...
+        // Se precisar mudar o cálculo, precisa mudar em 40 lugares!
+    }
+}`,
+        codeExplanation: '**O problema**: O mesmo código de cálculo de média é repetido para cada aluno. Com 40 alunos, seriam 40 cópias. Se o cálculo precisar mudar (ex: média ponderada), você teria que alterar 40 vezes — e provavelmente esqueceria algum.',
+      },
+
+      // ────────── SEÇÃO 2: Criando Métodos ──────────
+      {
+        title: 'Criando Métodos — Estrutura Completa',
+        body: 'Um método tem: **tipo de retorno** (o que devolve), **nome**, **parâmetros** (dados de entrada) e **corpo** (o que faz).\n\n- **void**: não retorna nada — apenas executa uma ação (imprimir, modificar, etc.)\n- **return**: devolve um valor para quem chamou o método\n\nPor enquanto, todos os métodos são `static` (podem ser chamados sem criar objeto). Isso vai mudar quando você aprender Orientação a Objetos.',
+        code: `public class ComMetodos {
+
+    // ═══ MÉTODO COM RETORNO ═══
+    // Recebe um array, calcula e RETORNA a média
+    public static double calcularMedia(int[] notas) {
+        int soma = 0;
+        for (int n : notas) {
+            soma += n;
+        }
+        return (double) soma / notas.length;
+    }
+
+    // ═══ MÉTODO VOID (sem retorno) ═══
+    // Recebe nome e média, apenas imprime
+    public static void exibirResultado(String nome, double media) {
+        String status = (media >= 7) ? "Aprovado" : "Reprovado";
+        System.out.println(nome + ": média " + media + " - " + status);
+    }
+
+    // ═══ MÉTODO COM MÚLTIPLAS CONDIÇÕES ═══
+    public static char calcularConceito(double media) {
+        if (media >= 9) return 'A';
+        if (media >= 7) return 'B';
+        if (media >= 5) return 'C';
+        return 'D';
+    }
+
+    public static void main(String[] args) {
+        // Agora é limpo e reutilizável!
+        int[] notasAna = {8, 7, 9};
+        int[] notasBruno = {6, 8, 7};
+        int[] notasCarla = {9, 10, 8};
+
+        double mediaAna = calcularMedia(notasAna);
+        double mediaBruno = calcularMedia(notasBruno);
+        double mediaCarla = calcularMedia(notasCarla);
+
+        exibirResultado("Ana", mediaAna);
+        exibirResultado("Bruno", mediaBruno);
+        exibirResultado("Carla", mediaCarla);
+
+        System.out.println("\\nConceito Ana: " + calcularConceito(mediaAna));
+    }
+}`,
+        codeExplanation: '**Linha 5** (`public static double calcularMedia(int[] notas)`): Tipo de retorno é `double`. Recebe um array de inteiros como parâmetro. O `return` devolve o resultado.\n\n**Linha 15** (`public static void exibirResultado(...)`): `void` significa que não retorna nada — apenas executa uma ação (imprimir).\n\n**Linhas 22-26** (`calcularConceito`): Múltiplos `return` — o método encerra assim que encontra o primeiro return. Se media é 8.5, testa `>= 9` (false), depois `>= 7` (true) e retorna \'B\'.\n\n**Linhas 35-37** (chamadas): `calcularMedia(notasAna)` passa o array da Ana como argumento. O retorno é guardado em `mediaAna`. O mesmo método funciona para qualquer aluno — ZERO código repetido.',
+        tip: 'Um bom método faz UMA coisa e faz bem. Se o método está ficando grande (30+ linhas) ou fazendo várias coisas, considere dividi-lo em métodos menores.',
+      },
+
+      // ────────── SEÇÃO 3: Escopo e Sobrecarga ──────────
+      {
+        title: 'Escopo de Variáveis e Sobrecarga',
+        body: '**Escopo** é onde uma variável existe e pode ser usada:\n- **Variáveis locais**: existem apenas dentro do método onde foram declaradas\n- **Parâmetros**: são variáveis locais que recebem valor na chamada do método\n- Dois métodos podem ter variáveis com o mesmo nome — são independentes\n\n**Sobrecarga (overloading)**: criar vários métodos com o **mesmo nome** mas **parâmetros diferentes**. O Java escolhe qual chamar baseado nos argumentos.',
+        code: `public class EscopoESobrecarga {
+
+    // ═══ SOBRECARGA: mesmo nome, parâmetros diferentes ═══
     public static int somar(int a, int b) {
         return a + b;
     }
-    
-    // Método void (sem retorno)
-    public static void saudacao(String nome) {
-        System.out.println("Olá, " + nome + "!");
-    }
-    
-    // Sobrecarga: mesmo nome, parâmetros diferentes
+
     public static double somar(double a, double b) {
         return a + b;
     }
-    
+
+    public static int somar(int a, int b, int c) {
+        return a + b + c;
+    }
+
+    // ═══ ESCOPO DE VARIÁVEIS ═══
+    public static void metodoA() {
+        int x = 10;  // x existe SÓ aqui dentro
+        System.out.println("metodoA: x = " + x);
+    }
+
+    public static void metodoB() {
+        int x = 20;  // outro x, independente!
+        System.out.println("metodoB: x = " + x);
+    }
+
     public static void main(String[] args) {
-        int resultado = somar(5, 3);    // chama somar(int, int)
-        double res2 = somar(2.5, 3.7);  // chama somar(double, double)
-        saudacao("Maria");
-        
-        System.out.println(resultado); // 8
-        System.out.println(res2);      // 6.2
+        // ═══ SOBRECARGA EM AÇÃO ═══
+        System.out.println(somar(5, 3));        // chama somar(int, int) → 8
+        System.out.println(somar(2.5, 3.7));    // chama somar(double, double) → 6.2
+        System.out.println(somar(1, 2, 3));     // chama somar(int, int, int) → 6
+
+        // ═══ ESCOPO ═══
+        metodoA();  // imprime 10
+        metodoB();  // imprime 20
+        // System.out.println(x); // ERRO! x não existe aqui
+
+        // Parâmetro é cópia (para tipos primitivos)
+        int valor = 100;
+        dobrar(valor);
+        System.out.println("valor: " + valor);  // 100 (não mudou!)
+    }
+
+    public static void dobrar(int n) {
+        n = n * 2;  // muda apenas a cópia local
+        System.out.println("Dentro: " + n);  // 200
     }
 }`,
-        codeExplanation: 'Sobrecarga permite criar métodos com o mesmo nome mas parâmetros diferentes. O Java escolhe o método correto baseado nos argumentos passados.',
+        codeExplanation: '**Linhas 4-14** (sobrecarga): Três métodos chamados `somar`, diferenciados pelos parâmetros. O Java escolhe automaticamente: `somar(5, 3)` chama a versão int×2; `somar(2.5, 3.7)` chama a versão double.\n\n**Linhas 17-25** (escopo): `x` em `metodoA` e `x` em `metodoB` são variáveis completamente independentes. Não "se enxergam".\n\n**Linhas 37-38** (`metodoA()` e `metodoB()`): Cada método imprime seu próprio `x` sem interferir no outro.\n\n**Linhas 41-47** (passagem por valor): Tipos primitivos são passados por CÓPIA. `dobrar(valor)` recebe uma cópia de 100 — alterar `n` dentro do método NÃO altera `valor` fora dele.',
+        warning: 'Tipos primitivos são passados por VALOR (cópia). Alterar o parâmetro dentro do método NÃO altera a variável original. Arrays e objetos são passados por referência.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual palavra-chave indica que um método não retorna valor?', snippetBefore: 'public static ', snippetAfter: ' saudacao(String nome) { ... }', options: ['void', 'null', 'none', 'empty'], correctIndex: 0, explanation: 'void indica que o método não retorna nenhum valor.' },
-    ],
-    summary: ['Métodos organizam e reutilizam código', 'void = sem retorno, return = com retorno', 'Sobrecarga: mesmo nome, parâmetros diferentes', 'Variáveis locais existem apenas dentro do método'],
     tryItCode: `public class Main {
+    // Crie seus métodos aqui!
+    public static double calcularMedia(int[] notas) {
+        int soma = 0;
+        for (int n : notas) soma += n;
+        return (double) soma / notas.length;
+    }
+
     public static int somar(int a, int b) {
         return a + b;
     }
+
+    public static double somar(double a, double b) {
+        return a + b;
+    }
+
     public static void main(String[] args) {
-        System.out.println("5 + 3 = " + somar(5, 3));
-        System.out.println("10 + 20 = " + somar(10, 20));
-        // Altere os números na chamada ou crie outro método.
+        // Testando calcularMedia
+        int[] notas = {8, 7, 9, 10};
+        System.out.println("Média: " + calcularMedia(notas));
+
+        // Testando sobrecarga
+        System.out.println("int: " + somar(5, 3));
+        System.out.println("double: " + somar(2.5, 3.7));
+
+        // Crie um método multiplicar e teste aqui!
     }
 }`,
-    tryItPrompt: 'Altere os argumentos de somar() ou crie um método multiplicar().',
+    tryItPrompt: 'Crie um método multiplicar(int a, int b) que retorna o produto. Teste com diferentes valores. Tente criar uma versão sobrecarregada para double.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual palavra-chave indica que um método NÃO retorna valor?',
+        snippetBefore: 'public static ',
+        snippetAfter: ' exibirMensagem(String msg) { ... }',
+        options: ['void', 'null', 'none', 'empty'],
+        correctIndex: 0,
+        explanation: 'void significa "vazio" — o método executa uma ação mas não retorna nenhum valor. Métodos void não usam return com valor.',
+      },
+      {
+        instruction: 'Qual palavra-chave devolve um valor do método para quem o chamou?',
+        snippetBefore: 'public static int somar(int a, int b) {\n    ',
+        snippetAfter: ' a + b;\n}',
+        options: ['return', 'give', 'send', 'output'],
+        correctIndex: 0,
+        explanation: 'return encerra o método e devolve o valor especificado. O tipo do valor deve corresponder ao tipo de retorno declarado.',
+      },
+      {
+        instruction: 'Como se chama a técnica de criar métodos com o mesmo nome mas parâmetros diferentes?',
+        snippetBefore: '// int somar(int a, int b)\n// double somar(double a, double b)\n// Isso é ',
+        snippetAfter: ' de métodos',
+        options: ['sobrecarga', 'sobrescrita', 'herança', 'polimorfismo'],
+        correctIndex: 0,
+        explanation: 'Sobrecarga (overloading) permite métodos com mesmo nome mas tipos/quantidade de parâmetros diferentes. Sobrescrita (overriding) é outro conceito que envolve herança.',
+      },
+    ],
+    commonErrors: [
+      {
+        title: 'Esquecer o return em método com retorno',
+        description: 'Se o método declara um tipo de retorno (int, double, String, etc.), ele DEVE ter return em todos os caminhos possíveis. Esquecer causa erro de compilação.',
+        code: `// ERRADO: "missing return statement"
+public static int maiorDeDois(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    // Se a <= b, não tem return! Erro de compilação!
+}
+
+// CORRETO: return em todos os caminhos
+public static int maiorDeDois(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;  // cobre o caso a <= b
+}`,
+      },
+      {
+        title: 'Achar que alterar parâmetro muda a variável original',
+        description: 'Tipos primitivos são passados por valor (cópia). Alterar o parâmetro dentro do método NÃO altera a variável original fora dele.',
+        code: `public static void dobrar(int n) {
+    n = n * 2;  // muda apenas a CÓPIA local
+}
+
+public static void main(String[] args) {
+    int valor = 10;
+    dobrar(valor);
+    System.out.println(valor); // 10 (NÃO mudou!)
+
+    // Para "retornar" o resultado, use return:
+    // public static int dobrar(int n) { return n * 2; }
+    // valor = dobrar(valor);  // agora valor = 20
+}`,
+      },
+      {
+        title: 'Confundir sobrecarga com redefinição',
+        description: 'Sobrecarga exige que os PARÂMETROS sejam diferentes. Mudar apenas o tipo de retorno NÃO é sobrecarga — causa erro de compilação.',
+        code: `// ERRADO: mesmo nome E mesmos parâmetros (só muda retorno)
+// public static int converter(String s) { return Integer.parseInt(s); }
+// public static double converter(String s) { return Double.parseDouble(s); }
+// Erro: method converter(String) is already defined
+
+// CORRETO: parâmetros diferentes
+public static int converter(String s) {
+    return Integer.parseInt(s);
+}
+public static int converter(String s, int base) {  // parâmetro a mais!
+    return Integer.parseInt(s, base);
+}`,
+      },
+    ],
+    summary: [
+      'Métodos organizam código em blocos reutilizáveis com nome',
+      'Estrutura: tipoRetorno nomeMetodo(parâmetros) { corpo }',
+      'void = sem retorno (executa ação); return = devolve valor',
+      'Parâmetros são como variáveis locais que recebem valor na chamada',
+      'Variáveis locais só existem dentro do método (escopo)',
+      'Sobrecarga: métodos com mesmo nome mas parâmetros diferentes',
+      'Java escolhe o método sobrecarregado baseado nos argumentos',
+      'Tipos primitivos são passados por valor (cópia) — alterar parâmetro não altera o original',
+      'Um bom método faz UMA coisa e tem nome descritivo',
+    ],
   },
 
   'm2-io': {
-    id: 'm2-io', moduleId: 2,
-    objectives: ['Ler dados do usuário com Scanner', 'Entender boas práticas de entrada/saída', 'Evitar o bug do buffer ao misturar nextInt/nextDouble com nextLine'],
+    id: 'm2-io',
+    moduleId: 2,
+    objectives: [
+      'Ler dados do usuário com a classe Scanner',
+      'Conhecer os diferentes métodos de leitura (nextLine, nextInt, next, etc.)',
+      'Entender e evitar o bug do buffer (\\n perdido)',
+      'Validar entradas do usuário com hasNextInt/hasNextDouble',
+      'Formatar saída com System.out.printf',
+    ],
     sections: [
-      { title: 'Scanner para Entrada de Dados', body: 'O Scanner é a forma mais comum de ler dados digitados pelo usuário no console em Java. Ele lê a partir de System.in (entrada padrão) e oferece métodos como nextInt(), nextDouble(), nextLine(), etc., que interpretam o texto digitado.\n\nUse nextLine() para linhas completas (nome, endereço), nextInt() e nextDouble() para números. Um detalhe importante: após ler um número com nextInt() ou nextDouble(), o Enter que o usuário digitou fica no buffer. Se você não consumir essa quebra de linha com um nextLine() em seguida, o próximo nextLine() vai "engolir" essa linha vazia e parecer que pulou a leitura. Sempre que misturar leitura de números e de texto, chame nextLine() após o número para limpar o buffer.',
-        code: `import java.util.Scanner;
+      // ────────── SEÇÃO 1: Scanner — Entrada de Dados ──────────
+      {
+        title: 'Scanner — Lendo Dados do Usuário',
+        body: 'Até agora seus programas usam dados "fixos" no código. Para criar programas interativos, você precisa **ler dados do teclado**. A classe `Scanner` (do pacote `java.util`) é a forma mais comum de fazer isso em Java.\n\nO Scanner lê a partir de `System.in` (entrada padrão = teclado) e oferece métodos para ler diferentes tipos de dados: `nextLine()` para texto, `nextInt()` para inteiro, `nextDouble()` para decimal, etc.',
+        code: `import java.util.Scanner;  // precisa importar!
 
 public class EntradaDados {
     public static void main(String[] args) {
+        // Criar o Scanner ligado à entrada padrão (teclado)
         Scanner scanner = new Scanner(System.in);
-        
-        System.out.print("Digite seu nome: ");
-        String nome = scanner.nextLine();
-        
+
+        // ═══ LENDO TEXTO ═══
+        System.out.print("Digite seu nome: ");  // print SEM ln (fica na mesma linha)
+        String nome = scanner.nextLine();        // lê a linha inteira
+
+        // ═══ LENDO NÚMERO INTEIRO ═══
         System.out.print("Digite sua idade: ");
         int idade = scanner.nextInt();
-        scanner.nextLine(); // limpa o buffer (importante!)
-        
+        scanner.nextLine();  // ← LIMPA O BUFFER! (explicação abaixo)
+
+        // ═══ LENDO NÚMERO DECIMAL ═══
         System.out.print("Digite seu salário: ");
         double salario = scanner.nextDouble();
-        
-        System.out.println("Nome: " + nome + ", Idade: " + idade);
-        
-        scanner.close(); // sempre fechar o scanner
+        scanner.nextLine();  // ← LIMPA O BUFFER!
+
+        // ═══ LENDO TEXTO DEPOIS DE NÚMERO ═══
+        System.out.print("Digite sua cidade: ");
+        String cidade = scanner.nextLine();  // funciona por causa do nextLine() acima
+
+        // Exibindo
+        System.out.println("\\n=== Dados ===");
+        System.out.println("Nome: " + nome);
+        System.out.println("Idade: " + idade);
+        System.out.println("Salário: R$ " + salario);
+        System.out.println("Cidade: " + cidade);
+
+        scanner.close();  // SEMPRE fechar quando terminar
     }
 }`,
-        codeExplanation: 'Criamos o Scanner com System.in. Cada next...() lê o próximo token ou linha. O nextLine() após nextInt() evita que o Enter fique no buffer e atrapalhe a próxima leitura.',
-        warning: 'Após nextInt() ou nextDouble(), sempre chame nextLine() para limpar o buffer do teclado. Caso contrário, o próximo nextLine() será pulado!',
+        codeExplanation: '**Linha 1** (`import java.util.Scanner`): Scanner não é carregado automaticamente — precisa importar.\n\n**Linha 6** (`new Scanner(System.in)`): Cria um Scanner conectado ao teclado. Existe durante toda a execução do programa.\n\n**Linha 10** (`scanner.nextLine()`): Lê TUDO que o usuário digitar até pressionar Enter. Retorna como String.\n\n**Linha 14** (`scanner.nextInt()`): Lê o próximo inteiro. Se o usuário digitar "abc", lança InputMismatchException.\n\n**Linha 15** (`scanner.nextLine()` para limpar buffer): CRUCIAL! Após nextInt() ou nextDouble(), o Enter (\\n) que o usuário digitou fica no buffer. Esse nextLine() "engole" o \\n perdido. Sem isso, o próximo nextLine() leria uma linha vazia.\n\n**Linha 33** (`scanner.close()`): Libera o recurso System.in. Boa prática — sempre fechar.',
+        warning: 'O BUG MAIS COMUM com Scanner: após nextInt() ou nextDouble(), o Enter fica no buffer! SEMPRE chame scanner.nextLine() depois de ler números se for ler texto em seguida.',
       },
-      { title: 'Quando usar cada método', body: 'next() lê até o próximo espaço ou quebra de linha. nextLine() lê a linha inteira. nextInt(), nextDouble(), nextBoolean() leem um valor daquele tipo. Para ler vários números na mesma linha, você pode usar nextInt() várias vezes ou ler a linha com nextLine() e depois fazer split() e Integer.parseInt().',
+
+      // ────────── SEÇÃO 2: Métodos do Scanner ──────────
+      {
+        title: 'Métodos de Leitura — Quando Usar Cada Um',
+        body: 'O Scanner oferece vários métodos, cada um para uma situação:\n\n- **nextLine()**: Lê a linha INTEIRA até o Enter. Use para nomes, endereços, frases.\n- **next()**: Lê até o próximo ESPAÇO ou Enter. Use para uma palavra só.\n- **nextInt()**: Lê o próximo inteiro. Lança erro se não for número.\n- **nextDouble()**: Lê o próximo decimal. Atenção: usa vírgula ou ponto dependendo do locale.\n- **hasNextInt()** / **hasNextDouble()**: Verifica SE o próximo valor é do tipo esperado (sem ler). Perfeito para validação.',
+        code: `import java.util.Scanner;
+
+public class MetodosScanner {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // ═══ next() vs nextLine() ═══
+        System.out.print("Digite nome completo: ");
+        String nomeCompleto = sc.nextLine();  // "João Silva" → "João Silva"
+
+        // Se usasse next():
+        // String nome = sc.next();  // "João Silva" → "João" (só primeira palavra!)
+
+        // ═══ VALIDAÇÃO COM hasNextInt() ═══
+        System.out.print("Digite um número: ");
+        if (sc.hasNextInt()) {
+            int num = sc.nextInt();
+            System.out.println("Você digitou: " + num);
+        } else {
+            System.out.println("Isso não é um número!");
+            sc.next();  // descarta a entrada inválida
+        }
+        sc.nextLine();  // limpa buffer
+
+        // ═══ LOOP DE VALIDAÇÃO ═══
+        int idade = -1;
+        while (idade < 0 || idade > 150) {
+            System.out.print("Digite idade (0-150): ");
+            if (sc.hasNextInt()) {
+                idade = sc.nextInt();
+                sc.nextLine();
+                if (idade < 0 || idade > 150) {
+                    System.out.println("Idade inválida! Tente novamente.");
+                }
+            } else {
+                System.out.println("Digite um número!");
+                sc.nextLine();  // descarta entrada inválida
+            }
+        }
+        System.out.println("Idade aceita: " + idade);
+
+        sc.close();
+    }
+}`,
+        codeExplanation: '**Linha 9** (`sc.nextLine()`): Lê "João Silva" completo. Se usasse `sc.next()`, leria apenas "João" — o "Silva" ficaria no buffer.\n\n**Linha 16** (`sc.hasNextInt()`): Verifica se o próximo token é um inteiro SEM ler ele. Retorna true ou false. Evita InputMismatchException.\n\n**Linhas 26-39** (loop de validação): Padrão robusto — repete a leitura enquanto o valor for inválido. Usa `hasNextInt()` para verificar se é número, e depois valida a faixa.',
+        tip: 'Para entrada robusta, sempre combine hasNextInt()/hasNextDouble() com loops de validação. Assim seu programa nunca crasha por entrada inválida.',
+      },
+
+      // ────────── SEÇÃO 3: Saída Formatada com printf ──────────
+      {
+        title: 'Saída Formatada com printf',
+        body: 'Além de `println`, Java oferece `System.out.printf()` para **saída formatada**. É inspirado na função printf do C e permite controlar casas decimais, alinhamento e formatação de números.\n\nFormatos comuns: `%s` (String), `%d` (inteiro), `%f` (decimal), `%n` (nova linha), `%.2f` (2 casas decimais).',
+        code: `public class FormatacaoSaida {
+    public static void main(String[] args) {
+
+        String nome = "Maria";
+        int idade = 25;
+        double salario = 3500.567;
+
+        // ═══ println (concatenação) ═══
+        System.out.println("Nome: " + nome + ", Idade: " + idade);
+
+        // ═══ printf (formatação) ═══
+        System.out.printf("Nome: %s, Idade: %d%n", nome, idade);
+        System.out.printf("Salário: R$ %.2f%n", salario);  // 3500.57
+
+        // ═══ FORMATADORES ÚTEIS ═══
+        System.out.printf("Inteiro: %d%n", 42);           // 42
+        System.out.printf("Decimal 2 casas: %.2f%n", 3.14159);  // 3.14
+        System.out.printf("Decimal 4 casas: %.4f%n", 3.14159);  // 3.1416
+        System.out.printf("String: %s%n", "Java");         // Java
+
+        // ═══ ALINHAMENTO ═══
+        System.out.printf("%-20s %5d%n", "Produto A", 100);
+        System.out.printf("%-20s %5d%n", "Produto B", 25);
+        System.out.printf("%-20s %5d%n", "Produto C", 1500);
+        // Resultado:
+        // Produto A              100
+        // Produto B               25
+        // Produto C             1500
+
+        // ═══ String.format (mesma sintaxe, retorna String) ═══
+        String msg = String.format("Olá, %s! Você tem %d anos.", nome, idade);
+        System.out.println(msg);
+    }
+}`,
+        codeExplanation: '**Linha 12** (`%s` e `%d`): `%s` é substituído por nome (String), `%d` por idade (inteiro). `%n` é nova linha (portável entre SOs).\n\n**Linha 13** (`%.2f`): O `.2` limita a 2 casas decimais. 3500.567 vira 3500.57 (arredondado).\n\n**Linhas 22-24** (`%-20s %5d`): `-20s` = String alinhada à esquerda com 20 caracteres. `5d` = inteiro alinhado à direita com 5 caracteres. Resultado: tabela alinhada!\n\n**Linha 30** (`String.format`): Mesma sintaxe do printf, mas retorna uma String em vez de imprimir. Útil para montar mensagens.',
+        tip: 'printf NÃO pula linha automaticamente (diferente de println). Use %n no final para pular linha.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Qual método do Scanner lê uma linha completa de texto?', snippetBefore: 'String linha = scanner.', snippetAfter: '();', options: ['next', 'nextLine', 'readLine', 'getLine'], correctIndex: 1, explanation: 'nextLine() lê até a quebra de linha; next() lê apenas até o próximo espaço.' },
-    ],
-    summary: ['Scanner lê dados do console', 'nextLine() para texto, nextInt()/nextDouble() para números', 'Limpe o buffer com nextLine() após ler números', 'Sempre feche o Scanner com close()'],
     tryItCode: `import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.print("Digite seu nome: ");
+
+        System.out.print("Seu nome: ");
         String nome = sc.nextLine();
-        System.out.print("Digite sua idade: ");
+
+        System.out.print("Sua idade: ");
         int idade = sc.hasNextInt() ? sc.nextInt() : 0;
         sc.nextLine();
-        System.out.println("Nome: " + nome + ", Idade: " + idade);
+
+        System.out.print("Seu salário: ");
+        double salario = sc.hasNextDouble() ? sc.nextDouble() : 0;
+
+        System.out.printf("%n=== Dados ===%n");
+        System.out.printf("Nome: %s%n", nome);
+        System.out.printf("Idade: %d anos%n", idade);
+        System.out.printf("Salário: R$ %.2f%n", salario);
+
         sc.close();
     }
 }`,
-    tryItPrompt: 'Aqui a entrada é vazia; rode no seu computador (IDE/terminal) para digitar dados de verdade.',
+    tryItPrompt: 'A entrada é interativa — rode no seu computador (IDE/terminal) para digitar dados. Aqui, experimente apenas a formatação com printf.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual método do Scanner lê uma linha completa de texto (incluindo espaços)?',
+        snippetBefore: 'String nome = scanner.',
+        snippetAfter: '();',
+        options: ['next', 'nextLine', 'readLine', 'getLine'],
+        correctIndex: 1,
+        explanation: 'nextLine() lê tudo até a quebra de linha (Enter). next() lê apenas até o próximo espaço.',
+      },
+      {
+        instruction: 'O que deve ser chamado APÓS nextInt() para limpar o buffer?',
+        snippetBefore: 'int idade = scanner.nextInt();\nscanner.',
+        snippetAfter: '(); // limpa o \\n do buffer',
+        options: ['nextLine', 'clear', 'flush', 'reset'],
+        correctIndex: 0,
+        explanation: 'nextLine() consome a quebra de linha (\\n) que ficou no buffer após nextInt(). Sem isso, o próximo nextLine() leria uma linha vazia.',
+      },
+      {
+        instruction: 'Qual formatador do printf exibe um double com 2 casas decimais?',
+        snippetBefore: 'System.out.printf("Preço: R$ ',
+        snippetAfter: '%n", preco);',
+        options: ['%.2f', '%d', '%s', '%2d'],
+        correctIndex: 0,
+        explanation: '%.2f formata um double/float com 2 casas decimais. %d é para inteiros, %s para Strings.',
+      },
+    ],
     commonErrors: [
-      { title: 'Buffer após nextInt/nextDouble', description: 'Chame nextLine() depois de nextInt() ou nextDouble() para consumir a quebra de linha.' },
-      { title: 'Não fechar o Scanner', description: 'Use scanner.close() ao terminar para liberar recursos.' },
+      {
+        title: 'Bug do buffer: nextLine() "pulada" após nextInt()',
+        description: 'O erro mais comum! Após nextInt() ou nextDouble(), o Enter (\\n) fica no buffer. O próximo nextLine() lê esse \\n vazio e parece "pular" a leitura.',
+        code: `Scanner sc = new Scanner(System.in);
+
+// ERRADO: nextLine() é "pulada"!
+System.out.print("Idade: ");
+int idade = sc.nextInt();  // usuário digita "25\\n"
+// O "\\n" fica no buffer!
+
+System.out.print("Nome: ");
+String nome = sc.nextLine();  // lê o "\\n" do buffer → nome = ""
+// Parece que pulou a leitura!
+
+// CORRETO: limpar o buffer após nextInt()
+System.out.print("Idade: ");
+int idade2 = sc.nextInt();
+sc.nextLine();  // ← consome o "\\n" perdido
+
+System.out.print("Nome: ");
+String nome2 = sc.nextLine();  // agora lê corretamente!`,
+      },
+      {
+        title: 'InputMismatchException ao ler tipo errado',
+        description: 'Se o usuário digita "abc" quando nextInt() espera um número, o programa crasha. Use hasNextInt() para validar antes de ler.',
+        code: `Scanner sc = new Scanner(System.in);
+
+// ERRADO: crasha se o usuário digitar "abc"
+// int num = sc.nextInt();
+// InputMismatchException!
+
+// CORRETO: validar antes de ler
+System.out.print("Digite um número: ");
+if (sc.hasNextInt()) {
+    int num = sc.nextInt();
+    System.out.println("OK: " + num);
+} else {
+    System.out.println("Erro: isso não é um número!");
+    sc.next();  // descarta a entrada inválida
+}`,
+      },
+      {
+        title: 'Esquecer de fechar o Scanner',
+        description: 'O Scanner usa recursos do sistema (System.in). Não fechar pode causar vazamento de recursos. Sempre chame close() ao terminar.',
+        code: `Scanner sc = new Scanner(System.in);
+
+// ... usa o scanner ...
+
+// ERRADO: não fecha
+// O recurso System.in fica alocado
+
+// CORRETO: sempre fechar
+sc.close();
+
+// MELHOR AINDA: try-with-resources (fecha automaticamente)
+// try (Scanner sc2 = new Scanner(System.in)) {
+//     // usa sc2
+// } // fechado automaticamente aqui`,
+      },
+    ],
+    summary: [
+      'Scanner lê dados do teclado via System.in — precisa importar java.util.Scanner',
+      'nextLine() lê a linha inteira; next() lê até o espaço; nextInt()/nextDouble() leem números',
+      'BUG DO BUFFER: após nextInt()/nextDouble(), chame nextLine() para limpar o \\n residual',
+      'hasNextInt()/hasNextDouble() verificam o tipo ANTES de ler — evitam InputMismatchException',
+      'Sempre feche o Scanner com close() ao terminar',
+      'printf formata a saída: %s (String), %d (inteiro), %.2f (decimal 2 casas), %n (nova linha)',
+      'String.format() tem a mesma sintaxe do printf mas retorna String',
+      'Use print (sem ln) para manter o cursor na mesma linha (ideal antes de ler dados)',
     ],
   },
 
   'm2-strings': {
-    id: 'm2-strings', moduleId: 2,
-    objectives: ['Dominar os principais métodos de String', 'Entender imutabilidade e StringBuilder', 'Saber quando usar StringBuilder em loops'],
+    id: 'm2-strings',
+    moduleId: 2,
+    objectives: [
+      'Dominar os principais métodos de String (busca, transformação, divisão)',
+      'Entender por que Strings são imutáveis e as consequências',
+      'Usar StringBuilder para concatenação eficiente em loops',
+      'Comparar Strings corretamente com equals() e equalsIgnoreCase()',
+      'Aplicar split(), trim(), substring() em problemas reais',
+    ],
     sections: [
-      { title: 'Métodos Essenciais de String', body: 'Strings em Java são imutáveis: você não altera o conteúdo de um objeto String. Métodos como toUpperCase(), trim(), replace() retornam uma NOVA String; a original permanece igual. Por isso é comum fazer: texto = texto.trim(); para "atualizar" a variável com a versão sem espaços.\n\nOs métodos mais usados são: length(), charAt(i), substring(início, fim), indexOf(str), contains(str), startsWith/endsWith, replace, split(regex), trim(), toUpperCase()/toLowerCase(), e para comparar conteúdo use sempre equals() ou equalsIgnoreCase(), nunca ==.',
-        code: `String texto = "  Java é incrível!  ";
-
-// Limpeza
-texto.trim();           // "Java é incrível!" (remove espaços)
-texto.strip();          // "Java é incrível!" (remove espaços Unicode)
-
-// Busca
-texto.contains("Java"); // true
-texto.indexOf("é");     // 7 (posição)
-texto.startsWith("  J"); // true
-texto.endsWith("!  ");  // true
-
-// Transformação
-texto.toUpperCase();     // "  JAVA É INCRÍVEL!  "
-texto.replace("Java", "Python"); // "  Python é incrível!  "
-
-// Divisão
-String csv = "nome,idade,cidade";
-String[] partes = csv.split(","); // ["nome", "idade", "cidade"]
-
-// StringBuilder para concatenação eficiente
-StringBuilder sb = new StringBuilder();
-for (int i = 0; i < 100; i++) {
-    sb.append("Item ").append(i).append(", ");
-}
-String resultado = sb.toString();`,
-        codeExplanation: 'trim() e strip() removem espaços nas pontas. indexOf retorna a posição (ou -1). split() quebra em um array. StringBuilder evita criar várias Strings ao concatenar em loop.',
-        tip: 'Para concatenar strings em loops, use StringBuilder. Concatenar com + dentro de loops cria muitos objetos desnecessários.',
-      },
-      { title: 'Comparando Strings', body: 'Nunca use == para comparar conteúdo. Use s1.equals(s2) ou s1.equalsIgnoreCase(s2). O == compara se são o mesmo objeto na memória, não o texto.',
-      },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual método divide uma String em um array usando um separador?', snippetBefore: 'String[] partes = "a,b,c".', snippetAfter: '(",");', options: ['split', 'divide', 'break', 'cut'], correctIndex: 0, explanation: 'split(regex) divide a String e retorna um array de partes.' },
-    ],
-    summary: ['Strings são imutáveis em Java', 'Use .equals() para comparar, nunca ==', 'StringBuilder é mais eficiente para concatenações em loop', 'split() divide, trim() limpa espaços'],
-    tryItCode: `public class Main {
+      // ────────── SEÇÃO 1: Métodos Essenciais ──────────
+      {
+        title: 'Métodos Essenciais de String',
+        body: 'Strings em Java são **imutáveis**: quando você chama `texto.toUpperCase()`, a String original **NÃO muda** — o método retorna uma **NOVA String**. Para "atualizar", reatribua: `texto = texto.toUpperCase();`.\n\nEstes são os métodos que você vai usar todos os dias:',
+        code: `public class MetodosString {
     public static void main(String[] args) {
-        String s = "  Java Intermediario  ";
-        System.out.println("Original: [" + s + "]");
-        System.out.println("Trim: [" + s.trim() + "]");
-        System.out.println("Maiusculas: " + s.trim().toUpperCase());
-        String[] partes = "a,b,c".split(",");
-        for (String p : partes) System.out.println("Parte: " + p);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hello ").append("World");
-        System.out.println(sb);
+
+        String texto = "  Java é incrível!  ";
+
+        // ═══ TAMANHO ═══
+        System.out.println(texto.length());         // 20
+
+        // ═══ LIMPEZA DE ESPAÇOS ═══
+        System.out.println("[" + texto.trim() + "]");   // [Java é incrível!]
+        System.out.println("[" + texto.strip() + "]");  // [Java é incrível!] (Java 11+)
+
+        // ═══ MAIÚSCULAS / MINÚSCULAS ═══
+        String limpo = texto.trim();
+        System.out.println(limpo.toUpperCase());   // JAVA É INCRÍVEL!
+        System.out.println(limpo.toLowerCase());   // java é incrível!
+
+        // ═══ ACESSAR CARACTERE ═══
+        System.out.println(limpo.charAt(0));       // 'J'
+        System.out.println(limpo.charAt(limpo.length() - 1)); // '!'
+
+        // ═══ BUSCA ═══
+        System.out.println(limpo.contains("Java"));    // true
+        System.out.println(limpo.indexOf("é"));        // 5 (posição)
+        System.out.println(limpo.indexOf("Python"));   // -1 (não encontrou)
+        System.out.println(limpo.startsWith("Java"));  // true
+        System.out.println(limpo.endsWith("!"));       // true
+
+        // ═══ RECORTAR (substring) ═══
+        System.out.println(limpo.substring(0, 4));     // "Java"
+        System.out.println(limpo.substring(5));        // "é incrível!"
+
+        // ═══ SUBSTITUIR ═══
+        System.out.println(limpo.replace("Java", "Python"));
+        // "Python é incrível!"
+
+        // ═══ DIVIDIR (split) ═══
+        String csv = "Ana,25,São Paulo";
+        String[] partes = csv.split(",");
+        // partes[0] = "Ana", partes[1] = "25", partes[2] = "São Paulo"
+        for (String p : partes) {
+            System.out.println("-> " + p);
+        }
+
+        // ═══ VERIFICAÇÕES ═══
+        System.out.println("".isEmpty());          // true (string vazia)
+        System.out.println("  ".isBlank());        // true (só espaços, Java 11+)
     }
 }`,
-    tryItPrompt: 'Altere a String s e os métodos usados; teste split com outro separador.',
+        codeExplanation: '**Linha 10** (`trim()`): Remove espaços em branco do início e fim. `strip()` (Java 11+) faz o mesmo mas reconhece espaços Unicode.\n\n**Linha 26** (`indexOf("é")`): Retorna a posição da primeira ocorrência. Retorna **-1** se não encontrar — sempre verifique!\n\n**Linha 32** (`substring(0, 4)`): Retorna do índice 0 (incluso) ao 4 (excluso). `substring(5)` retorna do índice 5 até o final.\n\n**Linha 39** (`split(",")`): Divide a String onde encontrar a vírgula. Retorna um array. O separador pode ser qualquer regex.\n\n**Linha 46** (`isEmpty()` e `isBlank()`): `isEmpty()` verifica se length() == 0. `isBlank()` (Java 11+) verifica se só tem espaços.',
+        tip: 'Lembre: Strings são imutáveis! texto.toUpperCase() NÃO muda texto — retorna uma nova String. Para "atualizar": texto = texto.toUpperCase();',
+      },
+
+      // ────────── SEÇÃO 2: Comparação de Strings ──────────
+      {
+        title: 'Comparando Strings — O Erro que Todo Iniciante Comete',
+        body: '**NUNCA use `==` para comparar Strings!** O `==` compara se são o **mesmo objeto na memória**, não o conteúdo do texto. Use `.equals()` para comparar conteúdo e `.equalsIgnoreCase()` para ignorar maiúsculas/minúsculas.\n\nIsso acontece porque String é um tipo de referência (objeto), não primitivo. O `==` compara referências (endereços de memória), não valores.',
+        code: `public class CompararStrings {
+    public static void main(String[] args) {
+
+        // ═══ O PERIGO DO == ═══
+        String a = new String("Java");
+        String b = new String("Java");
+
+        System.out.println(a == b);       // false! (objetos diferentes!)
+        System.out.println(a.equals(b));  // true!  (conteúdo igual)
+
+        // ═══ POR QUE ÀS VEZES == "FUNCIONA" ═══
+        String c = "Java";     // pool de strings
+        String d = "Java";     // reutiliza do pool
+        System.out.println(c == d);       // true (mesmo objeto no pool!)
+        System.out.println(c.equals(d));  // true
+        // MAS ISSO É COINCIDÊNCIA! Não confie nisso!
+
+        // ═══ COMPARAÇÃO IGNORANDO CASE ═══
+        String email1 = "usuario@email.com";
+        String email2 = "USUARIO@EMAIL.COM";
+        System.out.println(email1.equals(email2));           // false
+        System.out.println(email1.equalsIgnoreCase(email2)); // true
+
+        // ═══ COMPARAÇÃO PARA ORDENAÇÃO ═══
+        String x = "banana";
+        String y = "abacate";
+        int cmp = x.compareTo(y);
+        // cmp > 0 → x vem DEPOIS de y
+        // cmp < 0 → x vem ANTES de y
+        // cmp == 0 → iguais
+        System.out.println("banana vs abacate: " + cmp); // positivo
+
+        // ═══ EVITAR NullPointerException ═══
+        String nome = null;
+        // nome.equals("Java");  // NullPointerException!
+        // Truque: coloque o literal primeiro:
+        System.out.println("Java".equals(nome)); // false (sem erro!)
+    }
+}`,
+        codeExplanation: '**Linhas 5-9**: `new String("Java")` cria dois objetos DIFERENTES na memória. `==` compara referências (endereços) → false. `.equals()` compara conteúdo → true.\n\n**Linhas 12-16**: Strings literais são armazenadas em um "pool". `"Java"` e `"Java"` apontam para o mesmo objeto. Por isso `==` dá true — mas é coincidência, não confie!\n\n**Linha 23** (`equalsIgnoreCase`): Ignora diferença entre maiúsculas e minúsculas. Perfeito para emails, usernames, etc.\n\n**Linha 36** (`"Java".equals(nome)`): Se `nome` for null e você chamar `nome.equals(...)`, dá NullPointerException. Colocar o literal primeiro evita isso.',
+        warning: 'REGRA DE OURO: sempre use .equals() para comparar Strings. O == pode "funcionar" com literais por causa do pool, mas vai falhar com strings vindas de Scanner, concatenação ou new.',
+      },
+
+      // ────────── SEÇÃO 3: StringBuilder ──────────
+      {
+        title: 'StringBuilder — Concatenação Eficiente',
+        body: 'Como Strings são imutáveis, cada concatenação com `+` cria um **NOVO objeto String**. Em um loop com 1000 iterações, são 1000 Strings intermediárias criadas e descartadas — desperdício!\n\n`StringBuilder` resolve isso: ele mantém um buffer mutável e só cria a String final quando você chama `.toString()`. Use StringBuilder sempre que concatenar em loops.',
+        code: `public class ExemploStringBuilder {
+    public static void main(String[] args) {
+
+        // ═══ PROBLEMA: concatenação com + em loop ═══
+        // Cada += cria uma nova String! Muito ineficiente.
+        String resultado1 = "";
+        for (int i = 0; i < 5; i++) {
+            resultado1 += "item" + i + " ";
+            // Cria: "", "item0 ", "item0 item1 ", ...
+            // 5 objetos String intermediários descartados!
+        }
+        System.out.println(resultado1);
+
+        // ═══ SOLUÇÃO: StringBuilder ═══
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            sb.append("item").append(i).append(" ");
+            // Modifica o mesmo buffer! Nenhum objeto intermediário.
+        }
+        String resultado2 = sb.toString(); // cria a String final
+        System.out.println(resultado2);
+
+        // ═══ MÉTODOS DO STRINGBUILDER ═══
+        StringBuilder texto = new StringBuilder("Olá");
+        texto.append(" Mundo");          // "Olá Mundo"
+        texto.insert(3, ",");            // "Olá, Mundo"
+        texto.replace(5, 10, "Java");    // "Olá, Java"
+        texto.delete(3, 5);              // "Olá Java"
+        texto.reverse();                 // "avaJ álO"
+
+        System.out.println(texto);
+        System.out.println("Tamanho: " + texto.length());
+
+        // ═══ EXEMPLO PRÁTICO: formatar lista ═══
+        String[] frutas = {"Maçã", "Banana", "Laranja"};
+        StringBuilder lista = new StringBuilder();
+        for (int i = 0; i < frutas.length; i++) {
+            lista.append(frutas[i]);
+            if (i < frutas.length - 1) {
+                lista.append(", ");
+            }
+        }
+        System.out.println(lista.toString()); // "Maçã, Banana, Laranja"
+    }
+}`,
+        codeExplanation: '**Linhas 6-11** (problema): Cada `+=` cria uma nova String — a antiga é descartada. Com 1000 iterações, o garbage collector trabalha loucamente.\n\n**Linhas 15-21** (solução): `StringBuilder` mantém um buffer que cresce conforme necessário. `append()` adiciona ao final sem criar novos objetos. `toString()` cria a String final.\n\n**Linhas 26-30** (métodos): `insert()` insere em posição específica. `replace()` substitui um trecho. `delete()` remove um trecho. `reverse()` inverte.\n\n**Linhas 35-42** (exemplo prático): Montar uma lista separada por vírgulas — o if evita a vírgula final.',
+        tip: 'Regra simples: concatenação com + é OK fora de loops (o compilador otimiza). Dentro de loops, SEMPRE use StringBuilder.',
+      },
+    ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        String texto = "  Java Intermediário  ";
+        System.out.println("Original:  [" + texto + "]");
+        System.out.println("Trim:      [" + texto.trim() + "]");
+        System.out.println("Upper:     " + texto.trim().toUpperCase());
+        System.out.println("Substring: " + texto.trim().substring(0, 4));
+        System.out.println("Contains:  " + texto.contains("Java"));
+        System.out.println("Replace:   " + texto.trim().replace("Java", "Python"));
+
+        // Split
+        String csv = "Ana,25,SP";
+        String[] p = csv.split(",");
+        System.out.printf("%nNome: %s, Idade: %s, Cidade: %s%n", p[0], p[1], p[2]);
+
+        // StringBuilder
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= 5; i++) {
+            sb.append(i);
+            if (i < 5) sb.append(" → ");
+        }
+        System.out.println("\\n" + sb.toString());
+    }
+}`,
+    tryItPrompt: 'Altere o texto, teste diferentes métodos (replace, substring, split). Monte uma lista com StringBuilder.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual método divide uma String em um array usando um separador?',
+        snippetBefore: 'String[] partes = "a,b,c".',
+        snippetAfter: '(",");',
+        options: ['split', 'divide', 'tokenize', 'cut'],
+        correctIndex: 0,
+        explanation: 'split(regex) divide a String onde encontrar o separador e retorna um array de partes.',
+      },
+      {
+        instruction: 'Qual método compara o conteúdo de duas Strings ignorando maiúsculas/minúsculas?',
+        snippetBefore: 'if (email1.',
+        snippetAfter: '(email2)) { ... }',
+        options: ['equals', 'equalsIgnoreCase', 'compareTo', '=='],
+        correctIndex: 1,
+        explanation: 'equalsIgnoreCase() compara conteúdo ignorando case. equals() diferencia maiúsculas. == compara referências.',
+      },
+      {
+        instruction: 'Qual classe usar para concatenação eficiente em loops?',
+        snippetBefore: '',
+        snippetAfter: ' sb = new StringBuilder();',
+        options: ['StringBuilder', 'StringBuffer', 'String', 'StringJoiner'],
+        correctIndex: 0,
+        explanation: 'StringBuilder mantém um buffer mutável e evita criar objetos intermediários. String com + em loops é ineficiente.',
+      },
+    ],
     commonErrors: [
-      { title: 'Comparar String com ==', description: 'Use .equals() para comparar o conteúdo.' },
-      { title: 'Concatenar muitas vezes em loop com +', description: 'Use StringBuilder para melhor desempenho.' },
+      {
+        title: 'Comparar String com == em vez de .equals()',
+        description: 'O == compara referências na memória, não o conteúdo. Pode funcionar com literais por causa do pool, mas vai falhar com Scanner, concatenação ou new String().',
+        code: `String a = "Java";
+String b = "Java";
+System.out.println(a == b);       // true (pool - coincidência!)
+
+String c = new String("Java");
+System.out.println(a == c);       // false! (objeto diferente)
+System.out.println(a.equals(c));  // true! (conteúdo igual)
+
+// SEMPRE use equals():
+if (nome.equals("admin")) { ... }
+// Ou melhor (evita null):
+if ("admin".equals(nome)) { ... }`,
+      },
+      {
+        title: 'Concatenar com + dentro de loop',
+        description: 'Cada += cria uma nova String e descarta a anterior. Com muitas iterações, o desempenho degrada significativamente.',
+        code: `// RUIM: cria objetos intermediários a cada iteração
+String resultado = "";
+for (int i = 0; i < 10000; i++) {
+    resultado += "x";  // 10.000 Strings criadas e descartadas!
+}
+
+// BOM: StringBuilder modifica o mesmo buffer
+StringBuilder sb = new StringBuilder();
+for (int i = 0; i < 10000; i++) {
+    sb.append("x");  // nenhum objeto intermediário
+}
+String resultado2 = sb.toString();`,
+      },
+      {
+        title: 'Esquecer que Strings são imutáveis',
+        description: 'Métodos como toUpperCase(), trim(), replace() NÃO modificam a String original — retornam uma NOVA. Se não reatribuir, nada muda.',
+        code: `String nome = "  maria  ";
+
+// ERRADO: não reatribuiu! nome continua "  maria  "
+nome.trim();
+nome.toUpperCase();
+System.out.println(nome); // "  maria  " (nada mudou!)
+
+// CORRETO: reatribuir
+nome = nome.trim();
+nome = nome.toUpperCase();
+System.out.println(nome); // "MARIA"
+
+// Ou encadear:
+nome = "  maria  ".trim().toUpperCase(); // "MARIA"`,
+      },
+    ],
+    summary: [
+      'Strings são IMUTÁVEIS — métodos retornam nova String, não modificam a original',
+      'Reatribua para "atualizar": texto = texto.trim().toUpperCase()',
+      'Métodos essenciais: length(), charAt(), substring(), indexOf(), contains(), replace(), split()',
+      'NUNCA compare Strings com == — use .equals() ou .equalsIgnoreCase()',
+      'Truque anti-null: "literal".equals(variavel) em vez de variavel.equals("literal")',
+      'StringBuilder é obrigatório para concatenação em loops (evita criar objetos intermediários)',
+      'split(separador) divide String em array; trim() remove espaços das pontas',
+      'isEmpty() verifica se length == 0; isBlank() (Java 11+) verifica se só tem espaços',
     ],
   },
 
   'm2-debug': {
-    id: 'm2-debug', moduleId: 2,
-    objectives: ['Ler e interpretar stack traces', 'Identificar erros comuns', 'Usar técnicas básicas de debug'],
+    id: 'm2-debug',
+    moduleId: 2,
+    objectives: [
+      'Ler e interpretar stack traces com confiança',
+      'Identificar as exceções mais comuns e suas causas',
+      'Usar System.out.println como ferramenta de debug',
+      'Aplicar técnicas de debug sistemático para encontrar bugs',
+      'Diferenciar erros de compilação vs erros de execução',
+    ],
     sections: [
-      { title: 'Lendo um Stack Trace', body: 'Quando ocorre um erro em tempo de execução, a JVM imprime um stack trace (rastro da pilha de chamadas). Saber ler isso é uma das habilidades mais importantes para corrigir bugs.\n\nO stack trace mostra: (1) O tipo da exceção (ex.: ArrayIndexOutOfBoundsException, NullPointerException); (2) A mensagem de erro, que muitas vezes explica o que falhou (ex.: "Index 5 out of bounds for length 3"); (3) A lista de "at arquivo.classe.método(arquivo:linha)" — cada linha é um nível de chamada. O primeiro "at" é onde o erro ocorreu; os de baixo mostram quem chamou quem. Em programas simples, o primeiro at já aponta para a linha do seu código que causou o problema.',
-        code: `// Erro típico:
-// Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: 
-//     Index 5 out of bounds for length 3
-//     at MeuPrograma.main(MeuPrograma.java:10)
-
-// Como ler:
-// 1. Tipo do erro: ArrayIndexOutOfBoundsException
-// 2. Mensagem: Index 5 out of bounds for length 3
-//    (tentou acessar índice 5, mas o array tem tamanho 3)
-// 3. Onde: MeuPrograma.java, linha 10
-// 4. Método: main
-
-// Leia DE BAIXO PRA CIMA para entender a sequência de chamadas`,
-        codeExplanation: 'A primeira linha indica a exceção e a mensagem. As linhas "at" indicam o arquivo e a linha exata. Vá direto ao primeiro "at" do seu código para encontrar a causa.',
-        tip: 'Sempre leia o stack trace! A primeira linha diz o TIPO de erro, a mensagem explica O QUE aconteceu, e o local diz ONDE aconteceu.',
-      },
-      { title: 'Erros mais comuns', body: 'NullPointerException: chamou método ou acessou campo em uma referência null. ArrayIndexOutOfBoundsException: índice fora do tamanho do array. NumberFormatException: tentativa de converter uma String que não é número (ex.: Integer.parseInt("abc")). Verifique a linha indicada e a variável que está null ou com índice inválido.',
-      },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual exceção ocorre ao acessar um índice fora do tamanho do array?', snippetBefore: 'int[] a = {1, 2, 3};\nint x = a[5]; // lança ', snippetAfter: '', options: ['ArrayIndexOutOfBoundsException', 'IndexError', 'OutOfBounds', 'ArrayException'], correctIndex: 0, explanation: 'ArrayIndexOutOfBoundsException é lançada quando o índice é negativo ou >= length.' },
-    ],
-    summary: ['Stack trace mostra tipo, mensagem e localização do erro', 'Leia de baixo para cima para entender a sequência', 'Erros comuns: NullPointerException, ArrayIndexOutOfBounds, NumberFormatException'],
-    tryItCode: `public class Main {
+      // ────────── SEÇÃO 1: Tipos de Erros ──────────
+      {
+        title: 'Tipos de Erros em Java',
+        body: 'Em Java, existem três categorias de erros:\n\n**1. Erros de compilação** (compile-time): O código nem compila. Causas: sintaxe errada, tipo incompatível, variável não declarada. O compilador javac mostra a linha exata.\n\n**2. Erros de execução** (runtime): O código compila, mas crasha ao rodar. Causas: divisão por zero, índice inválido, null. A JVM lança uma **exceção** e imprime um **stack trace**.\n\n**3. Erros de lógica**: O código roda sem crashes, mas o resultado está errado. São os mais difíceis de encontrar — o programa faz algo diferente do esperado.',
+        code: `public class TiposDeErros {
     public static void main(String[] args) {
-        int[] arr = { 10, 20, 30 };
-        System.out.println(arr[5]); // proposital: indice invalido
+
+        // ═══ 1. ERRO DE COMPILAÇÃO ═══
+        // O javac encontra ANTES de rodar
+        // int x = "texto";  // error: incompatible types
+        // System.out.println(y);  // error: cannot find symbol
+
+        // ═══ 2. ERRO DE EXECUÇÃO (Exception) ═══
+        // Compila OK, mas crasha ao rodar
+        int[] arr = {1, 2, 3};
+        // System.out.println(arr[5]);  // ArrayIndexOutOfBoundsException!
+
+        String nome = null;
+        // System.out.println(nome.length());  // NullPointerException!
+
+        // int resultado = 10 / 0;  // ArithmeticException!
+
+        // ═══ 3. ERRO DE LÓGICA ═══
+        // Compila e roda, mas resultado está errado
+        double media = (8 + 7 + 9) / 3;   // 8.0 (deveria ser 8.0)
+        // Mas: (7 + 8) / 3 = 5.0 (deveria ser 5.0, truncou!)
+        double mediaErrada = (7 + 8) / 3;
+        System.out.println("Média: " + mediaErrada); // 5.0, não 5.0
+        // Correto: (7 + 8) / 3.0 ou (double)(7 + 8) / 3
+
+        System.out.println("Programa rodou sem erros de execução!");
     }
 }`,
-    tryItPrompt: 'Execute para ver o stack trace. Depois mude o índice para 0 ou 1 e rode de novo.',
+        codeExplanation: '**Linhas 6-7** (compilação): O compilador javac detecta esses erros ANTES de rodar. A mensagem inclui a linha e o tipo do problema.\n\n**Linhas 11-17** (execução): O programa compila normalmente, mas ao executar aquela linha específica, a JVM lança uma exceção e o programa crasha.\n\n**Linhas 21-25** (lógica): O programa roda sem crashes, mas a divisão inteira trunca o resultado. É o tipo de bug mais traiçoeiro — parece funcionar mas dá resultado errado.',
+        tip: 'Erros de compilação são seus amigos — eles impedem bugs piores. Erros de lógica são os inimigos — o programa "funciona" mas faz a coisa errada.',
+      },
+
+      // ────────── SEÇÃO 2: Lendo Stack Traces ──────────
+      {
+        title: 'Lendo um Stack Trace — Sua Ferramenta #1',
+        body: 'Quando ocorre um erro em tempo de execução, a JVM imprime um **stack trace** (rastro da pilha de chamadas). Saber ler isso é **a habilidade mais importante** para corrigir bugs.\n\nUm stack trace tem 3 partes:\n1. **Tipo da exceção** (NullPointerException, ArrayIndexOutOfBoundsException, etc.)\n2. **Mensagem** explicando o que deu errado\n3. **Lista de "at"** mostrando ONDE o erro ocorreu (arquivo e linha)',
+        code: `public class ExemploStackTrace {
+
+    public static int dividir(int a, int b) {
+        return a / b;  // linha 4: aqui ocorre o erro!
+    }
+
+    public static void calcular() {
+        int resultado = dividir(10, 0);  // linha 8: chamou dividir
+        System.out.println(resultado);
+    }
+
+    public static void main(String[] args) {
+        calcular();  // linha 13: chamou calcular
+    }
+}
+
+// ═══ STACK TRACE GERADO ═══
+// Exception in thread "main" java.lang.ArithmeticException: / by zero
+//     at ExemploStackTrace.dividir(ExemploStackTrace.java:4)
+//     at ExemploStackTrace.calcular(ExemploStackTrace.java:8)
+//     at ExemploStackTrace.main(ExemploStackTrace.java:13)
+//
+// COMO LER (de cima para baixo):
+// 1. TIPO: ArithmeticException
+// 2. MENSAGEM: "/ by zero" (divisão por zero)
+// 3. ONDE: dividir() na linha 4 (onde o erro ACONTECEU)
+//    ↑ chamado por calcular() na linha 8
+//    ↑ chamado por main() na linha 13
+//
+// O primeiro "at" é onde o erro OCORREU → vá direto para essa linha!`,
+        codeExplanation: '**Linha 18** (tipo e mensagem): `ArithmeticException: / by zero` diz exatamente o problema — tentou dividir por zero.\n\n**Linha 19** (primeiro "at"): `ExemploStackTrace.java:4` → vá para a linha 4 do arquivo. Ali está `return a / b;` onde b é 0.\n\n**Linha 20**: Mostra quem chamou `dividir()` — foi `calcular()` na linha 8.\n\n**Linha 21**: E quem chamou `calcular()`? Foi `main()` na linha 13.',
+        warning: 'SEMPRE leia o stack trace! A maioria dos iniciantes ignora e tenta adivinhar o erro — leia a mensagem e vá para a linha indicada no primeiro "at".',
+      },
+
+      // ────────── SEÇÃO 3: As 5 Exceções Mais Comuns ──────────
+      {
+        title: 'As 5 Exceções Mais Comuns de Iniciantes',
+        body: 'Estas são as exceções que você vai encontrar 90% das vezes. Aprenda a reconhecer cada uma pelo nome e saberá exatamente onde procurar o bug.',
+        code: `public class ExcecoesComuns {
+    public static void main(String[] args) {
+
+        // ═══ 1. NullPointerException (NPE) ═══
+        // Causa: chamar método em variável que é null
+        String nome = null;
+        // nome.length();  // NPE! nome é null!
+        // CORREÇÃO: verificar antes
+        if (nome != null) {
+            System.out.println(nome.length());
+        }
+
+        // ═══ 2. ArrayIndexOutOfBoundsException ═══
+        // Causa: índice negativo ou >= length
+        int[] arr = {10, 20, 30}; // índices: 0, 1, 2
+        // arr[3];  // BOOM! índice 3 não existe
+        // arr[-1]; // BOOM! índice negativo
+        // CORREÇÃO: sempre verifique limites
+
+        // ═══ 3. NumberFormatException ═══
+        // Causa: converter String que não é número
+        // Integer.parseInt("abc");  // BOOM!
+        // Integer.parseInt("12.5"); // BOOM! (não é inteiro)
+        // Integer.parseInt("");     // BOOM! (vazio)
+        // CORREÇÃO: validar antes
+        String input = "42";
+        try {
+            int num = Integer.parseInt(input);
+            System.out.println("Número: " + num);
+        } catch (NumberFormatException e) {
+            System.out.println("Não é um número: " + input);
+        }
+
+        // ═══ 4. StringIndexOutOfBoundsException ═══
+        // Causa: charAt() ou substring() com índice inválido
+        String texto = "Java";
+        // texto.charAt(10);        // BOOM!
+        // texto.substring(0, 10);  // BOOM!
+
+        // ═══ 5. ArithmeticException ═══
+        // Causa: divisão inteira por zero
+        // int x = 10 / 0;  // BOOM!
+        // OBS: double / 0 NÃO dá exceção (resulta em Infinity)
+        double d = 10.0 / 0;
+        System.out.println(d);  // Infinity (sem exceção!)
+    }
+}`,
+        codeExplanation: '**NullPointerException**: A mais comum. Verifique se a variável é null antes de chamar métodos nela.\n\n**ArrayIndexOutOfBoundsException**: Acessou posição que não existe. Lembre: índices vão de 0 a length-1.\n\n**NumberFormatException**: `Integer.parseInt()` recebeu algo que não é inteiro. Use try/catch ou valide com hasNextInt().\n\n**StringIndexOutOfBoundsException**: `charAt()` ou `substring()` recebeu índice fora do tamanho da String.\n\n**ArithmeticException**: Divisão inteira por zero. Curiosidade: `10.0 / 0` (double) resulta em Infinity, sem exceção!',
+        tip: 'Quando encontrar uma exceção, procure a CAUSA, não o SINTOMA. NullPointerException na linha 10 significa que alguma variável é null naquela linha — rastreie de onde ela veio.',
+      },
+
+      // ────────── SEÇÃO 4: Técnicas de Debug ──────────
+      {
+        title: 'Técnicas Práticas de Debug',
+        body: 'Quando o stack trace não é suficiente (especialmente em erros de lógica), use estas técnicas:\n\n1. **println debug**: Imprima valores de variáveis em pontos estratégicos\n2. **Dividir e conquistar**: Comente metade do código e veja se o erro persiste\n3. **Rubber duck debugging**: Explique o código linha por linha (para um pato de borracha ou para si mesmo)\n4. **Verificar suposições**: Imprima o que você ACHA que a variável contém — pode ser diferente!',
+        code: `public class TecnicasDebug {
+
+    public static double calcularMedia(int[] notas) {
+        // DEBUG: verificar o que recebemos
+        System.out.println("[DEBUG] notas.length = " + notas.length);
+
+        int soma = 0;
+        for (int i = 0; i < notas.length; i++) {
+            soma += notas[i];
+            // DEBUG: ver a soma acumulada
+            System.out.println("[DEBUG] i=" + i + " nota=" + notas[i] + " soma=" + soma);
+        }
+
+        double media = soma / notas.length;  // BUG! divisão inteira!
+        // DEBUG: ver o resultado
+        System.out.println("[DEBUG] soma=" + soma + " length=" + notas.length + " media=" + media);
+
+        return media;
+    }
+
+    public static void main(String[] args) {
+        int[] notas = {7, 8, 9};
+        double media = calcularMedia(notas);
+        System.out.println("Média: " + media);
+        // Saída: Média: 8.0 (correto por coincidência!)
+        // Mas com {7, 8}: Média: 7.0 (deveria ser 7.5!)
+
+        // CORREÇÃO do bug na linha 14:
+        // double media = (double) soma / notas.length;
+    }
+}`,
+        codeExplanation: '**Linhas 5, 11, 16** (println debug): Prefixo `[DEBUG]` facilita identificar e remover depois. Imprima TODAS as variáveis envolvidas no cálculo.\n\n**Linha 14** (o bug): `soma / notas.length` faz divisão inteira! Com notas {7, 8}, soma = 15, 15 / 2 = 7 (trunca). O debug na linha 16 mostraria "soma=15 length=2 media=7.0" — aí você percebe o problema.\n\n**Linha 29** (correção): `(double) soma / notas.length` força divisão com decimais.',
+        warning: 'Lembre de REMOVER os println de debug antes de entregar o código! Use [DEBUG] como prefixo para facilitar a busca e remoção.',
+      },
+    ],
+    tryItCode: `public class Main {
+    public static void main(String[] args) {
+        // Teste 1: provoque um ArrayIndexOutOfBoundsException
+        int[] arr = {10, 20, 30};
+        // Descomente a linha abaixo para ver o stack trace:
+        // System.out.println(arr[5]);
+
+        // Teste 2: provoque um NullPointerException
+        String nome = null;
+        // Descomente para ver:
+        // System.out.println(nome.length());
+
+        // Teste 3: provoque um NumberFormatException
+        // int num = Integer.parseInt("abc");
+
+        // Teste 4: bug de lógica (divisão inteira)
+        int soma = 15;
+        int qtd = 2;
+        double media = soma / qtd;  // Bug! Resultado: 7.0
+        System.out.println("Média: " + media);
+        // Correção: double media = (double) soma / qtd;
+
+        System.out.println("\\nDescomente as linhas para ver cada exceção!");
+    }
+}`,
+    tryItPrompt: 'Descomente uma linha por vez para provocar cada tipo de exceção e leia o stack trace. Depois corrija o bug de lógica da média.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual exceção ocorre ao acessar um índice inválido em um array?',
+        snippetBefore: 'int[] a = {1, 2, 3};\na[5]; // lança ',
+        snippetAfter: '',
+        options: ['ArrayIndexOutOfBoundsException', 'IndexOutOfRangeException', 'ArrayException', 'IndexError'],
+        correctIndex: 0,
+        explanation: 'ArrayIndexOutOfBoundsException é a exceção de Java para acesso a índice inválido. IndexError é Python, IndexOutOfRangeException é C#.',
+      },
+      {
+        instruction: 'Qual exceção ocorre ao chamar um método em uma variável null?',
+        snippetBefore: 'String s = null;\ns.length(); // lança ',
+        snippetAfter: '',
+        options: ['NullPointerException', 'NullReferenceException', 'TypeError', 'VoidException'],
+        correctIndex: 0,
+        explanation: 'NullPointerException (NPE) é a exceção mais comum em Java — ocorre quando você tenta usar uma referência que é null.',
+      },
+      {
+        instruction: 'Qual exceção ocorre ao converter "abc" para inteiro?',
+        snippetBefore: 'Integer.parseInt("abc"); // lança ',
+        snippetAfter: '',
+        options: ['NumberFormatException', 'ParseException', 'ConversionError', 'FormatException'],
+        correctIndex: 0,
+        explanation: 'NumberFormatException ocorre quando parseInt() ou parseDouble() recebem uma String que não representa um número válido.',
+      },
+    ],
     commonErrors: [
-      { title: 'Ignorar o stack trace', description: 'Sempre leia a mensagem e o primeiro "at" do seu arquivo.' },
-      { title: 'NullPointerException', description: 'Alguma variável está null; verifique quem chamou o método na linha indicada.' },
+      {
+        title: 'Ignorar o stack trace',
+        description: 'O erro mais grave: não ler a mensagem de erro! O stack trace contém EXATAMENTE o tipo do erro, o que aconteceu e onde. Sempre leia.',
+        code: `// Stack trace:
+// Exception in thread "main" java.lang.NullPointerException
+//     at Programa.processar(Programa.java:15)
+//     at Programa.main(Programa.java:8)
+
+// ERRADO: "deu erro, não sei o que fazer"
+// CORRETO: "NullPointerException na linha 15 de Programa.java"
+//   → vá para a linha 15
+//   → identifique qual variável é null
+//   → rastreie de onde ela deveria ter recebido valor`,
+      },
+      {
+        title: 'Não verificar null antes de usar',
+        description: 'NullPointerException é a exceção mais comum em Java. Sempre verifique se a variável pode ser null antes de chamar métodos.',
+        code: `// ERRADO: crasha se nome for null
+String nome = obterNome(); // pode retornar null
+System.out.println(nome.toUpperCase()); // NPE!
+
+// CORRETO: verificar antes
+if (nome != null) {
+    System.out.println(nome.toUpperCase());
+} else {
+    System.out.println("Nome não disponível");
+}
+
+// CORRETO (alternativa): valor padrão
+String nomeSeguro = (nome != null) ? nome : "Desconhecido";`,
+      },
+      {
+        title: 'Bug de divisão inteira silencioso',
+        description: 'Divisão entre inteiros trunca o resultado SEM lançar exceção. O programa "funciona" mas dá resultado errado — erro de lógica difícil de encontrar.',
+        code: `int soma = 15;
+int qtd = 2;
+
+// BUG SILENCIOSO: divisão inteira!
+double media = soma / qtd;  // 7.0 (deveria ser 7.5!)
+// Java faz 15/2 = 7 (int), DEPOIS converte para 7.0 (double)
+
+// CORRETO: forçar divisão decimal
+double mediaCorreta = (double) soma / qtd;  // 7.5
+// Ou: soma / (double) qtd
+// Ou: soma * 1.0 / qtd`,
+      },
+    ],
+    summary: [
+      'Erros de compilação: o javac encontra antes de rodar (sintaxe, tipos)',
+      'Erros de execução: o programa crasha com uma exceção e stack trace',
+      'Erros de lógica: o programa roda mas o resultado está errado (mais difíceis!)',
+      'Stack trace mostra: tipo da exceção + mensagem + localização (arquivo:linha)',
+      'Primeiro "at" do stack trace = onde o erro OCORREU — vá direto para essa linha',
+      'Top 5 exceções: NullPointerException, ArrayIndexOutOfBounds, NumberFormatException, StringIndexOutOfBounds, ArithmeticException',
+      'Técnica de debug: use System.out.println("[DEBUG]") para imprimir valores de variáveis',
+      'Sempre verifique null antes de chamar métodos em objetos',
+      'Remova prints de debug antes de entregar o código',
     ],
   },
 
   'm2-collections': {
-    id: 'm2-collections', moduleId: 2,
-    objectives: ['Entender a diferença entre Array e ArrayList', 'Usar ArrayList para listas dinâmicas', 'Conhecer add, remove, get, size e o for-each'],
+    id: 'm2-collections',
+    moduleId: 2,
+    objectives: [
+      'Entender a limitação de arrays (tamanho fixo) e por que precisamos de ArrayList',
+      'Criar e manipular ArrayList com add, remove, get, set e size',
+      'Percorrer ArrayList com for clássico e for-each',
+      'Conhecer generics (ArrayList<Tipo>) e wrappers (Integer, Double)',
+      'Saber quando usar Array vs ArrayList',
+    ],
     sections: [
-      { title: 'ArrayList vs Array', body: 'Um array (int[], String[]) tem tamanho fixo no momento da criação. Se você precisa adicionar ou remover elementos ao longo do programa, use ArrayList, que é uma lista de tamanho dinâmico.\n\nArrayList faz parte do pacote java.util e usa generics: ArrayList<String>, ArrayList<Integer>. Não use ArrayList<int> — para tipos primitivos use o wrapper Integer. Os métodos mais usados são: add(elemento), add(índice, elemento), remove(índice ou elemento), get(índice), size(), contains(elemento), clear(). Você pode percorrer com for-each: for (String s : lista) { ... }.',
+      // ────────── SEÇÃO 1: O Problema dos Arrays ──────────
+      {
+        title: 'O Problema: Arrays Têm Tamanho Fixo',
+        body: 'Arrays são ótimos quando você sabe exatamente quantos elementos vai ter. Mas e quando **não sabe**? Uma lista de compras cresce e diminui. Um chat recebe mensagens continuamente. Uma playlist adiciona e remove músicas.\n\nCom arrays, você teria que criar um array "grande o suficiente" e controlar manualmente quantos elementos estão preenchidos — propenso a bugs. O **ArrayList** resolve isso: é uma lista de **tamanho dinâmico** que cresce e diminui automaticamente.',
         code: `import java.util.ArrayList;
 
-// Array: tamanho fixo
-int[] notas = new int[3]; // sempre terá 3 elementos
+public class ArrayVsArrayList {
+    public static void main(String[] args) {
 
-// ArrayList: tamanho dinâmico
-ArrayList<String> nomes = new ArrayList<>();
-nomes.add("Ana");       // adiciona ao final
-nomes.add("Bruno");
-nomes.add("Carlos");
-nomes.add(1, "Bia");    // adiciona na posição 1
+        // ═══ ARRAY: tamanho FIXO ═══
+        int[] notasArray = new int[3]; // sempre 3 — não cresce!
+        notasArray[0] = 10;
+        notasArray[1] = 8;
+        notasArray[2] = 7;
+        // notasArray[3] = 9;  // BOOM! ArrayIndexOutOfBoundsException
 
-System.out.println(nomes.get(0));  // "Ana"
-System.out.println(nomes.size());  // 4
-nomes.remove("Bruno");             // remove por valor
-nomes.remove(0);                   // remove por índice
-System.out.println(nomes.contains("Carlos")); // true
+        // ═══ ARRAYLIST: tamanho DINÂMICO ═══
+        ArrayList<Integer> notasList = new ArrayList<>(); // começa vazio!
+        notasList.add(10);   // [10]
+        notasList.add(8);    // [10, 8]
+        notasList.add(7);    // [10, 8, 7]
+        notasList.add(9);    // [10, 8, 7, 9] → cresceu sem problema!
+        notasList.add(6);    // [10, 8, 7, 9, 6] → continua crescendo!
 
-// Percorrer
-for (String nome : nomes) {
-    System.out.println(nome);
+        System.out.println("Array tamanho: " + notasArray.length);  // 3 (fixo!)
+        System.out.println("List tamanho:  " + notasList.size());   // 5 (dinâmico!)
+        System.out.println("Lista: " + notasList);  // [10, 8, 7, 9, 6]
+    }
 }`,
-        codeExplanation: 'new ArrayList<>() cria uma lista vazia. add() insere no final; add(1, "Bia") insere na posição 1. remove() pode ser por índice ou por valor (remove a primeira ocorrência).',
-        tip: 'ArrayList usa tipos wrapper (Integer, Double) ao invés de primitivos (int, double). Ex: ArrayList<Integer>, não ArrayList<int>.',
+        codeExplanation: '**Linha 7** (`new int[3]`): Array com tamanho fixo 3. Tentar colocar um 4º elemento causa exceção.\n\n**Linha 14** (`new ArrayList<>()`): Lista vazia que cresce automaticamente a cada `add()`. Sem limite prático de tamanho.\n\n**Linha 14** (`ArrayList<Integer>`): Note que usamos `Integer` (wrapper), não `int` (primitivo). Generics não aceitam tipos primitivos.\n\n**Linha 23** (`println(notasList)`): Diferente de arrays, ArrayList imprime o conteúdo automaticamente com `toString()`.',
+        tip: 'Use Array quando: sabe o tamanho e ele não muda (ex: dias da semana, meses). Use ArrayList quando: o tamanho pode variar (ex: lista de compras, mensagens, resultados de busca).',
       },
-    ],
-    codeFillExercises: [
-      { instruction: 'Qual método do ArrayList retorna o número de elementos?', snippetBefore: 'ArrayList<String> list = ...;\nint n = list.', snippetAfter: '();', options: ['length', 'size', 'count', 'length()'], correctIndex: 1, explanation: 'ArrayList usa .size(); arrays usam .length (atributo).' },
-    ],
-    summary: ['Array: tamanho fixo, acesso por índice', 'ArrayList: tamanho dinâmico, mais métodos disponíveis', 'ArrayList usa generics: ArrayList<Tipo>', 'Prefira ArrayList quando o tamanho pode mudar'],
-    tryItCode: `import java.util.ArrayList;
 
-public class Main {
+      // ────────── SEÇÃO 2: Métodos do ArrayList ──────────
+      {
+        title: 'ArrayList — Todos os Métodos que Você Precisa',
+        body: 'O ArrayList é da classe `java.util.ArrayList` e precisa ser importado. Usa **generics** para definir o tipo: `ArrayList<String>`, `ArrayList<Integer>`, `ArrayList<Double>`.\n\nPara tipos primitivos, use os **wrappers**: `int → Integer`, `double → Double`, `char → Character`, `boolean → Boolean`.',
+        code: `import java.util.ArrayList;
+import java.util.Collections;
+
+public class MetodosArrayList {
+    public static void main(String[] args) {
+
+        ArrayList<String> frutas = new ArrayList<>();
+
+        // ═══ ADICIONAR ═══
+        frutas.add("Maçã");             // adiciona ao final
+        frutas.add("Banana");
+        frutas.add("Laranja");
+        frutas.add(1, "Abacaxi");       // insere na posição 1
+        System.out.println(frutas);      // [Maçã, Abacaxi, Banana, Laranja]
+
+        // ═══ ACESSAR ═══
+        System.out.println(frutas.get(0));    // "Maçã"
+        System.out.println(frutas.get(2));    // "Banana"
+
+        // ═══ MODIFICAR ═══
+        frutas.set(0, "Manga");               // troca "Maçã" por "Manga"
+        System.out.println(frutas);           // [Manga, Abacaxi, Banana, Laranja]
+
+        // ═══ REMOVER ═══
+        frutas.remove("Banana");              // remove por VALOR (primeira ocorrência)
+        frutas.remove(0);                     // remove por ÍNDICE (posição 0)
+        System.out.println(frutas);           // [Abacaxi, Laranja]
+
+        // ═══ BUSCAR ═══
+        System.out.println(frutas.contains("Abacaxi")); // true
+        System.out.println(frutas.indexOf("Laranja"));   // 1
+        System.out.println(frutas.indexOf("Uva"));       // -1 (não encontrou)
+
+        // ═══ TAMANHO E VERIFICAÇÕES ═══
+        System.out.println(frutas.size());       // 2
+        System.out.println(frutas.isEmpty());    // false
+
+        // ═══ ORDENAR ═══
+        frutas.add("Acerola");
+        frutas.add("Mamão");
+        Collections.sort(frutas);                // ordena alfabeticamente
+        System.out.println("Ordenado: " + frutas);
+
+        // ═══ LIMPAR ═══
+        frutas.clear();                          // remove TUDO
+        System.out.println(frutas.isEmpty());    // true
+    }
+}`,
+        codeExplanation: '**Linha 11** (`add("Maçã")`): Adiciona ao final da lista. O tamanho cresce automaticamente.\n\n**Linha 14** (`add(1, "Abacaxi")`): Insere na posição 1. Os elementos seguintes são empurrados para a direita.\n\n**Linha 17** (`get(0)`): Acessa elemento por índice — como `array[0]`, mas com método.\n\n**Linha 21** (`set(0, "Manga")`): Substitui o elemento na posição 0. Diferente de `add(0, ...)` que insere sem remover.\n\n**Linhas 25-26**: `remove("Banana")` remove por valor (primeira ocorrência). `remove(0)` remove por índice. Cuidado com a ambiguidade em `ArrayList<Integer>`!\n\n**Linha 39** (`Collections.sort()`): Ordena a lista. Para Strings, ordena alfabeticamente.',
+        warning: 'Cuidado com ArrayList<Integer>: remove(1) remove pelo ÍNDICE 1, não pelo valor 1! Para remover o valor, use remove(Integer.valueOf(1)).',
+      },
+
+      // ────────── SEÇÃO 3: Percorrendo e Exemplos Práticos ──────────
+      {
+        title: 'Percorrendo ArrayList e Exemplos Práticos',
+        body: 'Você pode percorrer ArrayList com **for clássico**, **for-each** ou **while com Iterator**. Na prática, for-each é o mais usado.',
+        code: `import java.util.ArrayList;
+
+public class PercorrendoArrayList {
     public static void main(String[] args) {
         ArrayList<String> nomes = new ArrayList<>();
         nomes.add("Ana");
         nomes.add("Bruno");
-        nomes.add("Carlos");
-        System.out.println("Tamanho: " + nomes.size());
-        System.out.println("Primeiro: " + nomes.get(0));
-        nomes.remove(1);
-        for (String n : nomes) System.out.println(n);
+        nomes.add("Carla");
+        nomes.add("Daniel");
+
+        // ═══ FOR-EACH (mais comum) ═══
+        System.out.println("=== For-each ===");
+        for (String nome : nomes) {
+            System.out.println(nome);
+        }
+
+        // ═══ FOR CLÁSSICO (quando precisa do índice) ═══
+        System.out.println("\\n=== For clássico ===");
+        for (int i = 0; i < nomes.size(); i++) {
+            System.out.println(i + ": " + nomes.get(i));
+        }
+
+        // ═══ EXEMPLO PRÁTICO: Filtrar ═══
+        ArrayList<Integer> numeros = new ArrayList<>();
+        numeros.add(3); numeros.add(8); numeros.add(1);
+        numeros.add(9); numeros.add(4); numeros.add(7);
+
+        // Filtrar apenas os maiores que 5
+        ArrayList<Integer> maiores = new ArrayList<>();
+        for (int n : numeros) {
+            if (n > 5) {
+                maiores.add(n);
+            }
+        }
+        System.out.println("\\nOriginais: " + numeros);
+        System.out.println("Maiores que 5: " + maiores);
+
+        // ═══ EXEMPLO PRÁTICO: Soma ═══
+        int soma = 0;
+        for (int n : numeros) {
+            soma += n;
+        }
+        System.out.println("Soma: " + soma);
+        System.out.println("Média: " + ((double) soma / numeros.size()));
     }
 }`,
-    tryItPrompt: 'Adicione mais nomes, remova por índice ou por valor, e use get(i).',
+        codeExplanation: '**Linha 13** (`for (String nome : nomes)`): For-each — a forma mais limpa. Cada iteração, `nome` recebe o próximo elemento.\n\n**Linha 20** (`i < nomes.size()`): Use `size()` (não `length`!) para o limite do loop. `get(i)` acessa o elemento na posição i.\n\n**Linhas 29-33** (filtrar): Padrão comum — criar uma nova lista com elementos que passam em um critério. Percorre a original e adiciona os válidos na nova.',
+        tip: 'Nunca remova elementos de um ArrayList DURANTE um for-each — causa ConcurrentModificationException! Use Iterator ou percorra de trás para frente com for clássico.',
+      },
+    ],
+    tryItCode: `import java.util.ArrayList;
+import java.util.Collections;
+
+public class Main {
+    public static void main(String[] args) {
+        ArrayList<String> lista = new ArrayList<>();
+        lista.add("Banana");
+        lista.add("Maçã");
+        lista.add("Laranja");
+        lista.add("Abacaxi");
+
+        System.out.println("Original: " + lista);
+        System.out.println("Tamanho: " + lista.size());
+        System.out.println("Contém Maçã? " + lista.contains("Maçã"));
+
+        lista.remove("Banana");
+        Collections.sort(lista);
+        System.out.println("\\nOrdenada (sem Banana): " + lista);
+
+        // Soma de números
+        ArrayList<Integer> nums = new ArrayList<>();
+        nums.add(10); nums.add(20); nums.add(30);
+        int soma = 0;
+        for (int n : nums) soma += n;
+        System.out.println("\\nSoma: " + soma);
+    }
+}`,
+    tryItPrompt: 'Adicione e remova frutas, teste get() e set(), ordene a lista. Crie uma lista de números e calcule a média.',
+    codeFillExercises: [
+      {
+        instruction: 'Qual método do ArrayList retorna o número de elementos?',
+        snippetBefore: 'ArrayList<String> list = ...;\nint n = list.',
+        snippetAfter: '();',
+        options: ['length', 'size', 'count', 'total'],
+        correctIndex: 1,
+        explanation: 'ArrayList usa .size() (método). Arrays usam .length (atributo). É uma diferença importante!',
+      },
+      {
+        instruction: 'Qual wrapper deve ser usado para criar um ArrayList de inteiros?',
+        snippetBefore: 'ArrayList<',
+        snippetAfter: '> numeros = new ArrayList<>();',
+        options: ['int', 'Integer', 'Int', 'integer'],
+        correctIndex: 1,
+        explanation: 'Generics não aceitam tipos primitivos. Use wrappers: int→Integer, double→Double, char→Character.',
+      },
+      {
+        instruction: 'Qual método adiciona um elemento ao FINAL do ArrayList?',
+        snippetBefore: 'ArrayList<String> lista = new ArrayList<>();\nlista.',
+        snippetAfter: '("Java");',
+        options: ['add', 'push', 'append', 'insert'],
+        correctIndex: 0,
+        explanation: 'add() adiciona ao final. add(indice, elemento) insere em posição específica. push e append não existem em ArrayList.',
+      },
+    ],
     commonErrors: [
-      { title: 'ArrayList<int>', description: 'Use ArrayList<Integer>; generics não aceitam primitivos.' },
-      { title: 'Índice fora do tamanho', description: 'get(i) e remove(i) exigem 0 <= i < size().' },
+      {
+        title: 'Usar ArrayList<int> em vez de ArrayList<Integer>',
+        description: 'Generics em Java NÃO aceitam tipos primitivos. Use os wrappers: int→Integer, double→Double, boolean→Boolean, char→Character.',
+        code: `// ERRADO: tipo primitivo em generics
+// ArrayList<int> numeros = new ArrayList<>();
+// Erro de compilação!
+
+// CORRETO: usar wrapper
+ArrayList<Integer> numeros = new ArrayList<>();
+numeros.add(42);     // autoboxing: int → Integer automaticamente
+int valor = numeros.get(0); // unboxing: Integer → int automaticamente`,
+      },
+      {
+        title: 'Confundir remove(índice) com remove(valor) em ArrayList<Integer>',
+        description: 'Em ArrayList<Integer>, remove(1) remove pelo ÍNDICE 1, não pelo valor 1. Para remover pelo valor, use remove(Integer.valueOf(1)).',
+        code: `ArrayList<Integer> nums = new ArrayList<>();
+nums.add(10); nums.add(20); nums.add(30);
+
+// Remove pelo ÍNDICE 1 (o 20):
+nums.remove(1);
+System.out.println(nums); // [10, 30]
+
+// Para remover pelo VALOR 10:
+nums.remove(Integer.valueOf(10));
+System.out.println(nums); // [30]`,
+      },
+      {
+        title: 'Remover durante for-each causa ConcurrentModificationException',
+        description: 'Modificar uma lista (add/remove) enquanto percorre com for-each causa exceção. Use Iterator ou percorra de trás para frente.',
+        code: `ArrayList<String> nomes = new ArrayList<>();
+nomes.add("Ana"); nomes.add("Bob"); nomes.add("Bia");
+
+// ERRADO: modifica durante for-each
+// for (String n : nomes) {
+//     if (n.startsWith("B")) nomes.remove(n); // ConcurrentModificationException!
+// }
+
+// CORRETO: percorrer de trás para frente
+for (int i = nomes.size() - 1; i >= 0; i--) {
+    if (nomes.get(i).startsWith("B")) {
+        nomes.remove(i);
+    }
+}
+System.out.println(nomes); // [Ana]`,
+      },
+    ],
+    summary: [
+      'Arrays têm tamanho FIXO; ArrayList tem tamanho DINÂMICO',
+      'ArrayList precisa de import java.util.ArrayList',
+      'Use generics para definir o tipo: ArrayList<String>, ArrayList<Integer>',
+      'Tipos primitivos não funcionam em generics — use wrappers (int→Integer, double→Double)',
+      'Métodos essenciais: add(), get(), set(), remove(), size(), contains(), isEmpty(), clear()',
+      'size() retorna o tamanho (não length!); get(i) acessa por índice (não []!)',
+      'Collections.sort() ordena a lista; ArrayList imprime conteúdo com toString()',
+      'Nunca remova durante for-each — use for clássico de trás para frente',
+      'Prefira ArrayList quando o tamanho é desconhecido ou variável',
     ],
   },
 
   'm2-packages': {
-    id: 'm2-packages', moduleId: 2,
-    objectives: ['Organizar código em pacotes', 'Usar import corretamente', 'Conhecer a convenção de nomes de pacotes'],
+    id: 'm2-packages',
+    moduleId: 2,
+    objectives: [
+      'Entender por que pacotes são necessários para organizar projetos',
+      'Declarar pacotes corretamente com package',
+      'Importar classes de outros pacotes com import',
+      'Conhecer a convenção de nomes de pacotes (domínio invertido)',
+      'Usar import estático e import com wildcard (*)',
+    ],
     sections: [
-      { title: 'Pacotes em Java', body: 'Pacotes organizam classes em diretórios lógicos e evitam conflitos de nomes: duas classes com o mesmo nome podem coexistir se estiverem em pacotes diferentes (ex.: com.loja.Cliente e com.banco.Cliente).\n\nA declaração package deve ser a primeira linha útil do arquivo (após comentários). O caminho da pasta no disco deve refletir o pacote: a classe com.empresa.modelo.Cliente fica em com/empresa/modelo/Cliente.java. Para usar uma classe de outro pacote, use import no topo do arquivo: import java.util.ArrayList; ou import java.util.*; (importar tudo do pacote). Classes no mesmo pacote não precisam ser importadas.',
-        code: `// Declaração de pacote (primeira linha do arquivo)
-package com.empresa.modelo;
+      // ────────── SEÇÃO 1: Por que Pacotes? ──────────
+      {
+        title: 'Por que Pacotes Existem?',
+        body: 'Imagine um projeto com 200 classes. Sem organização, todas ficariam soltas na mesma pasta — impossível de navegar. E se duas equipes criarem uma classe `Cliente`? Conflito de nomes!\n\n**Pacotes** resolvem ambos os problemas:\n- **Organização**: agrupam classes relacionadas em diretórios lógicos\n- **Namespace**: evitam conflitos — `com.loja.Cliente` e `com.banco.Cliente` podem coexistir\n- **Controle de acesso**: classes do mesmo pacote podem acessar membros `package-private`\n\nA estrutura de pastas no disco deve **refletir** o pacote: `com.empresa.modelo` → pasta `com/empresa/modelo/`.',
+        code: `// ═══ ESTRUTURA DE UM PROJETO ORGANIZADO ═══
+//
+// src/
+// ├── com/empresa/loja/
+// │   ├── modelo/
+// │   │   ├── Produto.java      ← package com.empresa.loja.modelo;
+// │   │   ├── Cliente.java      ← package com.empresa.loja.modelo;
+// │   │   └── Pedido.java       ← package com.empresa.loja.modelo;
+// │   ├── servico/
+// │   │   ├── PedidoService.java  ← package com.empresa.loja.servico;
+// │   │   └── EstoqueService.java ← package com.empresa.loja.servico;
+// │   └── util/
+// │       └── Formatador.java     ← package com.empresa.loja.util;
+// └── Main.java
 
-// Importações
+// ═══ CONVENÇÃO DE NOMES ═══
+// Usa o domínio da empresa INVERTIDO + projeto + módulo
+// Exemplos:
+// com.google.maps.api       (Google Maps)
+// org.apache.commons.lang   (Apache Commons)
+// br.com.minhaempresa.loja  (empresa brasileira)
+// com.seunome.projeto       (projetos pessoais)`,
+        codeExplanation: '**Estrutura**: Cada pacote corresponde a uma pasta no disco. `com.empresa.loja.modelo` → pasta `com/empresa/loja/modelo/`.\n\n**modelo/**: Classes que representam dados (Produto, Cliente, Pedido).\n\n**servico/**: Classes com lógica de negócio (PedidoService, EstoqueService).\n\n**util/**: Classes utilitárias usadas por todo o projeto.\n\n**Convenção de nomes**: Domínio invertido garante unicidade. `google.com` → `com.google`.',
+        tip: 'Para projetos pessoais, use: com.seunome.projeto ou com.github.seuuser.projeto. Isso garante que seus pacotes não conflitem com os de ninguém.',
+      },
+
+      // ────────── SEÇÃO 2: package e import ──────────
+      {
+        title: 'Declarando Pacotes e Importando Classes',
+        body: 'Duas palavras-chave essenciais:\n\n- **`package`**: Declara a qual pacote esta classe pertence. DEVE ser a **primeira linha** do arquivo (antes de imports).\n- **`import`**: Traz classes de outros pacotes para você usar pelo nome curto.\n\nClasses no **mesmo pacote** não precisam de import. Classes de `java.lang` (String, Math, Integer, System) são importadas automaticamente.',
+        code: `// ═══ ARQUIVO: com/empresa/modelo/Produto.java ═══
+package com.empresa.modelo;  // PRIMEIRA linha útil!
+
+// Imports vêm DEPOIS do package
 import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.Date;
 
-// Classe dentro do pacote
-public class Cliente {
+public class Produto {
     private String nome;
-    // ...
+    private double preco;
+    private Date dataCriacao;  // Date importado acima
+
+    public Produto(String nome, double preco) {
+        this.nome = nome;
+        this.preco = preco;
+        this.dataCriacao = new Date();
+    }
+
+    public String getNome() { return nome; }
+    public double getPreco() { return preco; }
 }
 
-// Convenção de nomes de pacotes:
-// com.empresa.projeto.modulo
-// Exemplos:
-// com.loja.modelo     (classes de dados)
-// com.loja.servico    (lógica de negócio)
-// com.loja.util       (utilitários)`,
-        codeExplanation: 'package define o "endereço" da classe. import traz classes de outros pacotes para você usar pelo nome curto (ArrayList em vez de java.util.ArrayList).',
+// ═══ ARQUIVO: com/empresa/servico/LojaService.java ═══
+// package com.empresa.servico;
+//
+// import com.empresa.modelo.Produto;  // classe de OUTRO pacote
+// import java.util.ArrayList;
+//
+// public class LojaService {
+//     public ArrayList<Produto> listarProdutos() {
+//         ArrayList<Produto> lista = new ArrayList<>();
+//         lista.add(new Produto("Notebook", 3500.00));
+//         lista.add(new Produto("Mouse", 89.90));
+//         return lista;
+//     }
+// }`,
+        codeExplanation: '**Linha 2** (`package com.empresa.modelo;`): Declara que esta classe pertence ao pacote `com.empresa.modelo`. O arquivo DEVE estar na pasta `com/empresa/modelo/`.\n\n**Linhas 5-6** (imports): `ArrayList` e `Date` são de outros pacotes (`java.util`). Sem import, teria que usar o nome completo: `java.util.ArrayList`.\n\n**Linha 26** (`import com.empresa.modelo.Produto`): Importa uma classe do NOSSO projeto — de outro pacote. Sem isso, LojaService não enxerga Produto.',
+        warning: 'A declaração package DEVE ser a primeira linha útil do arquivo (depois de comentários). Se não tiver package, a classe fica no "pacote padrão" (sem nome) — evite isso em projetos reais.',
       },
-      { title: 'Import estático e nome fully qualified', body: 'Você pode usar o nome completo sem import: java.util.ArrayList lista = new java.util.ArrayList<>();. Para métodos estáticos, import static java.lang.Math.PI; permite usar PI em vez de Math.PI.',
+
+      // ────────── SEÇÃO 3: Import Avançado ──────────
+      {
+        title: 'Import com Wildcard, Estático e Fully Qualified',
+        body: 'Além do import simples, Java oferece variações:\n\n- **Wildcard** (`import java.util.*`): Importa TODAS as classes do pacote. Prático, mas pode poluir o namespace.\n- **Import estático** (`import static`): Importa métodos e constantes estáticas para usar sem o nome da classe.\n- **Fully qualified**: Usar o nome completo sem import — útil quando duas classes têm o mesmo nome.',
+        code: `// ═══ IMPORT SIMPLES (recomendado) ═══
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+// ═══ IMPORT COM WILDCARD (*) ═══
+// import java.util.*;  // importa TUDO de java.util
+// Prático, mas:
+// - Não importa subpacotes (java.util.* NÃO importa java.util.stream.*)
+// - Pode causar conflito se dois pacotes tiverem classe com mesmo nome
+
+// ═══ IMPORT ESTÁTICO ═══
+import static java.lang.Math.PI;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.pow;
+
+public class ImportsAvancados {
+    public static void main(String[] args) {
+
+        // Sem import estático: Math.PI, Math.sqrt()
+        double area1 = Math.PI * Math.pow(5, 2);
+
+        // Com import estático: PI, sqrt() (sem prefixo Math.)
+        double area2 = PI * pow(5, 2);
+        double hipotenusa = sqrt(pow(3, 2) + pow(4, 2));
+        System.out.println("Área: " + area2);
+        System.out.println("Hipotenusa: " + hipotenusa); // 5.0
+
+        // ═══ NOME COMPLETO (Fully Qualified) ═══
+        // Quando duas classes têm o mesmo nome:
+        java.util.Date dataUtil = new java.util.Date();
+        // java.sql.Date dataSql = new java.sql.Date(System.currentTimeMillis());
+        // Sem usar import — o nome completo resolve a ambiguidade
+
+        System.out.println("Data: " + dataUtil);
+    }
+}`,
+        codeExplanation: '**Linhas 13-15** (import static): Importa membros estáticos de Math. Depois pode usar `PI`, `sqrt()`, `pow()` diretamente sem `Math.`.\n\n**Linha 22** vs **Linha 25**: Com import estático, `Math.PI * Math.pow(5, 2)` vira `PI * pow(5, 2)` — mais limpo para fórmulas matemáticas.\n\n**Linhas 31-32** (fully qualified): Quando `java.util.Date` e `java.sql.Date` conflitam, use o nome completo para resolver a ambiguidade.',
+        tip: 'Prefira imports específicos (import java.util.ArrayList) sobre wildcards (import java.util.*). IDEs como IntelliJ e VS Code gerenciam imports automaticamente.',
       },
     ],
-    codeFillExercises: [
-      { instruction: 'Como importar a classe ArrayList do pacote java.util?', snippetBefore: '', snippetAfter: ' java.util.ArrayList;', options: ['import', 'use', 'include', 'require'], correctIndex: 0, explanation: 'A palavra-chave import permite usar classes de outros pacotes pelo nome curto.' },
-    ],
-    summary: ['Pacotes organizam classes em diretórios', 'Declare com package na primeira linha', 'Use import para usar classes de outros pacotes', 'Convenção: com.empresa.projeto.modulo'],
     tryItCode: `import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import static java.lang.Math.PI;
+import static java.lang.Math.pow;
 
 public class Main {
     public static void main(String[] args) {
-        ArrayList<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
-        System.out.println("Lista: " + list);
-        System.out.println("Classe de list: " + list.getClass().getName());
+        // Usando ArrayList (import java.util.ArrayList)
+        ArrayList<String> frutas = new ArrayList<>(Arrays.asList("Banana", "Maçã", "Laranja"));
+        Collections.sort(frutas);
+        System.out.println("Frutas: " + frutas);
+
+        // Usando import estático (Math.PI → PI)
+        double raio = 5;
+        double area = PI * pow(raio, 2);
+        System.out.printf("Área do círculo (raio=%.0f): %.2f%n", raio, area);
+
+        // Classe sem import: nome completo
+        java.util.Date agora = new java.util.Date();
+        System.out.println("Agora: " + agora);
     }
 }`,
-    tryItPrompt: 'Veja como import java.util.ArrayList e Arrays.asList permitem usar essas classes.',
+    tryItPrompt: 'Teste os imports: use PI e pow() diretamente (import static). Experimente criar uma ArrayList com Collections.sort().',
+    codeFillExercises: [
+      {
+        instruction: 'Qual palavra-chave importa uma classe de outro pacote em Java?',
+        snippetBefore: '',
+        snippetAfter: ' java.util.ArrayList;',
+        options: ['import', 'use', 'include', 'require'],
+        correctIndex: 0,
+        explanation: 'import permite usar classes de outros pacotes pelo nome curto. use é PHP, include é C, require é Node.js.',
+      },
+      {
+        instruction: 'Qual deve ser a PRIMEIRA linha útil de um arquivo Java com pacote?',
+        snippetBefore: '',
+        snippetAfter: ' com.empresa.modelo;',
+        options: ['package', 'import', 'module', 'namespace'],
+        correctIndex: 0,
+        explanation: 'A declaração package DEVE ser a primeira linha útil (antes de qualquer import ou classe). Ela define a qual pacote a classe pertence.',
+      },
+      {
+        instruction: 'Qual tipo de import permite usar Math.PI como apenas PI?',
+        snippetBefore: 'import ',
+        snippetAfter: ' java.lang.Math.PI;',
+        options: ['static', 'const', 'direct', 'global'],
+        correctIndex: 0,
+        explanation: 'import static importa membros estáticos (constantes e métodos) para uso direto sem o prefixo da classe.',
+      },
+    ],
     commonErrors: [
-      { title: 'Package não bate com a pasta', description: 'O diretório no disco deve corresponder ao nome do pacote.' },
-      { title: 'Import de classe que não existe', description: 'Verifique o nome do pacote e da classe (case-sensitive).' },
+      {
+        title: 'Package não corresponde à estrutura de pastas',
+        description: 'O diretório no disco DEVE refletir exatamente o pacote declarado. Se o package diz com.empresa.modelo, o arquivo DEVE estar em com/empresa/modelo/.',
+        code: `// ERRADO: arquivo em src/Produto.java com:
+// package com.empresa.modelo;
+// Erro: "class Produto is public, should be declared in..."
+
+// CORRETO: arquivo em src/com/empresa/modelo/Produto.java
+package com.empresa.modelo;
+
+public class Produto {
+    // ...
+}`,
+      },
+      {
+        title: 'Import com wildcard não importa subpacotes',
+        description: 'import java.util.* importa classes de java.util (ArrayList, HashMap, etc.) mas NÃO importa classes de java.util.stream ou java.util.concurrent.',
+        code: `import java.util.*;  // importa ArrayList, HashMap, List, etc.
+
+// MAS NÃO IMPORTA:
+// java.util.stream.Stream  → precisa: import java.util.stream.*;
+// java.util.concurrent.Future → precisa: import java.util.concurrent.*;
+
+// Cada pacote é independente!
+// import java.util.*;
+// import java.util.stream.*;  // necessário separadamente!`,
+      },
+      {
+        title: 'Esquecer de importar classes usadas',
+        description: 'Se usar uma classe de outro pacote sem import, o compilador dá erro "cannot find symbol". Classes de java.lang (String, Math, System, Integer) são importadas automaticamente.',
+        code: `// ERRADO: esqueceu o import
+// ArrayList<String> lista = new ArrayList<>();
+// Erro: "cannot find symbol: class ArrayList"
+
+// CORRETO: adicionar import
+import java.util.ArrayList;
+ArrayList<String> lista = new ArrayList<>(); // OK!
+
+// NÃO PRECISA importar (java.lang é automático):
+String texto = "Java";     // java.lang.String
+int num = Integer.parseInt("42");  // java.lang.Integer
+double raiz = Math.sqrt(25);      // java.lang.Math`,
+      },
+    ],
+    summary: [
+      'Pacotes organizam classes em diretórios lógicos e evitam conflitos de nomes',
+      'Declaração package deve ser a PRIMEIRA linha útil do arquivo',
+      'A pasta no disco DEVE corresponder ao nome do pacote (com/empresa/modelo/)',
+      'import traz classes de outros pacotes para uso pelo nome curto',
+      'Classes do mesmo pacote não precisam de import',
+      'java.lang (String, Math, System, Integer) é importado automaticamente',
+      'Wildcard (import java.util.*) importa todas as classes do pacote, mas NÃO subpacotes',
+      'Import estático (import static) permite usar constantes e métodos sem prefixo da classe',
+      'Convenção de nomes: domínio invertido + projeto (com.empresa.projeto)',
     ],
   },
 
