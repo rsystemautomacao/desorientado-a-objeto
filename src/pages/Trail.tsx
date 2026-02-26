@@ -2,8 +2,28 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules } from '@/data/modules';
+import { lessonContents } from '@/data/lessonContents';
 import { useProgress } from '@/hooks/useProgress';
 import { Search, CheckCircle2, Clock, Star, StarOff } from 'lucide-react';
+
+/** Checks if search term matches lesson title OR body content */
+function matchesSearch(lessonId: string, title: string, term: string): boolean {
+  if (!term) return true;
+  const lower = term.toLowerCase();
+  if (title.toLowerCase().includes(lower)) return true;
+
+  const content = lessonContents[lessonId];
+  if (!content) return false;
+
+  // Search in objectives
+  if (content.objectives?.some((o) => o.toLowerCase().includes(lower))) return true;
+  // Search in section titles and bodies
+  if (content.sections?.some((s) => s.title.toLowerCase().includes(lower) || s.body.toLowerCase().includes(lower))) return true;
+  // Search in summary
+  if (content.summary?.some((s) => s.toLowerCase().includes(lower))) return true;
+
+  return false;
+}
 
 export default function Trail() {
   const [filter, setFilter] = useState<string>('todos');
@@ -16,7 +36,7 @@ export default function Trail() {
       .map((m) => ({
         ...m,
         lessons: m.lessons.filter((l) =>
-          l.title.toLowerCase().includes(search.toLowerCase())
+          matchesSearch(l.id, l.title, search)
         ),
       }))
       .filter((m) => m.lessons.length > 0);
@@ -41,7 +61,7 @@ export default function Trail() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar aula (ex: herança, arrays, switch...)"
+              placeholder="Buscar no titulo e conteudo (ex: ArrayList, encapsulamento, try catch...)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
