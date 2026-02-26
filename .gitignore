@@ -27,3 +27,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Evitar commit acidental de chaves/saída de scripts
+b64.txt
+nul
+.claude/
