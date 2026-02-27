@@ -82,16 +82,6 @@ export default function Admin() {
   const keyValid =
     keyTrimmed === DEFAULT_ADMIN_KEY || (EXTRA_ADMIN_KEY.length > 0 && keyTrimmed === EXTRA_ADMIN_KEY);
 
-  // Quem não tem a chave correta na URL não pode saber que a página existe
-  if (!keyValid) {
-    return <NotFound />;
-  }
-
-  // Logado com outro email: tratar como 404
-  if (!authLoading && user && !isAdmin) {
-    return <NotFound />;
-  }
-
   const loadHistory = async () => {
     if (!user) return;
     setHistoryLoading(true);
@@ -208,6 +198,10 @@ export default function Admin() {
   useEffect(() => {
     setPage(0);
   }, [search, filterTrail, filterProgress, filterActive]);
+
+  // Early returns só depois de todos os hooks (evita React error #310)
+  if (!keyValid) return <NotFound />;
+  if (!authLoading && user && !isAdmin) return <NotFound />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
