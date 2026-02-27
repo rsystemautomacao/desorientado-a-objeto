@@ -5,6 +5,7 @@ import InfoBox from '@/components/InfoBox';
 import QuizComponent from '@/components/QuizComponent';
 import TryItBox from '@/components/TryItBox';
 import CodeFillExerciseBox from '@/components/CodeFillExerciseBox';
+import LessonNotes from '@/components/LessonNotes';
 import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
@@ -189,6 +190,9 @@ export default function Lesson() {
             />
           </section>
         )}
+
+        {/* Personal Notes */}
+        <LessonNotes lessonId={id} />
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t border-border">
