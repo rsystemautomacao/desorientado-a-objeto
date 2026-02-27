@@ -2,6 +2,15 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light') document.documentElement.classList.add('light');
+          else document.documentElement.classList.remove('light');
+        } catch (_) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DESorientado a Objetos — Do Zero ao Avançado em POO</title>
     <meta name="description" content="Aprenda Java do zero ao avançado com foco em Lógica e POO. Curso completo com exercícios, quizzes e perguntas de entrevista." />

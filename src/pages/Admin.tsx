@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
 import { modules } from '@/data/modules';
@@ -35,6 +36,8 @@ import {
   TrendingUp,
   Trophy,
   RefreshCw,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
@@ -367,6 +370,7 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const key = searchParams.get('k') ?? '';
   const { user, loading: authLoading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -508,6 +512,16 @@ export default function Admin() {
             Painel do Professor
           </h1>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <span className="text-sm text-muted-foreground truncate max-w-[180px]" title={user?.email ?? ''}>
               <User className="h-4 w-4 inline mr-1" />
               {user?.email}

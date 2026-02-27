@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2 } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [logoutExiting, setLogoutExiting] = useState(false);
   const location = useLocation();
   const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleConfirmLogout = useCallback(() => {
     setLogoutConfirmOpen(false);
@@ -74,6 +76,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             {!loading && (
               user ? (
                 <DropdownMenu>
@@ -122,6 +134,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {menuOpen && (
           <div className="md:hidden border-t border-border bg-background p-4 space-y-1">
+            <button
+              type="button"
+              onClick={() => { toggleTheme(); setMenuOpen(false); }}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+            </button>
             {navItems.map((item) => (
               <Link
                 key={item.to}
