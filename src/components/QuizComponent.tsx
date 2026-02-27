@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { QuizQuestion } from '@/data/types';
 import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 
@@ -20,22 +20,40 @@ export default function QuizComponent({ questions, onComplete }: Props) {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const quizQuestions = useMemo(() => shuffle(questions).slice(0, 5), [questions]);
+  // Stabilize questions: only shuffle once on mount (or when question IDs change).
+  // Using useRef + useMemo to prevent re-shuffling when the parent re-renders
+  // and passes a new array reference with the same content.
+  const questionIdsKey = questions.map((q) => q.id).join(',');
+  const stableQuestionsRef = useRef<{ key: string; items: QuizQuestion[] }>({ key: '', items: [] });
 
-  const score = useMemo(() => {
-    if (!submitted) return 0;
-    return quizQuestions.reduce((acc, q, i) => acc + (selected[i] === q.correct ? 1 : 0), 0);
-  }, [submitted, selected, quizQuestions]);
+  const quizQuestions = useMemo(() => {
+    if (stableQuestionsRef.current.key === questionIdsKey) {
+      return stableQuestionsRef.current.items;
+    }
+    const shuffled = shuffle(questions).slice(0, 5);
+    stableQuestionsRef.current = { key: questionIdsKey, items: shuffled };
+    return shuffled;
+  }, [questionIdsKey, questions]);
 
   const handleSubmit = () => {
+    // Calculate score BEFORE setting submitted, then pass to onComplete
+    const finalScore = quizQuestions.reduce(
+      (acc, q, i) => acc + (selected[i] === q.correct ? 1 : 0),
+      0,
+    );
     setSubmitted(true);
-    onComplete?.(score, quizQuestions.length);
+    onComplete?.(finalScore, quizQuestions.length);
   };
 
   const handleRetry = () => {
     setSelected({});
     setSubmitted(false);
   };
+
+  const score = useMemo(() => {
+    if (!submitted) return 0;
+    return quizQuestions.reduce((acc, q, i) => acc + (selected[i] === q.correct ? 1 : 0), 0);
+  }, [submitted, selected, quizQuestions]);
 
   return (
     <div className="space-y-6">
