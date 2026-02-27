@@ -1,3 +1,11 @@
+export interface QuizAttempt {
+  score: number;
+  total: number;
+  timestamp: string; // ISO string
+}
+
+export type QuizHistory = Record<string, QuizAttempt[]>;
+
 export interface Progress {
   completedLessons: string[];
   quizResults: Record<string, { score: number; total: number }>;
@@ -10,6 +18,8 @@ export interface Progress {
   };
   /** Tracks when each lesson was last studied (quiz taken or marked complete) */
   lastStudied: Record<string, string>; // lessonId -> ISO date 'YYYY-MM-DD'
+  /** Histórico opcional de tentativas por aula (somente cliente; opt-in via flag) */
+  quizHistory?: QuizHistory;
 }
 
 const DEFAULT: Progress = {
@@ -21,20 +31,25 @@ const DEFAULT: Progress = {
   lastStudied: {},
 };
 
+export const FEATURE_QUIZ_HISTORY =
+  typeof import.meta !== 'undefined' &&
+  (import.meta as any).env &&
+  (import.meta as any).env.VITE_FEATURE_QUIZ_HISTORY === 'true';
+
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_BASE_URL;
   return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : '';
 }
 
 export async function getProgressFromApi(token: string): Promise<Progress> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/api/progress`, {
+  const apiBase = getApiBase();
+  const res = await fetch(`${apiBase}/api/progress`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) throw new Error('UNAUTHORIZED');
   if (!res.ok) return { ...DEFAULT };
   const data = await res.json();
-  return {
+  const parsed: Progress = {
     completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : [],
     quizResults: data.quizResults && typeof data.quizResults === 'object' ? data.quizResults : {},
     favorites: Array.isArray(data.favorites) ? data.favorites : [],
@@ -47,6 +62,28 @@ export async function getProgressFromApi(token: string): Promise<Progress> {
           lastDate: typeof data.streak.lastDate === 'string' ? data.streak.lastDate : '',
         }
       : { current: 0, longest: 0, lastDate: '' },
+  };
+  // quizHistory não vem da API hoje; mantemos vazio aqui (client-side only)
+  if (data.quizHistory && typeof data.quizHistory === 'object') {
+    parsed.quizHistory = data.quizHistory as QuizHistory;
+  }
+  return parsed;
+}
+
+export function addQuizAttempt(
+  history: QuizHistory | undefined,
+  lessonId: string,
+  score: number,
+  total: number,
+  timestamp: string,
+  maxPerLesson = 10,
+): QuizHistory {
+  const current = history?.[lessonId] ?? [];
+  const next: QuizAttempt[] = [...current, { score, total, timestamp }];
+  const trimmed = next.length > maxPerLesson ? next.slice(next.length - maxPerLesson) : next;
+  return {
+    ...(history ?? {}),
+    [lessonId]: trimmed,
   };
 }
 

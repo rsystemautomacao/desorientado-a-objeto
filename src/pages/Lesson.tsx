@@ -10,11 +10,51 @@ import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
+import type { QuizAttempt } from '@/lib/progressStore';
 import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer } from 'lucide-react';
+
+const FEATURE_QUIZ_HISTORY =
+  typeof import.meta !== 'undefined' &&
+  (import.meta as any).env &&
+  (import.meta as any).env.VITE_FEATURE_QUIZ_HISTORY === 'true';
+
+function QuizHistorySection({ attempts }: { attempts: QuizAttempt[] }) {
+  if (!attempts || attempts.length === 0) {
+    return (
+      <div className="mt-4 text-xs text-muted-foreground">
+        Histórico de tentativas (quando ativado) aparecerá aqui após você fazer o quiz.
+      </div>
+    );
+  }
+  const sorted = [...attempts].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+  return (
+    <div className="mt-4 border-t border-border/60 pt-3">
+      <p className="text-xs font-semibold text-muted-foreground mb-2">
+        Histórico de tentativas (mais recentes primeiro)
+      </p>
+      <div className="max-h-40 overflow-y-auto text-xs">
+        {sorted.map((att, idx) => {
+          const date = new Date(att.timestamp);
+          const label = Number.isNaN(date.getTime())
+            ? att.timestamp
+            : date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+          return (
+            <div key={idx} className="flex items-center justify-between py-0.5 text-muted-foreground">
+              <span>{label}</span>
+              <span className="font-medium">
+                {att.score}/{att.total} ({att.total > 0 ? Math.round((att.score / att.total) * 100) : 0}%)
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+  const { progress, isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
 
   if (!id) return null;
 
@@ -196,6 +236,9 @@ export default function Lesson() {
               questions={lessonQuiz}
               onComplete={(score, total) => saveQuizResult(id, score, total)}
             />
+            {FEATURE_QUIZ_HISTORY && (
+              <QuizHistorySection attempts={progress.quizHistory?.[id] ?? []} />
+            )}
           </section>
         )}
 

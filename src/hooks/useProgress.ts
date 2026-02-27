@@ -6,6 +6,8 @@ import {
   updateStreak,
   getQuizXp,
   XP_REWARDS,
+  addQuizAttempt,
+  FEATURE_QUIZ_HISTORY,
   type Progress,
 } from '@/lib/progressStore';
 
@@ -147,12 +149,18 @@ export function useProgress() {
   const saveQuizResult = useCallback((lessonId: string, score: number, total: number) => {
     setProgress((p) => {
       const xpGain = getQuizXp(score, total);
+      const timestamp = new Date().toISOString();
+      const nextHistory = FEATURE_QUIZ_HISTORY
+        ? ((p.quizHistory && addQuizAttempt(p.quizHistory, lessonId, score, total, timestamp)) ??
+          addQuizAttempt(undefined, lessonId, score, total, timestamp))
+        : p.quizHistory;
       return {
         ...p,
         quizResults: { ...p.quizResults, [lessonId]: { score, total } },
         xp: p.xp + xpGain,
         streak: updateStreak(p.streak),
         lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
+        ...(FEATURE_QUIZ_HISTORY ? { quizHistory: nextHistory } : {}),
       };
     });
   }, []);
