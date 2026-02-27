@@ -216,7 +216,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
-        <div className="container">DESorientado a Objetos © 2024 — Aprenda Java do zero ao avançado</div>
+        <div className="container">DESorientado a Objetos © 2025–2026 — Aprenda Java do zero ao avançado</div>
       </footer>
     </div>
   );
