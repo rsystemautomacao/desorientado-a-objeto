@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
 import { getLevel, getReviewSuggestions } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
-import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap } from 'lucide-react';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper } from 'lucide-react';
 import {
   RadialBarChart, RadialBar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [studentName, setStudentName] = useState('');
   const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
+  const [announcements, setAnnouncements] = useState<{ id: string; message: string; type: string }[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -25,6 +26,17 @@ export default function Dashboard() {
       getProfileFromApi(token).then((p) => setStudentName(p.nome || user.displayName || 'Aluno'))
     ).catch(() => setStudentName(user.displayName || 'Aluno'));
   }, [user]);
+
+  // Load announcements
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_BASE_URL
+      ? String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+      : (typeof window !== 'undefined' ? window.location.origin : '');
+    fetch(`${base}/api/announcements`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.announcements) setAnnouncements(d.announcements); })
+      .catch(() => {});
+  }, []);
   const allLessons = getAllLessons();
   const totalLessons = allLessons.length;
   const completedCount = progress.completedLessons.length;
@@ -47,6 +59,26 @@ export default function Dashboard() {
     <Layout>
       <div className="container py-10 animate-fade-in">
         <h1 className="text-3xl font-bold mb-8">Dashboard do Aluno</h1>
+
+        {/* Announcements from teacher */}
+        {announcements.length > 0 && (
+          <div className="space-y-2 mb-6">
+            {announcements.map((a) => {
+              const styles = a.type === 'warning'
+                ? 'border-yellow-500/40 bg-yellow-500/10 text-yellow-800'
+                : a.type === 'success'
+                ? 'border-green-500/40 bg-green-500/10 text-green-800'
+                : 'border-blue-500/40 bg-blue-500/10 text-blue-800';
+              const Icon = a.type === 'warning' ? AlertTriangle : a.type === 'success' ? PartyPopper : Info;
+              return (
+                <div key={a.id} className={`flex items-start gap-3 p-4 rounded-lg border ${styles}`}>
+                  <Icon className="h-5 w-5 shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium">{a.message}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* XP & Streak bar */}
         {(() => {
