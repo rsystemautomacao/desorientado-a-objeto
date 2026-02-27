@@ -11,6 +11,27 @@ import {
 
 const STORAGE_KEY_PREFIX = 'desorientado-progress';
 
+function getApiBase(): string {
+  const base = import.meta.env.VITE_API_BASE_URL;
+  if (typeof base === 'string' && base.length > 0) return base.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin;
+  return '';
+}
+
+/** Fire-and-forget: registra atividade no backend para timeline do admin */
+async function logActivity(token: string, data: { type: string; lessonId: string; score?: number; total?: number }) {
+  try {
+    const base = getApiBase();
+    await fetch(`${base}/api/activity`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    // silently ignore — activity log is best-effort
+  }
+}
+
 const DEFAULT_PROGRESS: Progress = {
   completedLessons: [],
   quizResults: {},
@@ -127,6 +148,8 @@ export function useProgress() {
   const completeLesson = useCallback((id: string) => {
     setProgress((p) => {
       if (p.completedLessons.includes(id)) return p;
+      // Log activity (fire-and-forget)
+      if (user) user.getIdToken().then((t) => logActivity(t, { type: 'lesson_complete', lessonId: id }));
       return {
         ...p,
         completedLessons: [...p.completedLessons, id],
@@ -135,7 +158,7 @@ export function useProgress() {
         lastStudied: { ...p.lastStudied, [id]: todayStr() },
       };
     });
-  }, []);
+  }, [user]);
 
   const uncompleteLesson = useCallback((id: string) => {
     setProgress((p) => ({
@@ -145,6 +168,8 @@ export function useProgress() {
   }, []);
 
   const saveQuizResult = useCallback((lessonId: string, score: number, total: number) => {
+    // Log activity (fire-and-forget)
+    if (user) user.getIdToken().then((t) => logActivity(t, { type: 'quiz_complete', lessonId, score, total }));
     setProgress((p) => {
       const xpGain = getQuizXp(score, total);
       return {
@@ -155,7 +180,7 @@ export function useProgress() {
         lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
       };
     });
-  }, []);
+  }, [user]);
 
   const toggleFavorite = useCallback((id: string) => {
     setProgress((p) => ({

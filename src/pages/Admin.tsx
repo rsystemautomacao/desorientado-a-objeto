@@ -35,6 +35,8 @@ import {
   TrendingUp,
   Trophy,
   RefreshCw,
+  Activity,
+  Clock,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
@@ -42,6 +44,16 @@ const DEFAULT_ADMIN_KEY = 'desorientado-admin';
 const EXTRA_ADMIN_KEY = (import.meta.env.VITE_ADMIN_KEY || '').trim();
 
 const TOTAL_LESSONS = modules.reduce((acc, m) => acc + m.lessons.length, 0);
+
+interface ActivityEntry {
+  userId: string;
+  nome: string;
+  type: 'lesson_complete' | 'quiz_complete';
+  lessonId: string;
+  score?: number;
+  total?: number;
+  timestamp: string;
+}
 
 interface StudyHistoryEntry {
   userId: string;
@@ -372,6 +384,7 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [entries, setEntries] = useState<StudyHistoryEntry[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
@@ -411,6 +424,17 @@ export default function Admin() {
       }
       const data = await res.json();
       setEntries(data.entries ?? []);
+
+      // Load activities timeline (best-effort, don't block)
+      try {
+        const actRes = await fetch(`${base}/api/admin/activities?limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (actRes.ok) {
+          const actData = await actRes.json();
+          setActivities(actData.activities ?? []);
+        }
+      } catch { /* ignore */ }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setHistoryError(`Erro de conexao: ${msg}`);
@@ -664,6 +688,9 @@ export default function Admin() {
 
             {/* ===== Quiz Analytics ===== */}
             <QuizAnalyticsSection entries={entries} />
+
+            {/* ===== Activity Timeline ===== */}
+            <ActivityTimeline activities={activities} />
           </>
         )}
       </main>
@@ -672,6 +699,63 @@ export default function Admin() {
 }
 
 // ---------- Small components ----------
+
+function ActivityTimeline({ activities }: { activities: ActivityEntry[] }) {
+  if (activities.length === 0) return null;
+
+  function relativeTime(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'agora';
+    if (mins < 60) return `${mins}min atras`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h atras`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'ontem';
+    return `${days} dias atras`;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+        <Activity className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Atividade Recente</h2>
+        <span className="text-xs text-muted-foreground ml-auto">{activities.length} eventos</span>
+      </div>
+      <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
+        {activities.map((a, i) => {
+          const isQuiz = a.type === 'quiz_complete';
+          const pct = isQuiz && a.total && a.total > 0 ? Math.round(((a.score ?? 0) / a.total) * 100) : -1;
+          return (
+            <div key={`${a.userId}-${a.timestamp}-${i}`} className="flex items-start gap-3 px-4 py-3 text-sm">
+              <div className={`mt-0.5 p-1.5 rounded-full shrink-0 ${isQuiz ? 'bg-blue-500/10 text-blue-600' : 'bg-green-500/10 text-green-600'}`}>
+                {isQuiz ? <ClipboardList className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">
+                  <span className="font-medium">{a.nome || `id: ${a.userId.slice(0, 8)}...`}</span>
+                  {' '}
+                  {isQuiz ? (
+                    <>
+                      fez o quiz de <span className="font-medium">{getLessonTitle(a.lessonId)}</span>
+                      {pct >= 0 && <span className={`ml-1 font-medium ${scoreColor(pct)}`}>({a.score}/{a.total})</span>}
+                    </>
+                  ) : (
+                    <>concluiu <span className="font-medium">{getLessonTitle(a.lessonId)}</span></>
+                  )}
+                </p>
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1 shrink-0">
+                <Clock className="h-3 w-3" />
+                {relativeTime(a.timestamp)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; label: string; value: string | number; sub?: string; color?: string }) {
   return (
