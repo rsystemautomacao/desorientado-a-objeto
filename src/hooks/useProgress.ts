@@ -3,6 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   getProgressFromApi,
   saveProgressToApi,
+  updateStreak,
+  getQuizXp,
+  XP_REWARDS,
   type Progress,
 } from '@/lib/progressStore';
 
@@ -12,7 +15,14 @@ const DEFAULT_PROGRESS: Progress = {
   completedLessons: [],
   quizResults: {},
   favorites: [],
+  xp: 0,
+  streak: { current: 0, longest: 0, lastDate: '' },
+  lastStudied: {},
 };
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function storageKey(uid: string | null): string {
   return uid ? `${STORAGE_KEY_PREFIX}-${uid}` : STORAGE_KEY_PREFIX;
@@ -115,10 +125,16 @@ export function useProgress() {
   }, [user?.uid, progress, progressLoaded, authLoading]);
 
   const completeLesson = useCallback((id: string) => {
-    setProgress((p) => ({
-      ...p,
-      completedLessons: p.completedLessons.includes(id) ? p.completedLessons : [...p.completedLessons, id],
-    }));
+    setProgress((p) => {
+      if (p.completedLessons.includes(id)) return p;
+      return {
+        ...p,
+        completedLessons: [...p.completedLessons, id],
+        xp: p.xp + XP_REWARDS.LESSON_COMPLETE,
+        streak: updateStreak(p.streak),
+        lastStudied: { ...p.lastStudied, [id]: todayStr() },
+      };
+    });
   }, []);
 
   const uncompleteLesson = useCallback((id: string) => {
@@ -129,10 +145,16 @@ export function useProgress() {
   }, []);
 
   const saveQuizResult = useCallback((lessonId: string, score: number, total: number) => {
-    setProgress((p) => ({
-      ...p,
-      quizResults: { ...p.quizResults, [lessonId]: { score, total } },
-    }));
+    setProgress((p) => {
+      const xpGain = getQuizXp(score, total);
+      return {
+        ...p,
+        quizResults: { ...p.quizResults, [lessonId]: { score, total } },
+        xp: p.xp + xpGain,
+        streak: updateStreak(p.streak),
+        lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
+      };
+    });
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {

@@ -5,11 +5,12 @@ import InfoBox from '@/components/InfoBox';
 import QuizComponent from '@/components/QuizComponent';
 import TryItBox from '@/components/TryItBox';
 import CodeFillExerciseBox from '@/components/CodeFillExerciseBox';
+import LessonNotes from '@/components/LessonNotes';
 import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
-import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer } from 'lucide-react';
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +63,14 @@ export default function Lesson() {
               </button>
               <button onClick={() => toggleFavorite(id)} className="p-1">
                 {fav ? <Star className="h-5 w-5 text-accent fill-accent" /> : <StarOff className="h-5 w-5 text-muted-foreground hover:text-accent" />}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors print:hidden"
+                title="Imprimir / Salvar como PDF"
+              >
+                <Printer className="h-4 w-4" />
+                PDF
               </button>
             </div>
           </div>
@@ -189,6 +198,9 @@ export default function Lesson() {
             />
           </section>
         )}
+
+        {/* Personal Notes */}
+        <LessonNotes lessonId={id} />
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t border-border">
