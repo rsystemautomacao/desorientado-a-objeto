@@ -70,6 +70,22 @@ export default function Lesson() {
     addLessonTime,
   } = useProgress();
 
+  // Tempo de estudo por aula (apenas quando a feature estiver ligada)
+  // Sempre registramos o hook; a lógica interna respeita a flag.
+  const startRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!FEATURE_LESSON_TIME || !id) return undefined;
+    startRef.current = Date.now();
+    return () => {
+      if (!FEATURE_LESSON_TIME || !id || startRef.current == null) return;
+      const elapsedSec = Math.round((Date.now() - startRef.current) / 1000);
+      if (elapsedSec >= 5) {
+        addLessonTime(id, elapsedSec);
+      }
+      startRef.current = null;
+    };
+  }, [id, addLessonTime]);
+
   if (!id) return null;
 
   const allLessons = getAllLessons();
@@ -90,25 +106,6 @@ export default function Lesson() {
         </div>
       </Layout>
     );
-  }
-
-  // Tempo de estudo por aula (apenas quando a feature estiver ligada)
-  if (FEATURE_LESSON_TIME) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const React = require('react') as typeof import('react');
-    // usamos um efeito separado para não alterar a ordem dos hooks existentes
-    // @ts-expect-error dynamic hook; mantido condicionalmente pela flag de build
-    React.useEffect(() => {
-      if (!id) return;
-      const start = Date.now();
-      return () => {
-        const elapsedSec = Math.round((Date.now() - start) / 1000);
-        if (elapsedSec >= 5) {
-          addLessonTime(id, elapsedSec);
-        }
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
   }
 
   return (
