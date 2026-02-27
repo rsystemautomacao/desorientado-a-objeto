@@ -126,6 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const adminEmail = await requireAdminEmail(req);
     if (!adminEmail) {
+      console.warn('[admin/study-history] 403 Forbidden: invalid or non-admin token');
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -163,6 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     entries.sort((a, b) => b.completedCount - a.completedCount);
 
+    console.log('[admin/study-history] success', { count: entries.length });
     return res.status(200).json({ entries });
   } catch (err) {
     console.error('Admin study-history error:', err);
