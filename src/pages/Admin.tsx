@@ -199,7 +199,9 @@ export default function Admin() {
     setPage(0);
   }, [search, filterTrail, filterProgress, filterActive]);
 
-  // Early returns só depois de todos os hooks (evita React error #310)
+  const difficultModules = useMemo(() => computeModuleDifficulty(entries), [entries]);
+
+  // Early returns só depois de TODOS os hooks (evita React error #310)
   if (!keyValid) return <NotFound />;
   if (!authLoading && user && !isAdmin) return <NotFound />;
 
@@ -278,7 +280,6 @@ export default function Admin() {
   const avgCompletionPct = entries.length > 0
     ? Math.round((totalCompleted / (entries.length * TOTAL_LESSONS)) * 100)
     : 0;
-  const difficultModules = useMemo(() => computeModuleDifficulty(entries), [entries]);
 
   const exportCsv = () => {
     const headers = ['Nome', 'Trilha atual', 'Progresso %', 'Última atividade', 'Tempo total', 'Exercícios (quizzes)', 'Taxa de acerto %', 'Alertas'];
