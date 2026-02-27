@@ -12,6 +12,8 @@ export interface ProgressDoc {
   completedLessons: string[];
   quizResults: Record<string, { score: number; total: number }>;
   favorites: string[];
+  /** Tempo total de estudo por aula, em segundos (opcional e aditivo) */
+  lessonTime?: Record<string, number>;
 }
 
 const DEFAULT_PROGRESS: ProgressDoc = {
@@ -19,6 +21,7 @@ const DEFAULT_PROGRESS: ProgressDoc = {
   completedLessons: [],
   quizResults: {},
   favorites: [],
+  lessonTime: {},
 };
 
 function getMongoClient() {
@@ -133,6 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             completedLessons: Array.isArray(doc.completedLessons) ? doc.completedLessons : [],
             quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},
             favorites: Array.isArray(doc.favorites) ? doc.favorites : [],
+            lessonTime: doc.lessonTime && typeof doc.lessonTime === 'object' ? doc.lessonTime : {},
           }
         : { ...DEFAULT_PROGRESS, userId };
       return res.status(200).json(progress);
@@ -159,6 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       completedLessons: Array.isArray(body.completedLessons) ? body.completedLessons : [],
       quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
       favorites: Array.isArray(body.favorites) ? body.favorites : [],
+      lessonTime: body.lessonTime && typeof body.lessonTime === 'object' ? body.lessonTime : {},
     };
     try {
       const client = getMongoClient();

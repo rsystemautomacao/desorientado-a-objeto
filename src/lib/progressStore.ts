@@ -20,6 +20,8 @@ export interface Progress {
   lastStudied: Record<string, string>; // lessonId -> ISO date 'YYYY-MM-DD'
   /** Histórico opcional de tentativas por aula (somente cliente; opt-in via flag) */
   quizHistory?: QuizHistory;
+  /** Tempo total de estudo por aula, em segundos (opcional e aditivo) */
+  lessonTime?: Record<string, number>;
 }
 
 const DEFAULT: Progress = {
@@ -35,6 +37,11 @@ export const FEATURE_QUIZ_HISTORY =
   typeof import.meta !== 'undefined' &&
   (import.meta as any).env &&
   (import.meta as any).env.VITE_FEATURE_QUIZ_HISTORY === 'true';
+
+export const FEATURE_LESSON_TIME =
+  typeof import.meta !== 'undefined' &&
+  (import.meta as any).env &&
+  (import.meta as any).env.VITE_FEATURE_LESSON_TIME === 'true';
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_BASE_URL;
@@ -67,6 +74,9 @@ export async function getProgressFromApi(token: string): Promise<Progress> {
   if (data.quizHistory && typeof data.quizHistory === 'object') {
     parsed.quizHistory = data.quizHistory as QuizHistory;
   }
+  if (data.lessonTime && typeof data.lessonTime === 'object') {
+    parsed.lessonTime = data.lessonTime as Record<string, number>;
+  }
   return parsed;
 }
 
@@ -84,6 +94,21 @@ export function addQuizAttempt(
   return {
     ...(history ?? {}),
     [lessonId]: trimmed,
+  };
+}
+
+export function addLessonTime(
+  current: Record<string, number> | undefined,
+  lessonId: string,
+  seconds: number,
+): Record<string, number> {
+  const safe = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+  if (safe === 0) return current ?? {};
+  const existing = current?.[lessonId] ?? 0;
+  const next = existing + safe;
+  return {
+    ...(current ?? {}),
+    [lessonId]: next,
   };
 }
 

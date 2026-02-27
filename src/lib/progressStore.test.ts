@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { addQuizAttempt, type QuizHistory } from './progressStore';
+import {
+  addQuizAttempt,
+  addLessonTime,
+  type QuizHistory,
+} from './progressStore';
 
 describe('addQuizAttempt', () => {
   it('adiciona primeira tentativa quando não há histórico', () => {
@@ -24,3 +28,17 @@ describe('addQuizAttempt', () => {
   });
 });
 
+describe('addLessonTime', () => {
+  it('soma tempo para uma aula, criando objeto quando necessário', () => {
+    const first = addLessonTime(undefined, 'lesson-1', 30);
+    expect(first['lesson-1']).toBe(30);
+    const second = addLessonTime(first, 'lesson-1', 15);
+    expect(second['lesson-1']).toBe(45);
+  });
+
+  it('ignora valores não positivos mantendo o estado', () => {
+    const base = { 'lesson-1': 60 };
+    const same = addLessonTime(base, 'lesson-1', 0);
+    expect(same['lesson-1']).toBe(60);
+  });
+});

@@ -7,7 +7,9 @@ import {
   getQuizXp,
   XP_REWARDS,
   addQuizAttempt,
+  addLessonTime,
   FEATURE_QUIZ_HISTORY,
+  FEATURE_LESSON_TIME,
   type Progress,
 } from '@/lib/progressStore';
 
@@ -20,6 +22,7 @@ const DEFAULT_PROGRESS: Progress = {
   xp: 0,
   streak: { current: 0, longest: 0, lastDate: '' },
   lastStudied: {},
+  lessonTime: {},
 };
 
 function todayStr(): string {
@@ -165,6 +168,14 @@ export function useProgress() {
     });
   }, []);
 
+  const addLessonTimeSeconds = useCallback((lessonId: string, seconds: number) => {
+    if (!FEATURE_LESSON_TIME) return;
+    setProgress((p) => ({
+      ...p,
+      lessonTime: addLessonTime(p.lessonTime, lessonId, seconds),
+    }));
+  }, []);
+
   const toggleFavorite = useCallback((id: string) => {
     setProgress((p) => ({
       ...p,
@@ -182,6 +193,7 @@ export function useProgress() {
     completeLesson,
     uncompleteLesson,
     saveQuizResult,
+    addLessonTime: addLessonTimeSeconds,
     toggleFavorite,
     isCompleted,
     isFavorite,

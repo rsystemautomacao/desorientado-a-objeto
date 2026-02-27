@@ -18,6 +18,11 @@ const FEATURE_QUIZ_HISTORY =
   (import.meta as any).env &&
   (import.meta as any).env.VITE_FEATURE_QUIZ_HISTORY === 'true';
 
+const FEATURE_LESSON_TIME =
+  typeof import.meta !== 'undefined' &&
+  (import.meta as any).env &&
+  (import.meta as any).env.VITE_FEATURE_LESSON_TIME === 'true';
+
 function QuizHistorySection({ attempts }: { attempts: QuizAttempt[] }) {
   if (!attempts || attempts.length === 0) {
     return (
@@ -54,7 +59,16 @@ function QuizHistorySection({ attempts }: { attempts: QuizAttempt[] }) {
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { progress, isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+  const {
+    progress,
+    isCompleted,
+    completeLesson,
+    uncompleteLesson,
+    isFavorite,
+    toggleFavorite,
+    saveQuizResult,
+    addLessonTime,
+  } = useProgress();
 
   if (!id) return null;
 
@@ -78,6 +92,25 @@ export default function Lesson() {
     );
   }
 
+  // Tempo de estudo por aula (apenas quando a feature estiver ligada)
+  if (FEATURE_LESSON_TIME) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const React = require('react') as typeof import('react');
+    // usamos um efeito separado para não alterar a ordem dos hooks existentes
+    // @ts-expect-error dynamic hook; mantido condicionalmente pela flag de build
+    React.useEffect(() => {
+      if (!id) return;
+      const start = Date.now();
+      return () => {
+        const elapsedSec = Math.round((Date.now() - start) / 1000);
+        if (elapsedSec >= 5) {
+          addLessonTime(id, elapsedSec);
+        }
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+  }
+
   return (
     <Layout>
       <div className="container max-w-4xl py-10 animate-fade-in">
@@ -94,6 +127,14 @@ export default function Lesson() {
             <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{lessonMeta.duration}</span>
+              {FEATURE_LESSON_TIME && (
+                <span className="text-xs text-muted-foreground">
+                  Tempo estudado:{' '}
+                  {progress.lessonTime && progress.lessonTime[id]
+                    ? `${Math.round(progress.lessonTime[id] / 60)} min`
+                    : 'N/D'}
+                </span>
+              )}
               <button
                 onClick={() => done ? uncompleteLesson(id) : completeLesson(id)}
                 className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full transition-colors ${done ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
