@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
 import { modules } from '@/data/modules';
@@ -36,8 +35,14 @@ import {
   TrendingUp,
   Trophy,
   RefreshCw,
-  Sun,
-  Moon,
+  Activity,
+  Clock,
+  Megaphone,
+  Send,
+  X,
+  Info,
+  AlertTriangle,
+  PartyPopper,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
@@ -45,6 +50,24 @@ const DEFAULT_ADMIN_KEY = 'desorientado-admin';
 const EXTRA_ADMIN_KEY = (import.meta.env.VITE_ADMIN_KEY || '').trim();
 
 const TOTAL_LESSONS = modules.reduce((acc, m) => acc + m.lessons.length, 0);
+
+interface AnnouncementEntry {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'success';
+  active: boolean;
+  createdAt: string;
+}
+
+interface ActivityEntry {
+  userId: string;
+  nome: string;
+  type: 'lesson_complete' | 'quiz_complete';
+  lessonId: string;
+  score?: number;
+  total?: number;
+  timestamp: string;
+}
 
 interface StudyHistoryEntry {
   userId: string;
@@ -370,12 +393,13 @@ export default function Admin() {
   const [searchParams] = useSearchParams();
   const key = searchParams.get('k') ?? '';
   const { user, loading: authLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [entries, setEntries] = useState<StudyHistoryEntry[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
@@ -415,6 +439,16 @@ export default function Admin() {
       }
       const data = await res.json();
       setEntries(data.entries ?? []);
+
+      // Load activities + announcements (best-effort, don't block)
+      try {
+        const [actRes, annRes] = await Promise.all([
+          fetch(`${base}/api/admin/activities?limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${base}/api/admin/announcements`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (actRes.ok) { const d = await actRes.json(); setActivities(d.activities ?? []); }
+        if (annRes.ok) { const d = await annRes.json(); setAnnouncements(d.announcements ?? []); }
+      } catch { /* ignore */ }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setHistoryError(`Erro de conexao: ${msg}`);
@@ -512,16 +546,6 @@ export default function Admin() {
             Painel do Professor
           </h1>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
             <span className="text-sm text-muted-foreground truncate max-w-[180px]" title={user?.email ?? ''}>
               <User className="h-4 w-4 inline mr-1" />
               {user?.email}
@@ -557,6 +581,13 @@ export default function Admin() {
               <StatCard icon={<BarChart3 className="h-4 w-4" />} label="Media quizzes" value={`${avgQuizScore}%`} color={scoreColor(avgQuizScore)} />
               <StatCard icon={<Trophy className="h-4 w-4" />} label="Concluiram tudo" value={studentsCompleted100} sub={`de ${entries.length}`} />
             </div>
+
+            {/* ===== Announcements ===== */}
+            <AnnouncementsManager
+              announcements={announcements}
+              onUpdate={setAnnouncements}
+              getToken={() => user!.getIdToken(true)}
+            />
 
             {/* ===== Student Table ===== */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -678,6 +709,9 @@ export default function Admin() {
 
             {/* ===== Quiz Analytics ===== */}
             <QuizAnalyticsSection entries={entries} />
+
+            {/* ===== Activity Timeline ===== */}
+            <ActivityTimeline activities={activities} />
           </>
         )}
       </main>
@@ -686,6 +720,185 @@ export default function Admin() {
 }
 
 // ---------- Small components ----------
+
+function AnnouncementsManager({ announcements, onUpdate, getToken }: { announcements: AnnouncementEntry[]; onUpdate: (a: AnnouncementEntry[]) => void; getToken: () => Promise<string> }) {
+  const [msg, setMsg] = useState('');
+  const [type, setType] = useState<'info' | 'warning' | 'success'>('info');
+  const [sending, setSending] = useState(false);
+
+  const activeAnn = announcements.filter((a) => a.active);
+  const inactiveAnn = announcements.filter((a) => !a.active);
+
+  const handleCreate = async () => {
+    if (!msg.trim()) return;
+    setSending(true);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      const res = await fetch(`${base}/api/admin/announcements`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg.trim(), type }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        onUpdate([{ id: data.id, message: data.message, type: data.type, active: true, createdAt: data.createdAt }, ...announcements]);
+        setMsg('');
+      }
+    } catch { /* ignore */ }
+    finally { setSending(false); }
+  };
+
+  const handleDeactivate = async (id: string) => {
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/admin/announcements?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      onUpdate(announcements.map((a) => a.id === id ? { ...a, active: false } : a));
+    } catch { /* ignore */ }
+  };
+
+  const typeIcon = (t: string) => {
+    if (t === 'warning') return <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />;
+    if (t === 'success') return <PartyPopper className="h-3.5 w-3.5 text-green-600" />;
+    return <Info className="h-3.5 w-3.5 text-blue-600" />;
+  };
+
+  const typeBorder = (t: string) => {
+    if (t === 'warning') return 'border-yellow-500/30 bg-yellow-500/5';
+    if (t === 'success') return 'border-green-500/30 bg-green-500/5';
+    return 'border-blue-500/30 bg-blue-500/5';
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+        <Megaphone className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Avisos para os Alunos</h2>
+        <span className="text-xs text-muted-foreground ml-auto">{activeAnn.length} ativo(s)</span>
+      </div>
+      <div className="p-4 space-y-4">
+        {/* Create form */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <textarea
+            value={msg}
+            onChange={(e) => setMsg(e.target.value)}
+            placeholder="Escreva um aviso para todos os alunos..."
+            rows={2}
+            maxLength={500}
+            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+          />
+          <div className="flex sm:flex-col gap-2">
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as 'info' | 'warning' | 'success')}
+              className="text-xs rounded-md border border-border bg-background px-2 py-1.5 focus:outline-none"
+            >
+              <option value="info">Informacao</option>
+              <option value="warning">Atencao</option>
+              <option value="success">Parabens</option>
+            </select>
+            <Button size="sm" className="gap-1 text-xs" onClick={handleCreate} disabled={!msg.trim() || sending}>
+              <Send className="h-3 w-3" /> {sending ? 'Enviando...' : 'Publicar'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Active announcements */}
+        {activeAnn.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Avisos ativos (visiveis no Dashboard dos alunos):</p>
+            {activeAnn.map((a) => (
+              <div key={a.id} className={`flex items-start gap-2 p-3 rounded-lg border ${typeBorder(a.type)}`}>
+                <div className="mt-0.5">{typeIcon(a.type)}</div>
+                <p className="flex-1 text-sm">{a.message}</p>
+                <button onClick={() => handleDeactivate(a.id)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0" title="Desativar aviso">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Inactive (collapsed) */}
+        {inactiveAnn.length > 0 && (
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer hover:text-foreground">{inactiveAnn.length} aviso(s) desativado(s)</summary>
+            <div className="mt-2 space-y-1">
+              {inactiveAnn.map((a) => (
+                <div key={a.id} className="flex items-center gap-2 p-2 rounded border border-border/50 opacity-60">
+                  {typeIcon(a.type)}
+                  <span className="truncate flex-1">{a.message}</span>
+                  <span className="text-[10px]">{new Date(a.createdAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActivityTimeline({ activities }: { activities: ActivityEntry[] }) {
+  if (activities.length === 0) return null;
+
+  function relativeTime(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'agora';
+    if (mins < 60) return `${mins}min atras`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h atras`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'ontem';
+    return `${days} dias atras`;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+        <Activity className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Atividade Recente</h2>
+        <span className="text-xs text-muted-foreground ml-auto">{activities.length} eventos</span>
+      </div>
+      <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
+        {activities.map((a, i) => {
+          const isQuiz = a.type === 'quiz_complete';
+          const pct = isQuiz && a.total && a.total > 0 ? Math.round(((a.score ?? 0) / a.total) * 100) : -1;
+          return (
+            <div key={`${a.userId}-${a.timestamp}-${i}`} className="flex items-start gap-3 px-4 py-3 text-sm">
+              <div className={`mt-0.5 p-1.5 rounded-full shrink-0 ${isQuiz ? 'bg-blue-500/10 text-blue-600' : 'bg-green-500/10 text-green-600'}`}>
+                {isQuiz ? <ClipboardList className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">
+                  <span className="font-medium">{a.nome || `id: ${a.userId.slice(0, 8)}...`}</span>
+                  {' '}
+                  {isQuiz ? (
+                    <>
+                      fez o quiz de <span className="font-medium">{getLessonTitle(a.lessonId)}</span>
+                      {pct >= 0 && <span className={`ml-1 font-medium ${scoreColor(pct)}`}>({a.score}/{a.total})</span>}
+                    </>
+                  ) : (
+                    <>concluiu <span className="font-medium">{getLessonTitle(a.lessonId)}</span></>
+                  )}
+                </p>
+              </div>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1 shrink-0">
+                <Clock className="h-3 w-3" />
+                {relativeTime(a.timestamp)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function StatCard({ icon, label, value, sub, color }: { icon: React.ReactNode; label: string; value: string | number; sub?: string; color?: string }) {
   return (
