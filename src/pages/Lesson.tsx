@@ -10,7 +10,7 @@ import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
-import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle } from 'lucide-react';
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +47,26 @@ export default function Lesson() {
           <span>/</span>
           <span>Módulo {lessonMeta.moduleId} — {mod?.title}</span>
         </div>
+
+        {/* Prerequisite warning */}
+        {(() => {
+          if (!mod || mod.id <= 1) return null;
+          const prevMod = modules.find((m) => m.id === mod.id - 1);
+          if (!prevMod) return null;
+          const prevDone = prevMod.lessons.filter((l) => isCompleted(l.id)).length;
+          const prevPct = Math.round((prevDone / prevMod.lessons.length) * 100);
+          if (prevPct >= 70) return null;
+          return (
+            <div className="flex items-start gap-2 p-3 mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-800 text-sm print:hidden">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>
+                Recomendamos concluir o <strong>{prevMod.icon} Modulo {prevMod.id} — {prevMod.title}</strong> antes
+                ({prevDone}/{prevMod.lessons.length} concluidas).
+                <Link to="/trilha" className="ml-1 underline hover:text-yellow-900">Ver trilha</Link>
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8">

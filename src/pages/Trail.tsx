@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import { modules } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { useProgress } from '@/hooks/useProgress';
-import { Search, CheckCircle2, Clock, Star, StarOff } from 'lucide-react';
+import { Search, CheckCircle2, Clock, Star, StarOff, AlertTriangle } from 'lucide-react';
 
 /** Checks if search term matches lesson title OR body content */
 function matchesSearch(lessonId: string, title: string, term: string): boolean {
@@ -82,11 +82,28 @@ export default function Trail() {
 
         {/* Modules */}
         <div className="space-y-10">
-          {filteredModules.map((m) => (
+          {filteredModules.map((m) => {
+            // Prerequisite check: suggest completing previous module first
+            const prevModule = m.id > 1 ? modules.find((pm) => pm.id === m.id - 1) : null;
+            const prevCompleted = prevModule ? prevModule.lessons.filter((l) => isCompleted(l.id)).length : 0;
+            const prevTotal = prevModule ? prevModule.lessons.length : 0;
+            const prevPct = prevTotal > 0 ? Math.round((prevCompleted / prevTotal) * 100) : 100;
+            const showPrereq = prevModule && prevPct < 70;
+
+            return (
             <div key={m.id}>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>{m.icon}</span> Módulo {m.id} — {m.title}
               </h2>
+              {showPrereq && (
+                <div className="flex items-start gap-2 p-3 mb-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-800 text-sm">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <p>
+                    Recomendamos concluir o <strong>{prevModule.icon} Modulo {prevModule.id} — {prevModule.title}</strong> antes
+                    ({prevCompleted}/{prevTotal} aulas concluidas — {prevPct}%).
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 {m.lessons.map((l, i) => {
                   const done = isCompleted(l.id);
@@ -110,7 +127,8 @@ export default function Trail() {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </Layout>
