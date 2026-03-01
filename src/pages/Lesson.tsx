@@ -24,44 +24,71 @@ export default function Lesson() {
   const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
 
-  // Track study time — saves every 30s + on unmount + on tab close
+  // Track study time — only counts when user is actively interacting
+  // (mouse move, scroll, keyboard, click, touch within last 30s)
   const addStudyTimeRef = useRef(addStudyTime);
   addStudyTimeRef.current = addStudyTime;
   const lessonIdRef = useRef(id);
   lessonIdRef.current = id;
-  const lastSavedRef = useRef(Date.now());
+  const activeSecondsRef = useRef(0);
+  const lastInteractionRef = useRef(Date.now());
 
   useEffect(() => {
-    lastSavedRef.current = Date.now();
+    activeSecondsRef.current = 0;
+    lastInteractionRef.current = Date.now();
 
+    const IDLE_THRESHOLD = 30_000; // 30s without interaction = idle
+    const CHECK_INTERVAL = 5_000; // check activity every 5s
+
+    // Mark interaction on any user activity
+    const markActivity = () => { lastInteractionRef.current = Date.now(); };
+
+    // Accumulate active seconds every 5s (only if user interacted recently)
+    const checkInterval = setInterval(() => {
+      if (Date.now() - lastInteractionRef.current < IDLE_THRESHOLD) {
+        activeSecondsRef.current += CHECK_INTERVAL / 1000;
+      }
+    }, CHECK_INTERVAL);
+
+    // Flush accumulated active time to storage
     const flush = () => {
       const lid = lessonIdRef.current;
       if (!lid) return;
-      const now = Date.now();
-      const seconds = Math.floor((now - lastSavedRef.current) / 1000);
+      // Count any remaining active partial interval
+      if (Date.now() - lastInteractionRef.current < IDLE_THRESHOLD) {
+        // There might be a partial 5s window that wasn't counted yet
+        // We don't add partial here since the checkInterval handles it
+      }
+      const seconds = Math.floor(activeSecondsRef.current);
       if (seconds >= 5) {
         addStudyTimeRef.current(lid, seconds);
-        lastSavedRef.current = now;
+        activeSecondsRef.current = 0;
       }
     };
 
-    // Save every 30 seconds while on the page
-    const interval = setInterval(flush, 30_000);
+    // Save every 30 seconds
+    const saveInterval = setInterval(flush, 30_000);
 
-    // Save when tab is closed / navigated away (browser level)
+    // Save on tab close / navigation
     const handleBeforeUnload = () => flush();
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // Save when tab becomes hidden (mobile or tab switch)
+    // Save when tab becomes hidden
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    // Listen for user interactions
+    const events = ['mousemove', 'scroll', 'keydown', 'click', 'touchstart'] as const;
+    events.forEach((evt) => document.addEventListener(evt, markActivity, { passive: true }));
+
     return () => {
-      clearInterval(interval);
+      clearInterval(checkInterval);
+      clearInterval(saveInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibility);
+      events.forEach((evt) => document.removeEventListener(evt, markActivity));
       flush(); // save remaining time on unmount (route change)
     };
   }, [id]);
