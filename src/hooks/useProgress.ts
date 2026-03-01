@@ -170,6 +170,19 @@ export function useProgress() {
   const saveQuizResult = useCallback((lessonId: string, score: number, total: number) => {
     // Log activity (fire-and-forget)
     if (user) user.getIdToken().then((t) => logActivity(t, { type: 'quiz_complete', lessonId, score, total }));
+
+    // Save to quiz history (localStorage only)
+    try {
+      const hKey = `desorientado-quiz-history-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(hKey);
+      const history: Record<string, { score: number; total: number; date: string }[]> = raw ? JSON.parse(raw) : {};
+      if (!history[lessonId]) history[lessonId] = [];
+      history[lessonId].push({ score, total, date: new Date().toISOString() });
+      // Keep last 10 attempts per lesson
+      if (history[lessonId].length > 10) history[lessonId] = history[lessonId].slice(-10);
+      localStorage.setItem(hKey, JSON.stringify(history));
+    } catch { /* ignore */ }
+
     setProgress((p) => {
       const xpGain = getQuizXp(score, total);
       return {
@@ -194,6 +207,16 @@ export function useProgress() {
   const isCompleted = useCallback((id: string) => progress.completedLessons.includes(id), [progress]);
   const isFavorite = useCallback((id: string) => progress.favorites.includes(id), [progress]);
 
+  const getQuizHistory = useCallback((lessonId: string): { score: number; total: number; date: string }[] => {
+    try {
+      const hKey = `desorientado-quiz-history-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(hKey);
+      if (!raw) return [];
+      const history = JSON.parse(raw);
+      return Array.isArray(history[lessonId]) ? history[lessonId] : [];
+    } catch { return []; }
+  }, [user?.uid]);
+
   return {
     progress,
     completeLesson,
@@ -202,5 +225,6 @@ export function useProgress() {
     toggleFavorite,
     isCompleted,
     isFavorite,
+    getQuizHistory,
   };
 }
