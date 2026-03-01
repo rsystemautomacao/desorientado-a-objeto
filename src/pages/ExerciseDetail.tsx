@@ -174,6 +174,69 @@ export default function ExerciseDetail() {
     setActiveLine(line);
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const ta = e.currentTarget;
+    const { selectionStart: start, selectionEnd: end, value } = ta;
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        const linePrefix = value.substring(lineStart, start);
+        const spacesToRemove = Math.min(4, linePrefix.length - linePrefix.trimStart().length, start - lineStart);
+        if (spacesToRemove > 0) {
+          const next = value.substring(0, lineStart) + value.substring(lineStart + spacesToRemove);
+          setCode(next);
+          requestAnimationFrame(() => {
+            ta.selectionStart = ta.selectionEnd = start - spacesToRemove;
+            updateActiveLine();
+          });
+        }
+      } else {
+        const next = value.substring(0, start) + '    ' + value.substring(end);
+        setCode(next);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + 4;
+          updateActiveLine();
+        });
+      }
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = value.substring(lineStart, start);
+      const indent = currentLine.match(/^(\s*)/)?.[1] ?? '';
+      const trimmed = value.substring(0, start).trimEnd();
+      const extra = trimmed.endsWith('{') ? '    ' : '';
+      const insertion = '\n' + indent + extra;
+      const next = value.substring(0, start) + insertion + value.substring(end);
+      setCode(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + insertion.length;
+        updateActiveLine();
+      });
+      return;
+    }
+
+    if (e.key === '}') {
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const beforeCursor = value.substring(lineStart, start);
+      if (/^\s{4,}$/.test(beforeCursor)) {
+        e.preventDefault();
+        const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + '}' + value.substring(end);
+        const newPos = start - 4 + 1;
+        setCode(dedented);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = newPos;
+          updateActiveLine();
+        });
+        return;
+      }
+    }
+  }, [setCode, updateActiveLine]);
+
   if (!exercise) {
     return (
       <Layout>
@@ -402,6 +465,7 @@ export default function ExerciseDetail() {
                     ref={textareaRef}
                     value={code}
                     onChange={(e) => { setCode(e.target.value); updateActiveLine(); }}
+                    onKeyDown={handleKeyDown}
                     onClick={updateActiveLine}
                     onKeyUp={updateActiveLine}
                     onFocus={updateActiveLine}
