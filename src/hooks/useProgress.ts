@@ -238,6 +238,55 @@ export function useProgress() {
     } catch { return {}; }
   }, [user?.uid]);
 
+  /** Registra exercício completo e adiciona XP */
+  const completeExercise = useCallback((exerciseId: string, xpReward: number) => {
+    // Save to exercise-specific localStorage
+    try {
+      const key = `desorientado-exercises-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      const data: Record<string, { passed: boolean; attempts: number; bestScore: string }> = raw ? JSON.parse(raw) : {};
+      if (data[exerciseId]?.passed) return; // already awarded XP for this exercise
+      data[exerciseId] = {
+        ...data[exerciseId],
+        passed: true,
+      };
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch { /* ignore */ }
+
+    // Add XP + update streak via main progress
+    if (user) user.getIdToken().then((t) => logActivity(t, { type: 'exercise_complete', lessonId: exerciseId }));
+    setProgress((p) => ({
+      ...p,
+      xp: p.xp + xpReward,
+      streak: updateStreak(p.streak),
+    }));
+  }, [user]);
+
+  /** Registra tentativa de exercício (sem XP) */
+  const saveExerciseAttempt = useCallback((exerciseId: string, score: string) => {
+    try {
+      const key = `desorientado-exercises-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      const data: Record<string, { passed: boolean; attempts: number; bestScore: string }> = raw ? JSON.parse(raw) : {};
+      const prev = data[exerciseId];
+      data[exerciseId] = {
+        passed: prev?.passed ?? false,
+        attempts: (prev?.attempts ?? 0) + 1,
+        bestScore: prev?.bestScore ?? score,
+      };
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch { /* ignore */ }
+  }, [user?.uid]);
+
+  /** Retorna dados de exercícios completados */
+  const getExerciseData = useCallback((): Record<string, { passed: boolean; attempts: number; bestScore: string }> => {
+    try {
+      const key = `desorientado-exercises-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }, [user?.uid]);
+
   return {
     progress,
     completeLesson,
@@ -249,5 +298,8 @@ export function useProgress() {
     getQuizHistory,
     addStudyTime,
     getStudyTimes,
+    completeExercise,
+    saveExerciseAttempt,
+    getExerciseData,
   };
 }
