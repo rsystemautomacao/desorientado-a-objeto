@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
@@ -21,8 +21,20 @@ function getApiBase(): string {
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory } = useProgress();
+  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
+
+  // Track study time
+  const enterTimeRef = useRef(Date.now());
+  useEffect(() => {
+    enterTimeRef.current = Date.now();
+    return () => {
+      if (id) {
+        const seconds = Math.floor((Date.now() - enterTimeRef.current) / 1000);
+        addStudyTime(id, seconds);
+      }
+    };
+  }, [id, addStudyTime]);
 
   // Feedback state
   const [myVote, setMyVote] = useState<'like' | 'dislike' | null>(null);

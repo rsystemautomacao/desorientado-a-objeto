@@ -217,6 +217,27 @@ export function useProgress() {
     } catch { return []; }
   }, [user?.uid]);
 
+  /** Registra tempo de estudo (em segundos) para uma aula */
+  const addStudyTime = useCallback((lessonId: string, seconds: number) => {
+    if (seconds < 5) return; // ignore very short visits
+    try {
+      const key = `desorientado-study-time-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      const data: Record<string, number> = raw ? JSON.parse(raw) : {};
+      data[lessonId] = (data[lessonId] ?? 0) + seconds;
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch { /* ignore */ }
+  }, [user?.uid]);
+
+  /** Retorna tempo total de estudo (em segundos) por aula */
+  const getStudyTimes = useCallback((): Record<string, number> => {
+    try {
+      const key = `desorientado-study-time-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }, [user?.uid]);
+
   return {
     progress,
     completeLesson,
@@ -226,5 +247,7 @@ export function useProgress() {
     isCompleted,
     isFavorite,
     getQuizHistory,
+    addStudyTime,
+    getStudyTimes,
   };
 }

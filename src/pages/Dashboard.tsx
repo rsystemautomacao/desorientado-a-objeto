@@ -7,14 +7,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
 import { getLevel, getReviewSuggestions } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
-import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper, Medal, Crown, Users } from 'lucide-react';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper, Medal, Crown, Users, Clock } from 'lucide-react';
 import {
   RadialBarChart, RadialBar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from 'recharts';
 
 export default function Dashboard() {
-  const { progress, isCompleted } = useProgress();
+  const { progress, isCompleted, getStudyTimes } = useProgress();
   const { user } = useAuth();
   const [studentName, setStudentName] = useState('');
   const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
@@ -137,23 +137,75 @@ export default function Dashboard() {
         })()}
 
         {/* Stats */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-10">
-          <div className="rounded-xl border border-border bg-card p-6">
-            <BookOpen className="h-8 w-8 text-primary mb-3" />
-            <p className="text-3xl font-bold">{completedCount}<span className="text-lg text-muted-foreground">/{totalLessons}</span></p>
-            <p className="text-sm text-muted-foreground">Aulas concluídas</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-6">
-            <Target className="h-8 w-8 text-accent mb-3" />
-            <p className="text-3xl font-bold">{quizPct}%</p>
-            <p className="text-sm text-muted-foreground">Acerto nos quizzes ({totalCorrect}/{totalQuestions})</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-6">
-            <Trophy className="h-8 w-8 text-primary mb-3" />
-            <p className="text-3xl font-bold">{pctTotal}%</p>
-            <p className="text-sm text-muted-foreground">Progresso total</p>
-          </div>
-        </div>
+        {(() => {
+          const studyTimes = getStudyTimes();
+          const totalSeconds = Object.values(studyTimes).reduce((a, b) => a + b, 0);
+          const formatTime = (s: number) => {
+            if (s < 60) return `${s}s`;
+            const mins = Math.floor(s / 60);
+            if (mins < 60) return `${mins}min`;
+            const hrs = Math.floor(mins / 60);
+            const remMins = mins % 60;
+            return remMins > 0 ? `${hrs}h ${remMins}min` : `${hrs}h`;
+          };
+          return (
+            <>
+              <div className="grid sm:grid-cols-4 gap-4 mb-10">
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <BookOpen className="h-8 w-8 text-primary mb-3" />
+                  <p className="text-3xl font-bold">{completedCount}<span className="text-lg text-muted-foreground">/{totalLessons}</span></p>
+                  <p className="text-sm text-muted-foreground">Aulas concluidas</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <Target className="h-8 w-8 text-accent mb-3" />
+                  <p className="text-3xl font-bold">{quizPct}%</p>
+                  <p className="text-sm text-muted-foreground">Acerto nos quizzes ({totalCorrect}/{totalQuestions})</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <Trophy className="h-8 w-8 text-primary mb-3" />
+                  <p className="text-3xl font-bold">{pctTotal}%</p>
+                  <p className="text-sm text-muted-foreground">Progresso total</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <Clock className="h-8 w-8 text-blue-500 mb-3" />
+                  <p className="text-3xl font-bold">{formatTime(totalSeconds)}</p>
+                  <p className="text-sm text-muted-foreground">Tempo de estudo</p>
+                </div>
+              </div>
+
+              {/* Study time per lesson (collapsible) */}
+              {totalSeconds > 0 && (
+                <div className="mb-10">
+                  <details className="rounded-xl border border-border bg-card overflow-hidden">
+                    <summary className="flex items-center gap-2 px-5 py-3 cursor-pointer hover:bg-muted/30 transition-colors text-sm font-medium">
+                      <Clock className="h-4 w-4 text-blue-500" />
+                      Tempo de estudo por aula
+                    </summary>
+                    <div className="px-5 pb-4 space-y-1.5 mt-1">
+                      {allLessons
+                        .filter((l) => studyTimes[l.id] > 0)
+                        .sort((a, b) => (studyTimes[b.id] ?? 0) - (studyTimes[a.id] ?? 0))
+                        .map((l) => {
+                          const secs = studyTimes[l.id] ?? 0;
+                          const maxSecs = Math.max(...Object.values(studyTimes));
+                          const barPct = maxSecs > 0 ? Math.round((secs / maxSecs) * 100) : 0;
+                          return (
+                            <div key={l.id} className="flex items-center gap-3 text-xs">
+                              <span className="truncate w-40 shrink-0" title={l.title}>{l.title}</span>
+                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-blue-500" style={{ width: `${barPct}%` }} />
+                              </div>
+                              <span className="font-medium text-muted-foreground w-16 text-right">{formatTime(secs)}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </details>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Leaderboard */}
         {leaderboard.length > 0 && (
