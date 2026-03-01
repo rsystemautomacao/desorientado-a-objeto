@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { getExerciseById } from '@/data/exercises';
@@ -136,18 +136,57 @@ const DIFF_LABELS: Record<string, { label: string; color: string }> = {
   dificil: { label: 'Difícil', color: 'text-red-400 bg-red-400/10 border-red-400/20' },
 };
 
+// ── Auto-save helpers ──
+function getDraftKey(exerciseId: string): string {
+  return `desorientado-draft-${exerciseId}`;
+}
+
+function loadDraft(exerciseId: string, starterCode: string): string {
+  try {
+    const saved = localStorage.getItem(getDraftKey(exerciseId));
+    // Only restore if it differs from starter code (means user actually wrote something)
+    if (saved && saved !== starterCode) return saved;
+  } catch { /* ignore */ }
+  return starterCode;
+}
+
+function saveDraft(exerciseId: string, code: string) {
+  try { localStorage.setItem(getDraftKey(exerciseId), code); } catch { /* ignore */ }
+}
+
+function clearDraft(exerciseId: string) {
+  try { localStorage.removeItem(getDraftKey(exerciseId)); } catch { /* ignore */ }
+}
+
 export default function ExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { completeExercise, saveExerciseAttempt } = useProgress();
   const exercise = useMemo(() => getExerciseById(id ?? ''), [id]);
 
-  const [code, setCode] = useState(exercise?.starterCode ?? '');
+  // Load saved draft (or starter code if no draft)
+  const [code, setCode] = useState(() => loadDraft(exercise?.id ?? '', exercise?.starterCode ?? ''));
+  const [hasDraft, setHasDraft] = useState(() => {
+    if (!exercise) return false;
+    try { const s = localStorage.getItem(getDraftKey(exercise.id)); return !!s && s !== exercise.starterCode; } catch { return false; }
+  });
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [hintsShown, setHintsShown] = useState(0);
   const [compileError, setCompileError] = useState('');
   const [activeLine, setActiveLine] = useState(-1);
+
+  // Auto-save code to localStorage on every change (debounced)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!exercise) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveDraft(exercise.id, code);
+      setHasDraft(code !== exercise.starterCode);
+    }, 500);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [code, exercise]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -167,7 +206,16 @@ export default function ExerciseDetail() {
     setActiveLine(line);
   }, []);
 
+  const submitRef = useRef<() => void>();
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl+Enter or Cmd+Enter → submit code
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      submitRef.current?.();
+      return;
+    }
+
     const ta = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = ta;
 
@@ -244,6 +292,7 @@ export default function ExerciseDetail() {
   const diff = DIFF_LABELS[exercise.difficulty];
 
   const handleSubmit = async () => {
+    if (running) return;
     setRunning(true);
     setResults(null);
     setCompileError('');
@@ -295,6 +344,8 @@ export default function ExerciseDetail() {
       const score = `${passedCount}/${testResults.length}`;
       if (allPassed) {
         completeExercise(exercise.id, exercise.xpReward);
+        clearDraft(exercise.id);
+        setHasDraft(false);
       } else {
         saveExerciseAttempt(exercise.id, score);
       }
@@ -305,8 +356,12 @@ export default function ExerciseDetail() {
     setRunning(false);
   };
 
+  submitRef.current = handleSubmit;
+
   const handleReset = () => {
     setCode(exercise.starterCode);
+    clearDraft(exercise.id);
+    setHasDraft(false);
     setResults(null);
     setCompileError('');
     setHintsShown(0);
@@ -402,13 +457,16 @@ export default function ExerciseDetail() {
             {/* Editor */}
             <div className="rounded-xl border-2 border-primary/30 bg-primary/5 overflow-hidden">
               <div className="px-4 py-3 border-b border-primary/20 bg-primary/10 flex items-center justify-between flex-wrap gap-2">
-                <span className="font-semibold text-primary text-sm">Seu código</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-primary text-sm">Seu código</span>
+                  {hasDraft && <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">rascunho salvo</span>}
+                </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={handleReset}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" />
                     Resetar
                   </Button>
-                  <Button type="button" size="sm" onClick={handleSubmit} disabled={running}>
+                  <Button type="button" size="sm" onClick={handleSubmit} disabled={running} title="Ctrl+Enter">
                     {running
                       ? <Loader2 className="h-4 w-4 animate-spin" />
                       : <Play className="h-4 w-4" />

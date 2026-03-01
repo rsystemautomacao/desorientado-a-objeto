@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
 import { modules } from '@/data/modules';
+import { exercises as allExercisesData } from '@/data/exercises';
 import {
   BarChart,
   Bar,
@@ -66,7 +67,7 @@ interface AnnouncementEntry {
 interface ActivityEntry {
   userId: string;
   nome: string;
-  type: 'lesson_complete' | 'quiz_complete';
+  type: 'lesson_complete' | 'quiz_complete' | 'exercise_complete';
   lessonId: string;
   score?: number;
   total?: number;
@@ -463,6 +464,109 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
   );
 }
 
+// ---------- Exercise Analytics ----------
+
+function ExerciseAnalyticsSection({ activities }: { activities: ActivityEntry[] }) {
+  const analytics = useMemo(() => {
+    // Count unique completions per exercise and total attempts from activity log
+    const exerciseCompletions: Record<string, Set<string>> = {};
+    for (const a of activities) {
+      if (a.type === 'exercise_complete') {
+        if (!exerciseCompletions[a.lessonId]) exerciseCompletions[a.lessonId] = new Set();
+        exerciseCompletions[a.lessonId].add(a.userId);
+      }
+    }
+
+    return allExercisesData.map((ex) => ({
+      id: ex.id,
+      title: ex.title,
+      topic: ex.topicLabel,
+      difficulty: ex.difficulty,
+      completions: exerciseCompletions[ex.id]?.size ?? 0,
+    })).sort((a, b) => b.completions - a.completions);
+  }, [activities]);
+
+  const totalExercises = allExercisesData.length;
+  const exercisesAttempted = analytics.filter((e) => e.completions > 0).length;
+  const totalCompletions = analytics.reduce((a, e) => a + e.completions, 0);
+  const neverAttempted = analytics.filter((e) => e.completions === 0);
+  const mostPopular = analytics.filter((e) => e.completions > 0).slice(0, 5);
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+        <Code2 className="h-4 w-4 text-purple-500" />
+        <h2 className="font-semibold">Exercicios — Visao Geral</h2>
+        <span className="ml-auto text-xs text-muted-foreground">{totalCompletions} resolucoes no total</span>
+      </div>
+      <div className="p-4">
+        {/* Stats */}
+        <div className="grid gap-3 sm:grid-cols-3 mb-4">
+          <div className="rounded-lg border border-border p-3 text-center">
+            <p className="text-2xl font-bold">{exercisesAttempted}<span className="text-sm text-muted-foreground">/{totalExercises}</span></p>
+            <p className="text-xs text-muted-foreground">exercicios ja resolvidos</p>
+          </div>
+          <div className="rounded-lg border border-border p-3 text-center">
+            <p className="text-2xl font-bold">{totalCompletions}</p>
+            <p className="text-xs text-muted-foreground">resolucoes no total</p>
+          </div>
+          <div className="rounded-lg border border-border p-3 text-center">
+            <p className="text-2xl font-bold text-red-500">{neverAttempted.length}</p>
+            <p className="text-xs text-muted-foreground">nunca resolvidos</p>
+          </div>
+        </div>
+
+        {/* Highlights */}
+        <div className="grid gap-3 sm:grid-cols-2 mb-4">
+          {mostPopular.length > 0 && (
+            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3">
+              <p className="text-xs font-medium text-green-600 mb-2">Mais resolvidos</p>
+              {mostPopular.map((e) => (
+                <div key={e.id} className="flex items-center justify-between text-xs py-0.5">
+                  <span className="truncate mr-2">{e.title}</span>
+                  <span className="font-medium text-green-600 shrink-0">{e.completions} aluno{e.completions !== 1 ? 's' : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {neverAttempted.length > 0 && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+              <p className="text-xs font-medium text-red-600 mb-2">Nunca resolvidos ({neverAttempted.length})</p>
+              {neverAttempted.slice(0, 5).map((e) => {
+                const diffLabel = e.difficulty === 'facil' ? 'Facil' : e.difficulty === 'medio' ? 'Medio' : 'Dificil';
+                return (
+                  <div key={e.id} className="flex items-center justify-between text-xs py-0.5">
+                    <span className="truncate mr-2">{e.title}</span>
+                    <span className="text-muted-foreground shrink-0">{diffLabel}</span>
+                  </div>
+                );
+              })}
+              {neverAttempted.length > 5 && (
+                <p className="text-[10px] text-muted-foreground mt-1">+ {neverAttempted.length - 5} mais...</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Per difficulty breakdown */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {(['facil', 'medio', 'dificil'] as const).map((d) => {
+            const total = allExercisesData.filter((e) => e.difficulty === d).length;
+            const solved = analytics.filter((e) => e.difficulty === d && e.completions > 0).length;
+            const label = d === 'facil' ? 'Facil' : d === 'medio' ? 'Medio' : 'Dificil';
+            const color = d === 'facil' ? 'text-green-500' : d === 'medio' ? 'text-yellow-500' : 'text-red-500';
+            return (
+              <span key={d} className="flex items-center gap-1">
+                <span className={`font-medium ${color}`}>{label}:</span> {solved}/{total}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Feedback Analytics ----------
 
 function FeedbackSection({ summary }: { summary: Record<string, { likes: number; dislikes: number }> }) {
@@ -759,6 +863,50 @@ export default function Admin() {
               <StatCard icon={<Trophy className="h-4 w-4" />} label="Concluiram tudo" value={studentsCompleted100} sub={`de ${entries.length}`} />
             </div>
 
+            {/* ===== Inactive students alert ===== */}
+            {(() => {
+              const now = new Date();
+              const INACTIVE_DAYS = 7;
+              const inactive = entries.filter((e) => {
+                if (!e.updatedAt) return true; // never updated = inactive
+                const last = new Date(e.updatedAt);
+                const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+                return diffDays >= INACTIVE_DAYS;
+              }).map((e) => {
+                const diffDays = e.updatedAt
+                  ? Math.floor((now.getTime() - new Date(e.updatedAt).getTime()) / 86400000)
+                  : 999;
+                return { ...e, daysInactive: diffDays };
+              }).sort((a, b) => b.daysInactive - a.daysInactive);
+
+              if (inactive.length === 0) return null;
+
+              return (
+                <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-yellow-500/20 bg-yellow-500/10 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <h2 className="font-semibold text-yellow-800 text-sm">Alunos inativos ({inactive.length})</h2>
+                    <span className="ml-auto text-[10px] text-yellow-700">sem atividade ha {INACTIVE_DAYS}+ dias</span>
+                  </div>
+                  <div className="p-3 max-h-[200px] overflow-y-auto">
+                    <div className="space-y-1">
+                      {inactive.slice(0, 15).map((e) => (
+                        <div key={e.userId} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-yellow-500/10">
+                          <span className="font-medium truncate mr-2">{e.nome || 'Sem nome'}</span>
+                          <span className="text-yellow-700 shrink-0">
+                            {e.daysInactive >= 999 ? 'nunca acessou' : `${e.daysInactive} dias`}
+                          </span>
+                        </div>
+                      ))}
+                      {inactive.length > 15 && (
+                        <p className="text-[10px] text-muted-foreground text-center pt-1">+ {inactive.length - 15} mais</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ===== Announcements ===== */}
             <AnnouncementsManager
               announcements={announcements}
@@ -886,6 +1034,9 @@ export default function Admin() {
 
             {/* ===== Quiz Analytics ===== */}
             <QuizAnalyticsSection entries={entries} />
+
+            {/* ===== Exercise Analytics ===== */}
+            <ExerciseAnalyticsSection activities={activities} />
 
             {/* ===== Feedback Analytics ===== */}
             <FeedbackSection summary={feedbackSummary} />

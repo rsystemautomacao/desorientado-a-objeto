@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules, getAllLessons } from '@/data/modules';
@@ -83,6 +83,21 @@ export default function Dashboard() {
 
   const favLessons = allLessons.filter((l) => progress.favorites.includes(l.id));
 
+  // "Continue de onde parou" — find the most recently studied lesson
+  const lastStudiedLesson = useMemo(() => {
+    const entries = Object.entries(progress.lastStudied);
+    if (entries.length === 0) return null;
+    const [lastId] = entries.sort((a, b) => b[1].localeCompare(a[1]))[0];
+    return allLessons.find((l) => l.id === lastId) ?? null;
+  }, [progress.lastStudied, allLessons]);
+
+  // Find next incomplete lesson (first lesson not yet completed)
+  const nextIncompleteLesson = useMemo(() => {
+    return allLessons.find((l) => !progress.completedLessons.includes(l.id)) ?? null;
+  }, [progress.completedLessons, allLessons]);
+
+  const resumeLesson = lastStudiedLesson ?? nextIncompleteLesson;
+
   return (
     <Layout>
       <div className="container py-10 animate-fade-in">
@@ -106,6 +121,25 @@ export default function Dashboard() {
               );
             })}
           </div>
+        )}
+
+        {/* Continue de onde parou */}
+        {resumeLesson && (
+          <Link
+            to={`/aula/${resumeLesson.id}`}
+            className="flex items-center gap-4 p-4 mb-6 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors group"
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+              <ArrowRight className="h-5 w-5 text-primary group-hover:translate-x-0.5 transition-transform" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-0.5">
+                {lastStudiedLesson ? 'Continue de onde parou' : 'Comece sua jornada'}
+              </p>
+              <p className="font-semibold text-sm truncate">{resumeLesson.title}</p>
+            </div>
+            <span className="text-xs text-muted-foreground hidden sm:block">{resumeLesson.duration}</span>
+          </Link>
         )}
 
         {/* XP & Streak bar */}

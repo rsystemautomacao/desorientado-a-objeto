@@ -149,6 +149,18 @@ export default function Lesson() {
     } catch { /* silent — optimistic update stays */ }
   }, [user, id, myVote]);
 
+  // Scroll progress indicator
+  const [scrollProgress, setScrollProgress] = useState(0);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(docHeight > 0 ? Math.min(Math.round((scrollTop / docHeight) * 100), 100) : 0);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (!id) return null;
 
   const allLessons = getAllLessons();
@@ -173,6 +185,14 @@ export default function Lesson() {
 
   return (
     <Layout>
+      {/* Reading progress bar */}
+      <div className="fixed top-16 left-0 right-0 z-40 h-0.5 bg-transparent print:hidden">
+        <div
+          className="h-full bg-primary transition-[width] duration-150 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       <div className="container max-w-4xl py-10 animate-fade-in">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
