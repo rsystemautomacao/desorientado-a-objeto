@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
@@ -10,11 +11,74 @@ import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
-import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle, ThumbsUp, ThumbsDown } from 'lucide-react';
+
+function getApiBase(): string {
+  const base = import.meta.env.VITE_API_BASE_URL;
+  return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : (typeof window !== 'undefined' ? window.location.origin : '');
+}
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
   const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+  const { user } = useAuth();
+
+  // Feedback state
+  const [myVote, setMyVote] = useState<'like' | 'dislike' | null>(null);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+
+  useEffect(() => {
+    if (!id) return;
+    const base = getApiBase();
+    const fetchFeedback = async () => {
+      try {
+        const headers: Record<string, string> = {};
+        if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+        const r = await fetch(`${base}/api/feedback`, { headers });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d?.summary?.[id]) {
+          setLikes(d.summary[id].likes);
+          setDislikes(d.summary[id].dislikes);
+        }
+        if (d?.myVotes?.[id]) {
+          setMyVote(d.myVotes[id] as 'like' | 'dislike');
+        }
+      } catch { /* silent */ }
+    };
+    fetchFeedback();
+  }, [id, user]);
+
+  const handleVote = useCallback(async (vote: 'like' | 'dislike') => {
+    if (!user || !id) return;
+    const isUndo = myVote === vote;
+    const newVote = isUndo ? 'none' : vote;
+
+    // Optimistic update
+    if (isUndo) {
+      if (vote === 'like') setLikes((l) => Math.max(0, l - 1));
+      else setDislikes((d) => Math.max(0, d - 1));
+      setMyVote(null);
+    } else {
+      if (myVote === 'like') setLikes((l) => Math.max(0, l - 1));
+      if (myVote === 'dislike') setDislikes((d) => Math.max(0, d - 1));
+      if (vote === 'like') setLikes((l) => l + 1);
+      else setDislikes((d) => d + 1);
+      setMyVote(vote);
+    }
+
+    try {
+      const token = await user.getIdToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/feedback`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId: id, vote: newVote }),
+      });
+    } catch { /* silent — optimistic update stays */ }
+  }, [user, id, myVote]);
 
   if (!id) return null;
 
@@ -221,6 +285,40 @@ export default function Lesson() {
 
         {/* Personal Notes */}
         <LessonNotes lessonId={id} />
+
+        {/* Feedback */}
+        <div className="my-8 p-5 rounded-xl border border-border bg-card text-center print:hidden">
+          <p className="text-sm font-medium mb-3">O que achou desta aula?</p>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => handleVote('like')}
+              disabled={!user}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                myVote === 'like'
+                  ? 'border-green-500 bg-green-500/10 text-green-700'
+                  : 'border-border hover:border-green-500/50 hover:bg-green-500/5 text-muted-foreground'
+              }`}
+              title={user ? 'Gostei' : 'Faca login para avaliar'}
+            >
+              <ThumbsUp className={`h-4 w-4 ${myVote === 'like' ? 'fill-green-500' : ''}`} />
+              {likes > 0 && <span>{likes}</span>}
+            </button>
+            <button
+              onClick={() => handleVote('dislike')}
+              disabled={!user}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                myVote === 'dislike'
+                  ? 'border-red-500 bg-red-500/10 text-red-700'
+                  : 'border-border hover:border-red-500/50 hover:bg-red-500/5 text-muted-foreground'
+              }`}
+              title={user ? 'Nao gostei' : 'Faca login para avaliar'}
+            >
+              <ThumbsDown className={`h-4 w-4 ${myVote === 'dislike' ? 'fill-red-500' : ''}`} />
+              {dislikes > 0 && <span>{dislikes}</span>}
+            </button>
+          </div>
+          {!user && <p className="text-xs text-muted-foreground mt-2">Faca login para avaliar</p>}
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t border-border">
