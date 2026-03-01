@@ -11,8 +11,6 @@ import { Button } from '@/components/ui/button';
 
 const JUDGE0_URL = 'https://ce.judge0.com';
 const JAVA_LANGUAGE_ID = 91;
-const POLL_INTERVAL_MS = 800;
-const MAX_POLL_ATTEMPTS = 30;
 
 // ── Java Syntax Highlighter (same as TryItBox) ──
 const JAVA_KEYWORDS = new Set([
@@ -82,25 +80,27 @@ function highlightJava(code: string): string {
   return tokens.join('');
 }
 
-// ── Judge0 helpers ──
-function isTerminalStatus(id: number): boolean {
-  return [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(id);
-}
-
-async function pollSubmission(token: string): Promise<{
+// ── Judge0 helper (wait=true, sem polling) ──
+async function runJava(sourceCode: string, stdin = ''): Promise<{
   stdout?: string | null;
   stderr?: string | null;
   compile_output?: string | null;
   status?: { id: number };
 }> {
-  for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-    const res = await fetch(`${JUDGE0_URL}/submissions/${token}?base64_encoded=false`);
-    if (!res.ok) continue;
-    const data = await res.json();
-    if (data.status?.id != null && isTerminalStatus(data.status.id)) return data;
+  const res = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_code: sourceCode,
+      language_id: JAVA_LANGUAGE_ID,
+      stdin,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? err.error ?? `HTTP ${res.status}`);
   }
-  return { status: { id: 0 } };
+  return res.json();
 }
 
 interface TestResult {
@@ -259,18 +259,30 @@ export default function ExerciseDetail() {
 
     try {
       for (const tc of exercise.testCases) {
-        const createRes = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_code: code,
-            language_id: JAVA_LANGUAGE_ID,
-            stdin: tc.input,
-          }),
-        });
+        try {
+          const result = await runJava(code, tc.input);
 
-        const createData = await createRes.json().catch(() => ({}));
-        if (!createRes.ok || !createData.token) {
+          // Compilation error — same for all tests, abort early
+          if (result.status?.id === 6) {
+            setCompileError(result.compile_output ?? 'Erro de compilação');
+            setRunning(false);
+            return;
+          }
+
+          const actual = normalizeOutput(result.stdout ?? '');
+          const expected = normalizeOutput(tc.expectedOutput);
+          const passed = actual === expected;
+          const error = result.stderr?.trim() || undefined;
+
+          testResults.push({
+            input: tc.input,
+            expected: tc.expectedOutput,
+            actual: result.stdout?.trim() ?? '',
+            passed,
+            visible: tc.visible,
+            error,
+          });
+        } catch {
           testResults.push({
             input: tc.input,
             expected: tc.expectedOutput,
@@ -279,31 +291,7 @@ export default function ExerciseDetail() {
             visible: tc.visible,
             error: 'Erro na API. Tente novamente.',
           });
-          continue;
         }
-
-        const result = await pollSubmission(createData.token);
-
-        // Compilation error — same for all tests
-        if (result.status?.id === 6) {
-          setCompileError(result.compile_output ?? 'Erro de compilação');
-          setRunning(false);
-          return;
-        }
-
-        const actual = normalizeOutput(result.stdout ?? '');
-        const expected = normalizeOutput(tc.expectedOutput);
-        const passed = actual === expected;
-        const error = result.stderr?.trim() || undefined;
-
-        testResults.push({
-          input: tc.input,
-          expected: tc.expectedOutput,
-          actual: result.stdout?.trim() ?? '',
-          passed,
-          visible: tc.visible,
-          error,
-        });
       }
 
       setResults(testResults);

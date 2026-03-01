@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 
 const JUDGE0_URL = 'https://ce.judge0.com';
 const JAVA_LANGUAGE_ID = 91; // Java (JDK 17.0.6)
-const POLL_INTERVAL_MS = 800;
-const MAX_POLL_ATTEMPTS = 30;
 
 type RunState = 'idle' | 'running' | 'success' | 'error';
 
@@ -124,8 +122,31 @@ function buildOutput(data: {
   return parts.join('\n').trim() || '(Nenhuma saída)';
 }
 
-function isTerminalStatus(statusId: number): boolean {
-  return [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(statusId);
+/** Executa código Java via Judge0 CE usando wait=true (sem polling) */
+async function runJava(sourceCode: string, stdin = ''): Promise<{
+  stdout?: string | null;
+  stderr?: string | null;
+  compile_output?: string | null;
+  message?: string | null;
+  status?: { id: number; description?: string };
+}> {
+  const res = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source_code: sourceCode,
+      language_id: JAVA_LANGUAGE_ID,
+      stdin,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = typeof err.error === 'string' ? err.error : err.message ?? err.errors?.join?.(' ') ?? '';
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
+
+  return res.json();
 }
 
 export default function TryItBox({ initialCode, prompt, className = '' }: TryItBoxProps) {
@@ -223,58 +244,19 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     setOutput('');
 
     try {
-      const createRes = await fetch(
-        `${JUDGE0_URL}/submissions?base64_encoded=false`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_code: code,
-            language_id: JAVA_LANGUAGE_ID,
-            stdin: '',
-          }),
-        }
+      const result = await runJava(code);
+      setOutput(buildOutput(result));
+      setState(result.status?.id === 3 ? 'success' : 'error');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      setOutput(
+        msg
+          ? `API: ${msg}\n\nCopie o código e execute no seu computador se o erro persistir.`
+          : 'Não foi possível executar. Verifique sua conexão ou copie o código e execute no seu IDE (ex: VS Code, IntelliJ).'
       );
-
-      const createData = await createRes.json().catch(() => ({}));
-      const token = createData.token;
-
-      if (!createRes.ok || !token) {
-        const errMsg = typeof createData.error === 'string' ? createData.error : createData.message ?? createData.errors?.join?.(' ') ?? '';
-        setOutput(
-          errMsg
-            ? `API: ${errMsg}\n\nCopie o código e execute no seu computador se o erro persistir.`
-            : `Erro na API (${createRes.status}). Tente novamente ou copie o código e execute no seu computador.`
-        );
-        setState('error');
-        return;
-      }
-
-      const polled = await pollSubmission(token);
-      setOutput(buildOutput(polled));
-      setState(polled.status?.id === 3 ? 'success' : 'error');
-    } catch {
-      setOutput('Não foi possível executar. Verifique sua conexão ou copie o código e execute no seu IDE (ex: VS Code, IntelliJ).');
       setState('error');
     }
   };
-
-  async function pollSubmission(token: string): Promise<{
-    stdout?: string | null;
-    stderr?: string | null;
-    compile_output?: string | null;
-    message?: string | null;
-    status?: { id: number; description?: string };
-  }> {
-    for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      const res = await fetch(`${JUDGE0_URL}/submissions/${token}?base64_encoded=false`);
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.status?.id != null && isTerminalStatus(data.status.id)) return data;
-    }
-    return { status: { id: 0, description: 'Timeout' }, message: 'Tempo esgotado. Tente novamente.' };
-  }
 
   const handleReset = () => {
     setCode(initialCode);
