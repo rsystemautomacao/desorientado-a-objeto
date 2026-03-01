@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
 import { getLevel, getReviewSuggestions } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
-import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper } from 'lucide-react';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper, Medal, Crown, Users } from 'lucide-react';
 import {
   RadialBarChart, RadialBar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
@@ -19,6 +19,9 @@ export default function Dashboard() {
   const [studentName, setStudentName] = useState('');
   const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
   const [announcements, setAnnouncements] = useState<{ id: string; message: string; type: string }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ rank: number; name: string; xp: number; lessonsCount: number; quizCount: number }[]>([]);
+  const [myRank, setMyRank] = useState<{ rank: number; name: string; xp: number; lessonsCount: number; quizCount: number } | null>(null);
+  const [totalStudents, setTotalStudents] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -37,6 +40,30 @@ export default function Dashboard() {
       .then((d) => { if (d?.announcements) setAnnouncements(d.announcements); })
       .catch(() => {});
   }, []);
+
+  // Load leaderboard
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_BASE_URL
+      ? String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
+      : (typeof window !== 'undefined' ? window.location.origin : '');
+    const fetchLeaderboard = async () => {
+      try {
+        const headers: Record<string, string> = {};
+        if (user) {
+          const token = await user.getIdToken();
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const r = await fetch(`${base}/api/leaderboard`, { headers });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d?.leaderboard) setLeaderboard(d.leaderboard);
+        if (d?.me) setMyRank(d.me);
+        if (typeof d?.totalStudents === 'number') setTotalStudents(d.totalStudents);
+      } catch { /* silent */ }
+    };
+    fetchLeaderboard();
+  }, [user]);
+
   const allLessons = getAllLessons();
   const totalLessons = allLessons.length;
   const completedCount = progress.completedLessons.length;
@@ -127,6 +154,80 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">Progresso total</p>
           </div>
         </div>
+
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Crown className="h-5 w-5 text-yellow-500" /> Ranking da Turma
+              </h2>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" /> {totalStudents} aluno{totalStudents !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* My position banner */}
+            {myRank && myRank.rank > 3 && (
+              <div className="flex items-center gap-3 p-3 mb-3 rounded-lg border border-primary/30 bg-primary/5">
+                <span className="text-sm font-bold text-primary w-8 text-center">#{myRank.rank}</span>
+                <span className="text-sm font-semibold flex-1">{myRank.name} (Voce)</span>
+                <span className="text-xs font-medium text-yellow-600">{myRank.xp} XP</span>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              {leaderboard.map((entry, i) => {
+                const isMe = myRank && entry.rank === myRank.rank && entry.xp === myRank.xp;
+                const medalColors = [
+                  'text-yellow-500', // gold
+                  'text-gray-400',   // silver
+                  'text-amber-600',  // bronze
+                ];
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                      i > 0 ? 'border-t border-border' : ''
+                    } ${isMe ? 'bg-primary/5' : ''}`}
+                  >
+                    {/* Rank */}
+                    <div className="w-8 flex justify-center shrink-0">
+                      {entry.rank <= 3 ? (
+                        <Medal className={`h-5 w-5 ${medalColors[entry.rank - 1]}`} />
+                      ) : (
+                        <span className="text-sm font-bold text-muted-foreground">#{entry.rank}</span>
+                      )}
+                    </div>
+
+                    {/* Name */}
+                    <span className={`text-sm flex-1 ${entry.rank <= 3 ? 'font-bold' : 'font-medium'} ${isMe ? 'text-primary' : ''}`}>
+                      {entry.name}{isMe ? ' (Voce)' : ''}
+                    </span>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1" title="Aulas concluidas">
+                        <BookOpen className="h-3.5 w-3.5" /> {entry.lessonsCount}
+                      </span>
+                      <span className="flex items-center gap-1" title="Quizzes feitos">
+                        <Target className="h-3.5 w-3.5" /> {entry.quizCount}
+                      </span>
+                    </div>
+
+                    {/* XP */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <span className={`text-sm font-bold ${entry.rank === 1 ? 'text-yellow-600' : entry.rank === 2 ? 'text-gray-500' : entry.rank === 3 ? 'text-amber-600' : ''}`}>
+                        {entry.xp}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Progress per module */}
         <h2 className="text-xl font-bold mb-4">Progresso por Módulo</h2>
