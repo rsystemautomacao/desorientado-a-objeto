@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,13 +30,34 @@ const navItems = [
 
 const LOGOUT_DELAY_MS = 2000;
 
+function useThemeToggle() {
+  const [isLight, setIsLight] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('theme') === 'light';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isLight) {
+      root.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+    } else {
+      root.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLight]);
+
+  const toggle = useCallback(() => setIsLight((v) => !v), []);
+  return { isLight, toggle };
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutExiting, setLogoutExiting] = useState(false);
   const location = useLocation();
   const { user, loading, signInWithGoogle, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { isLight, toggle: toggleTheme } = useThemeToggle();
 
   const handleConfirmLogout = useCallback(() => {
     setLogoutConfirmOpen(false);
@@ -76,16 +96,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full"
+            <button
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              title={isLight ? 'Modo escuro' : 'Modo claro'}
             >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
+              {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </button>
             {!loading && (
               user ? (
                 <DropdownMenu>
@@ -134,14 +151,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {menuOpen && (
           <div className="md:hidden border-t border-border bg-background p-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => { toggleTheme(); setMenuOpen(false); }}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              {theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-            </button>
             {navItems.map((item) => (
               <Link
                 key={item.to}
@@ -157,6 +166,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary"
+            >
+              {isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              {isLight ? 'Modo Escuro' : 'Modo Claro'}
+            </button>
             {!loading && (
               <div className="pt-2 border-t border-border mt-2">
                 {user ? (

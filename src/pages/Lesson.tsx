@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
@@ -12,7 +12,7 @@ import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle, ThumbsUp, ThumbsDown, History } from 'lucide-react';
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_BASE_URL;
@@ -21,8 +21,20 @@ function getApiBase(): string {
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
+
+  // Track study time
+  const enterTimeRef = useRef(Date.now());
+  useEffect(() => {
+    enterTimeRef.current = Date.now();
+    return () => {
+      if (id) {
+        const seconds = Math.floor((Date.now() - enterTimeRef.current) / 1000);
+        addStudyTime(id, seconds);
+      }
+    };
+  }, [id, addStudyTime]);
 
   // Feedback state
   const [myVote, setMyVote] = useState<'like' | 'dislike' | null>(null);
@@ -282,6 +294,44 @@ export default function Lesson() {
             />
           </section>
         )}
+
+        {/* Quiz History */}
+        {(() => {
+          const history = getQuizHistory(id);
+          if (history.length === 0) return null;
+          return (
+            <div className="mb-8 print:hidden">
+              <details className="rounded-xl border border-border bg-card overflow-hidden">
+                <summary className="flex items-center gap-2 px-5 py-3 cursor-pointer hover:bg-muted/30 transition-colors text-sm font-medium">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Historico de tentativas ({history.length})
+                </summary>
+                <div className="px-5 pb-4">
+                  <div className="space-y-1.5 mt-2">
+                    {[...history].reverse().map((h, i) => {
+                      const pct = h.total > 0 ? Math.round((h.score / h.total) * 100) : 0;
+                      const color = pct >= 80 ? 'text-green-600' : pct >= 60 ? 'text-yellow-600' : 'text-red-500';
+                      const bg = pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+                      return (
+                        <div key={i} className="flex items-center gap-3 text-xs">
+                          <span className="text-muted-foreground w-16 shrink-0">
+                            {new Date(h.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full ${bg}`} style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className={`font-medium w-20 text-right ${color}`}>
+                            {h.score}/{h.total} ({pct}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </details>
+            </div>
+          );
+        })()}
 
         {/* Personal Notes */}
         <LessonNotes lessonId={id} />

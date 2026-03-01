@@ -6,10 +6,6 @@ import {
   updateStreak,
   getQuizXp,
   XP_REWARDS,
-  addQuizAttempt,
-  addLessonTime,
-  FEATURE_QUIZ_HISTORY,
-  FEATURE_LESSON_TIME,
   type Progress,
 } from '@/lib/progressStore';
 
@@ -43,7 +39,6 @@ const DEFAULT_PROGRESS: Progress = {
   xp: 0,
   streak: { current: 0, longest: 0, lastDate: '' },
   lastStudied: {},
-  lessonTime: {},
 };
 
 function todayStr(): string {
@@ -175,31 +170,30 @@ export function useProgress() {
   const saveQuizResult = useCallback((lessonId: string, score: number, total: number) => {
     // Log activity (fire-and-forget)
     if (user) user.getIdToken().then((t) => logActivity(t, { type: 'quiz_complete', lessonId, score, total }));
+
+    // Save to quiz history (localStorage only)
+    try {
+      const hKey = `desorientado-quiz-history-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(hKey);
+      const history: Record<string, { score: number; total: number; date: string }[]> = raw ? JSON.parse(raw) : {};
+      if (!history[lessonId]) history[lessonId] = [];
+      history[lessonId].push({ score, total, date: new Date().toISOString() });
+      // Keep last 10 attempts per lesson
+      if (history[lessonId].length > 10) history[lessonId] = history[lessonId].slice(-10);
+      localStorage.setItem(hKey, JSON.stringify(history));
+    } catch { /* ignore */ }
+
     setProgress((p) => {
       const xpGain = getQuizXp(score, total);
-      const timestamp = new Date().toISOString();
-      const nextHistory = FEATURE_QUIZ_HISTORY
-        ? ((p.quizHistory && addQuizAttempt(p.quizHistory, lessonId, score, total, timestamp)) ??
-          addQuizAttempt(undefined, lessonId, score, total, timestamp))
-        : p.quizHistory;
       return {
         ...p,
         quizResults: { ...p.quizResults, [lessonId]: { score, total } },
         xp: p.xp + xpGain,
         streak: updateStreak(p.streak),
         lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
-        ...(FEATURE_QUIZ_HISTORY ? { quizHistory: nextHistory } : {}),
       };
     });
   }, [user]);
-
-  const addLessonTimeSeconds = useCallback((lessonId: string, seconds: number) => {
-    if (!FEATURE_LESSON_TIME) return;
-    setProgress((p) => ({
-      ...p,
-      lessonTime: addLessonTime(p.lessonTime, lessonId, seconds),
-    }));
-  }, []);
 
   const toggleFavorite = useCallback((id: string) => {
     setProgress((p) => ({
@@ -213,14 +207,47 @@ export function useProgress() {
   const isCompleted = useCallback((id: string) => progress.completedLessons.includes(id), [progress]);
   const isFavorite = useCallback((id: string) => progress.favorites.includes(id), [progress]);
 
+  const getQuizHistory = useCallback((lessonId: string): { score: number; total: number; date: string }[] => {
+    try {
+      const hKey = `desorientado-quiz-history-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(hKey);
+      if (!raw) return [];
+      const history = JSON.parse(raw);
+      return Array.isArray(history[lessonId]) ? history[lessonId] : [];
+    } catch { return []; }
+  }, [user?.uid]);
+
+  /** Registra tempo de estudo (em segundos) para uma aula */
+  const addStudyTime = useCallback((lessonId: string, seconds: number) => {
+    if (seconds < 5) return; // ignore very short visits
+    try {
+      const key = `desorientado-study-time-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      const data: Record<string, number> = raw ? JSON.parse(raw) : {};
+      data[lessonId] = (data[lessonId] ?? 0) + seconds;
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch { /* ignore */ }
+  }, [user?.uid]);
+
+  /** Retorna tempo total de estudo (em segundos) por aula */
+  const getStudyTimes = useCallback((): Record<string, number> => {
+    try {
+      const key = `desorientado-study-time-${user?.uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }, [user?.uid]);
+
   return {
     progress,
     completeLesson,
     uncompleteLesson,
     saveQuizResult,
-    addLessonTime: addLessonTimeSeconds,
     toggleFavorite,
     isCompleted,
     isFavorite,
+    getQuizHistory,
+    addStudyTime,
+    getStudyTimes,
   };
 }
