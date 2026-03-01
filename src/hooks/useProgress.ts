@@ -114,13 +114,26 @@ function recalculateMinXp(p: Progress, uid: string | null): number {
   return xp;
 }
 
-/** Corrige XP se estiver defasado em relação ao progresso real */
-function fixXpIfNeeded(p: Progress, uid: string | null): Progress {
+/** Corrige XP e streak se estiverem defasados em relação ao progresso real */
+function fixProgressIfNeeded(p: Progress, uid: string | null): Progress {
+  let fixed = p;
+
+  // Fix XP
   const minXp = recalculateMinXp(p, uid);
   if (minXp > p.xp) {
-    return { ...p, xp: minXp };
+    fixed = { ...fixed, xp: minXp };
   }
-  return p;
+
+  // Fix streak: se tem atividade (aulas/quizzes) mas streak está zerado, inicializa
+  const hasActivity = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0;
+  if (hasActivity && p.streak.current === 0 && !p.streak.lastDate) {
+    fixed = {
+      ...fixed,
+      streak: updateStreak(p.streak), // sets current=1, lastDate=today
+    };
+  }
+
+  return fixed;
 }
 
 export function useProgress() {
@@ -149,23 +162,23 @@ export function useProgress() {
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
           const hasLocal = effectiveLocal.completedLessons.length > 0 || Object.keys(effectiveLocal.quizResults).length > 0 || effectiveLocal.favorites.length > 0;
           if (!hasRemote && hasLocal) {
-            const fixed = fixXpIfNeeded(effectiveLocal, uid);
+            const fixed = fixProgressIfNeeded(effectiveLocal, uid);
             setProgress(fixed);
             if (apiOkRef.current) {
               user.getIdToken(true).then((t) => saveProgressToApi(t, fixed).catch(() => { apiOkRef.current = false; }));
             }
           } else {
-            setProgress(fixXpIfNeeded(p, uid));
+            setProgress(fixProgressIfNeeded(p, uid));
           }
           setProgressLoaded(true);
         })
         .catch(() => {
           apiOkRef.current = false;
-          setProgress(fixXpIfNeeded(effectiveLocal, uid));
+          setProgress(fixProgressIfNeeded(effectiveLocal, uid));
           setProgressLoaded(true);
         });
     } else {
-      setProgress(fixXpIfNeeded(loadLocalProgress(null), null));
+      setProgress(fixProgressIfNeeded(loadLocalProgress(null), null));
       setProgressLoaded(true);
     }
   }, [user?.uid, authLoading]);
