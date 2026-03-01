@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
@@ -11,81 +11,74 @@ import { modules, getAdjacentLessons, getAllLessons } from '@/data/modules';
 import { lessonContents } from '@/data/lessonContents';
 import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
-import type { QuizAttempt } from '@/lib/progressStore';
-import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle, ThumbsUp, ThumbsDown } from 'lucide-react';
 
-const FEATURE_QUIZ_HISTORY =
-  typeof import.meta !== 'undefined' &&
-  (import.meta as any).env &&
-  (import.meta as any).env.VITE_FEATURE_QUIZ_HISTORY === 'true';
-
-const FEATURE_LESSON_TIME =
-  typeof import.meta !== 'undefined' &&
-  (import.meta as any).env &&
-  (import.meta as any).env.VITE_FEATURE_LESSON_TIME === 'true';
-
-function QuizHistorySection({ attempts }: { attempts: QuizAttempt[] }) {
-  if (!attempts || attempts.length === 0) {
-    return (
-      <div className="mt-4 text-xs text-muted-foreground">
-        Histórico de tentativas (quando ativado) aparecerá aqui após você fazer o quiz.
-      </div>
-    );
-  }
-  const sorted = [...attempts].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-  return (
-    <div className="mt-4 border-t border-border/60 pt-3">
-      <p className="text-xs font-semibold text-muted-foreground mb-2">
-        Histórico de tentativas (mais recentes primeiro)
-      </p>
-      <div className="max-h-40 overflow-y-auto text-xs">
-        {sorted.map((att, idx) => {
-          const date = new Date(att.timestamp);
-          const label = Number.isNaN(date.getTime())
-            ? att.timestamp
-            : date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-          return (
-            <div key={idx} className="flex items-center justify-between py-0.5 text-muted-foreground">
-              <span>{label}</span>
-              <span className="font-medium">
-                {att.score}/{att.total} ({att.total > 0 ? Math.round((att.score / att.total) * 100) : 0}%)
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+function getApiBase(): string {
+  const base = import.meta.env.VITE_API_BASE_URL;
+  return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : (typeof window !== 'undefined' ? window.location.origin : '');
 }
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const {
-    progress,
-    isCompleted,
-    completeLesson,
-    uncompleteLesson,
-    isFavorite,
-    toggleFavorite,
-    saveQuizResult,
-    addLessonTime,
-  } = useProgress();
+  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult } = useProgress();
+  const { user } = useAuth();
 
-  // Tempo de estudo por aula (apenas quando a feature estiver ligada)
-  // Sempre registramos o hook; a lógica interna respeita a flag.
-  const startRef = useRef<number | null>(null);
+  // Feedback state
+  const [myVote, setMyVote] = useState<'like' | 'dislike' | null>(null);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+
   useEffect(() => {
-    if (!FEATURE_LESSON_TIME || !id) return undefined;
-    startRef.current = Date.now();
-    return () => {
-      if (!FEATURE_LESSON_TIME || !id || startRef.current == null) return;
-      const elapsedSec = Math.round((Date.now() - startRef.current) / 1000);
-      if (elapsedSec >= 5) {
-        addLessonTime(id, elapsedSec);
-      }
-      startRef.current = null;
+    if (!id) return;
+    const base = getApiBase();
+    const fetchFeedback = async () => {
+      try {
+        const headers: Record<string, string> = {};
+        if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+        const r = await fetch(`${base}/api/feedback`, { headers });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d?.summary?.[id]) {
+          setLikes(d.summary[id].likes);
+          setDislikes(d.summary[id].dislikes);
+        }
+        if (d?.myVotes?.[id]) {
+          setMyVote(d.myVotes[id] as 'like' | 'dislike');
+        }
+      } catch { /* silent */ }
     };
-  }, [id, addLessonTime]);
+    fetchFeedback();
+  }, [id, user]);
+
+  const handleVote = useCallback(async (vote: 'like' | 'dislike') => {
+    if (!user || !id) return;
+    const isUndo = myVote === vote;
+    const newVote = isUndo ? 'none' : vote;
+
+    // Optimistic update
+    if (isUndo) {
+      if (vote === 'like') setLikes((l) => Math.max(0, l - 1));
+      else setDislikes((d) => Math.max(0, d - 1));
+      setMyVote(null);
+    } else {
+      if (myVote === 'like') setLikes((l) => Math.max(0, l - 1));
+      if (myVote === 'dislike') setDislikes((d) => Math.max(0, d - 1));
+      if (vote === 'like') setLikes((l) => l + 1);
+      else setDislikes((d) => d + 1);
+      setMyVote(vote);
+    }
+
+    try {
+      const token = await user.getIdToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/feedback`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId: id, vote: newVote }),
+      });
+    } catch { /* silent — optimistic update stays */ }
+  }, [user, id, myVote]);
 
   if (!id) return null;
 
@@ -119,20 +112,32 @@ export default function Lesson() {
           <span>Módulo {lessonMeta.moduleId} — {mod?.title}</span>
         </div>
 
+        {/* Prerequisite warning */}
+        {(() => {
+          if (!mod || mod.id <= 1) return null;
+          const prevMod = modules.find((m) => m.id === mod.id - 1);
+          if (!prevMod) return null;
+          const prevDone = prevMod.lessons.filter((l) => isCompleted(l.id)).length;
+          const prevPct = Math.round((prevDone / prevMod.lessons.length) * 100);
+          if (prevPct >= 70) return null;
+          return (
+            <div className="flex items-start gap-2 p-3 mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-yellow-800 text-sm print:hidden">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>
+                Recomendamos concluir o <strong>{prevMod.icon} Modulo {prevMod.id} — {prevMod.title}</strong> antes
+                ({prevDone}/{prevMod.lessons.length} concluidas).
+                <Link to="/trilha" className="ml-1 underline hover:text-yellow-900">Ver trilha</Link>
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{lessonMeta.duration}</span>
-              {FEATURE_LESSON_TIME && (
-                <span className="text-xs text-muted-foreground">
-                  Tempo estudado:{' '}
-                  {progress.lessonTime && progress.lessonTime[id]
-                    ? `${Math.round(progress.lessonTime[id] / 60)} min`
-                    : 'N/D'}
-                </span>
-              )}
               <button
                 onClick={() => done ? uncompleteLesson(id) : completeLesson(id)}
                 className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full transition-colors ${done ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
@@ -275,14 +280,45 @@ export default function Lesson() {
               questions={lessonQuiz}
               onComplete={(score, total) => saveQuizResult(id, score, total)}
             />
-            {FEATURE_QUIZ_HISTORY && (
-              <QuizHistorySection attempts={progress.quizHistory?.[id] ?? []} />
-            )}
           </section>
         )}
 
         {/* Personal Notes */}
         <LessonNotes lessonId={id} />
+
+        {/* Feedback */}
+        <div className="my-8 p-5 rounded-xl border border-border bg-card text-center print:hidden">
+          <p className="text-sm font-medium mb-3">O que achou desta aula?</p>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => handleVote('like')}
+              disabled={!user}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                myVote === 'like'
+                  ? 'border-green-500 bg-green-500/10 text-green-700'
+                  : 'border-border hover:border-green-500/50 hover:bg-green-500/5 text-muted-foreground'
+              }`}
+              title={user ? 'Gostei' : 'Faca login para avaliar'}
+            >
+              <ThumbsUp className={`h-4 w-4 ${myVote === 'like' ? 'fill-green-500' : ''}`} />
+              {likes > 0 && <span>{likes}</span>}
+            </button>
+            <button
+              onClick={() => handleVote('dislike')}
+              disabled={!user}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                myVote === 'dislike'
+                  ? 'border-red-500 bg-red-500/10 text-red-700'
+                  : 'border-border hover:border-red-500/50 hover:bg-red-500/5 text-muted-foreground'
+              }`}
+              title={user ? 'Nao gostei' : 'Faca login para avaliar'}
+            >
+              <ThumbsDown className={`h-4 w-4 ${myVote === 'dislike' ? 'fill-red-500' : ''}`} />
+              {dislikes > 0 && <span>{dislikes}</span>}
+            </button>
+          </div>
+          {!user && <p className="text-xs text-muted-foreground mt-2">Faca login para avaliar</p>}
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t border-border">

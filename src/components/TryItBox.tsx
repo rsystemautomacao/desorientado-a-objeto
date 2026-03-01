@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Play, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +14,97 @@ interface TryItBoxProps {
   prompt?: string;
   className?: string;
 }
+
+// ── Simple Java Syntax Highlighter ──
+const JAVA_KEYWORDS = new Set([
+  'abstract','assert','boolean','break','byte','case','catch','char','class','const',
+  'continue','default','do','double','else','enum','extends','final','finally','float',
+  'for','goto','if','implements','import','instanceof','int','interface','long','native',
+  'new','package','private','protected','public','return','short','static','strictfp',
+  'super','switch','synchronized','this','throw','throws','transient','try','void',
+  'volatile','while','true','false','null','var','record','sealed','permits','yield',
+]);
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightJava(code: string): string {
+  // Tokenize: strings, single-line comments, multi-line comments, keywords, numbers, rest
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < code.length) {
+    // Multi-line comment
+    if (code[i] === '/' && code[i + 1] === '*') {
+      const end = code.indexOf('*/', i + 2);
+      const slice = end >= 0 ? code.slice(i, end + 2) : code.slice(i);
+      tokens.push(`<span style="color:#6b7280;font-style:italic">${escapeHtml(slice)}</span>`);
+      i += slice.length;
+    }
+    // Single-line comment
+    else if (code[i] === '/' && code[i + 1] === '/') {
+      const end = code.indexOf('\n', i);
+      const slice = end >= 0 ? code.slice(i, end) : code.slice(i);
+      tokens.push(`<span style="color:#6b7280;font-style:italic">${escapeHtml(slice)}</span>`);
+      i += slice.length;
+    }
+    // String literal
+    else if (code[i] === '"') {
+      let j = i + 1;
+      while (j < code.length && code[j] !== '"') { if (code[j] === '\\') j++; j++; }
+      const slice = code.slice(i, j + 1);
+      tokens.push(`<span style="color:#b45309">${escapeHtml(slice)}</span>`);
+      i = j + 1;
+    }
+    // Char literal
+    else if (code[i] === "'") {
+      let j = i + 1;
+      while (j < code.length && code[j] !== "'") { if (code[j] === '\\') j++; j++; }
+      const slice = code.slice(i, j + 1);
+      tokens.push(`<span style="color:#b45309">${escapeHtml(slice)}</span>`);
+      i = j + 1;
+    }
+    // Annotation
+    else if (code[i] === '@') {
+      let j = i + 1;
+      while (j < code.length && /\w/.test(code[j])) j++;
+      const slice = code.slice(i, j);
+      tokens.push(`<span style="color:#7c3aed">${escapeHtml(slice)}</span>`);
+      i = j;
+    }
+    // Word (keyword or identifier)
+    else if (/[a-zA-Z_$]/.test(code[i])) {
+      let j = i + 1;
+      while (j < code.length && /[\w$]/.test(code[j])) j++;
+      const word = code.slice(i, j);
+      if (JAVA_KEYWORDS.has(word)) {
+        tokens.push(`<span style="color:#7c3aed;font-weight:600">${escapeHtml(word)}</span>`);
+      } else if (word[0] === word[0].toUpperCase() && /[a-z]/.test(word)) {
+        // Likely a class name (starts uppercase, has lowercase)
+        tokens.push(`<span style="color:#0369a1">${escapeHtml(word)}</span>`);
+      } else {
+        tokens.push(escapeHtml(word));
+      }
+      i = j;
+    }
+    // Number
+    else if (/\d/.test(code[i])) {
+      let j = i + 1;
+      while (j < code.length && /[\d.xXa-fA-FLlFfDd_]/.test(code[j])) j++;
+      const slice = code.slice(i, j);
+      tokens.push(`<span style="color:#0d9488">${escapeHtml(slice)}</span>`);
+      i = j;
+    }
+    // Operators and punctuation
+    else {
+      tokens.push(escapeHtml(code[i]));
+      i++;
+    }
+  }
+  return tokens.join('');
+}
+
+// ── Submission helpers ──
 
 function buildOutput(data: {
   stdout?: string | null;
@@ -41,13 +132,21 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
   const [state, setState] = useState<RunState>('idle');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
+
+  const syncScroll = useCallback(() => {
+    if (textareaRef.current && preRef.current) {
+      preRef.current.scrollTop = textareaRef.current.scrollTop;
+      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  }, []);
 
   const handleRun = async () => {
     setState('running');
     setOutput('');
 
     try {
-      // Modo assíncrono apenas (evita 400 quando wait=true não é permitido)
       const createRes = await fetch(
         `${JUDGE0_URL}/submissions?base64_encoded=false`,
         {
@@ -107,6 +206,10 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     setState('idle');
   };
 
+  // Line numbers
+  const lineCount = code.split('\n').length;
+  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
+
   return (
     <div className={`rounded-xl border-2 border-primary/30 bg-primary/5 overflow-hidden ${className}`}>
       <div className="px-4 py-3 border-b border-primary/20 bg-primary/10 flex items-center justify-between flex-wrap gap-2">
@@ -125,13 +228,32 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
         </div>
       </div>
       <div className="p-2">
-        <textarea
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className="w-full min-h-[220px] p-4 font-mono text-sm bg-background border border-border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-primary/50"
-          spellCheck={false}
-          placeholder="Cole ou edite o código Java (classe com método main)..."
-        />
+        <div className="relative rounded-lg border border-border bg-background overflow-hidden">
+          {/* Line numbers */}
+          <div className="absolute left-0 top-0 bottom-0 w-10 bg-muted/50 border-r border-border overflow-hidden pointer-events-none z-10">
+            <pre className="p-4 pr-2 text-right font-mono text-xs leading-[1.625] text-muted-foreground select-none">{lineNumbers}</pre>
+          </div>
+
+          {/* Highlighted code (background layer) */}
+          <pre
+            ref={preRef}
+            className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: highlightJava(code) + '\n' }}
+          />
+
+          {/* Textarea (foreground layer, transparent text) */}
+          <textarea
+            ref={textareaRef}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            onScroll={syncScroll}
+            className="relative w-full min-h-[220px] p-4 pl-14 font-mono text-sm leading-[1.625] bg-transparent resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
+            style={{ color: 'transparent', caretColor: 'currentcolor' }}
+            spellCheck={false}
+            placeholder="Cole ou edite o código Java (classe com método main)..."
+          />
+        </div>
       </div>
       {output && (
         <div className={`px-4 py-3 border-t border-border flex items-start gap-2 ${state === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-muted/50'}`}>

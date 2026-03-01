@@ -43,6 +43,7 @@ import {
   Info,
   AlertTriangle,
   PartyPopper,
+  FileText,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
@@ -236,9 +237,81 @@ function MiniProgress({ pct, label }: { pct: number; label: string }) {
   );
 }
 
+function exportStudentPdf(entry: StudyHistoryEntry) {
+  const m1 = getModuleProgress(entry, 1);
+  const m2 = getModuleProgress(entry, 2);
+  const m3 = getModuleProgress(entry, 3);
+  const avg = getAvgQuizScore(entry);
+  const totalPct = Math.round((entry.completedCount / TOTAL_LESSONS) * 100);
+
+  const modulesHtml = modules.map((mod) => {
+    const prog = getModuleProgress(entry, mod.id);
+    const lessonsHtml = mod.lessons.map((lesson) => {
+      const done = entry.completedLessons.includes(lesson.id);
+      const quiz = entry.quizResults[lesson.id];
+      const qPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
+      const statusIcon = done ? '&#10003;' : '&#9675;';
+      const statusColor = done ? '#16a34a' : '#9ca3af';
+      const quizBadge = quiz
+        ? `<span style="padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;${qPct >= 80 ? 'background:#dcfce7;color:#166534' : qPct >= 60 ? 'background:#fef9c3;color:#854d0e' : 'background:#fee2e2;color:#991b1b'}">${quiz.score}/${quiz.total}</span>`
+        : '';
+      return `<tr><td style="padding:4px 8px;color:${statusColor};font-size:14px;width:24px">${statusIcon}</td><td style="padding:4px 8px;font-size:13px;${done ? '' : 'color:#9ca3af'}">${lesson.title}</td><td style="padding:4px 8px;text-align:right">${quizBadge}</td></tr>`;
+    }).join('');
+    return `<div style="margin-bottom:20px"><h3 style="margin:0 0 8px;font-size:15px">${mod.icon} ${mod.title} <span style="font-weight:normal;color:#6b7280;font-size:13px">(${prog.completed}/${prog.total} — ${prog.pct}%)</span></h3><table style="width:100%;border-collapse:collapse">${lessonsHtml}</table></div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatorio - ${entry.nome || 'Aluno'}</title><style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:40px;color:#1f2937;line-height:1.5}
+    h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:24px 0 12px;border-bottom:2px solid #e5e7eb;padding-bottom:6px}
+    .stats{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}
+    .stat{border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;min-width:120px}
+    .stat-val{font-size:24px;font-weight:700}.stat-lbl{font-size:11px;color:#6b7280;text-transform:uppercase}
+    .bar{height:8px;border-radius:4px;background:#e5e7eb;margin-top:4px}.bar-fill{height:100%;border-radius:4px}
+    @media print{body{margin:20px}@page{margin:15mm}}
+  </style></head><body>
+    <h1>Relatorio do Aluno</h1>
+    <p style="color:#6b7280;margin:0 0 20px;font-size:13px">DESorientado a Objetos — gerado em ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+
+    <table style="font-size:13px;margin-bottom:20px">
+      <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Nome:</td><td style="font-weight:600">${entry.nome || '-'}</td></tr>
+      <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Tipo:</td><td>${entry.tipo || '-'}</td></tr>
+      <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Curso:</td><td>${entry.curso || '-'}</td></tr>
+      <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Serie/Semestre:</td><td>${entry.serieOuSemestre || '-'}</td></tr>
+    </table>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val">${entry.completedCount}/${TOTAL_LESSONS}</div><div class="stat-lbl">Aulas concluidas</div><div class="bar"><div class="bar-fill" style="width:${totalPct}%;background:${totalPct >= 100 ? '#22c55e' : '#3b82f6'}"></div></div></div>
+      <div class="stat"><div class="stat-val">${avg >= 0 ? avg + '%' : '-'}</div><div class="stat-lbl">Media quizzes</div></div>
+      <div class="stat"><div class="stat-val">${Object.keys(entry.quizResults).length}</div><div class="stat-lbl">Quizzes feitos</div></div>
+      <div class="stat"><div class="stat-val">${totalPct}%</div><div class="stat-lbl">Progresso total</div></div>
+    </div>
+
+    <h2>Detalhamento por Modulo</h2>
+    ${modulesHtml}
+
+    ${entry.updatedAt ? `<p style="font-size:11px;color:#9ca3af;margin-top:24px">Perfil atualizado em ${new Date(entry.updatedAt).toLocaleDateString('pt-BR')}</p>` : ''}
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  }
+}
+
 function StudentDetail({ entry }: { entry: StudyHistoryEntry }) {
   return (
     <div className="px-4 py-4 bg-muted/10 space-y-4">
+      {/* PDF export button */}
+      <div className="flex justify-end">
+        <button
+          onClick={(e) => { e.stopPropagation(); exportStudentPdf(entry); }}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted transition-colors"
+        >
+          <FileText className="h-3.5 w-3.5" /> Exportar PDF
+        </button>
+      </div>
       {/* Module breakdown */}
       {modules.map((mod) => {
         const prog = getModuleProgress(entry, mod.id);
