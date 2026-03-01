@@ -206,7 +206,16 @@ export default function ExerciseDetail() {
     setActiveLine(line);
   }, []);
 
+  const submitRef = useRef<() => void>();
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl+Enter or Cmd+Enter → submit code
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      submitRef.current?.();
+      return;
+    }
+
     const ta = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = ta;
 
@@ -283,6 +292,7 @@ export default function ExerciseDetail() {
   const diff = DIFF_LABELS[exercise.difficulty];
 
   const handleSubmit = async () => {
+    if (running) return;
     setRunning(true);
     setResults(null);
     setCompileError('');
@@ -345,6 +355,8 @@ export default function ExerciseDetail() {
 
     setRunning(false);
   };
+
+  submitRef.current = handleSubmit;
 
   const handleReset = () => {
     setCode(exercise.starterCode);
@@ -454,7 +466,7 @@ export default function ExerciseDetail() {
                     <RotateCcw className="h-3.5 w-3.5 mr-1" />
                     Resetar
                   </Button>
-                  <Button type="button" size="sm" onClick={handleSubmit} disabled={running}>
+                  <Button type="button" size="sm" onClick={handleSubmit} disabled={running} title="Ctrl+Enter">
                     {running
                       ? <Loader2 className="h-4 w-4 animate-spin" />
                       : <Play className="h-4 w-4" />

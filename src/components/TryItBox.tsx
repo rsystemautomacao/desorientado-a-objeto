@@ -186,7 +186,16 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     setActiveLine(line);
   }, []);
 
+  const runRef = useRef<() => void>();
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl+Enter or Cmd+Enter → execute code
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      runRef.current?.();
+      return;
+    }
+
     const ta = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = ta;
 
@@ -254,6 +263,7 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
   }, [setCode, updateActiveLine]);
 
   const handleRun = async () => {
+    if (state === 'running') return;
     setState('running');
     setOutput('');
 
@@ -272,6 +282,8 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
     }
   };
 
+  runRef.current = handleRun;
+
   const handleReset = () => {
     setCode(initialCode);
     setOutput('');
@@ -289,7 +301,7 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
           <Button type="button" variant="outline" size="sm" onClick={handleReset}>
             Restaurar
           </Button>
-          <Button type="button" size="sm" onClick={handleRun} disabled={state === 'running'}>
+          <Button type="button" size="sm" onClick={handleRun} disabled={state === 'running'} title="Ctrl+Enter">
             {state === 'running' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             <span className="ml-2">{state === 'running' ? 'Executando...' : 'Executar'}</span>
           </Button>
