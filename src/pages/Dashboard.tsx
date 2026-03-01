@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules, getAllLessons } from '@/data/modules';
+import { exercises } from '@/data/exercises';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
 import { getLevel, getReviewSuggestions } from '@/lib/progressStore';
 import CertificateModal from '@/components/CertificateModal';
-import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper, Medal, Crown, Users, Clock } from 'lucide-react';
+import { Trophy, BookOpen, Target, Star, ArrowRight, Award, Flame, Zap, Info, AlertTriangle, PartyPopper, Medal, Crown, Users, Clock, Code2 } from 'lucide-react';
 import {
   RadialBarChart, RadialBar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from 'recharts';
 
 export default function Dashboard() {
-  const { progress, isCompleted, getStudyTimes } = useProgress();
+  const { progress, isCompleted, getStudyTimes, getExerciseData } = useProgress();
   const { user } = useAuth();
   const [studentName, setStudentName] = useState('');
   const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
@@ -140,6 +141,9 @@ export default function Dashboard() {
         {(() => {
           const studyTimes = getStudyTimes();
           const totalSeconds = Object.values(studyTimes).reduce((a, b) => a + b, 0);
+          const exData = getExerciseData();
+          const exCompleted = Object.values(exData).filter((e) => e.passed).length;
+          const exTotal = exercises.length;
           const formatTime = (s: number) => {
             if (s < 60) return `${s}s`;
             const mins = Math.floor(s / 60);
@@ -150,7 +154,7 @@ export default function Dashboard() {
           };
           return (
             <>
-              <div className="grid sm:grid-cols-4 gap-4 mb-10">
+              <div className="grid sm:grid-cols-5 gap-4 mb-10">
                 <div className="rounded-xl border border-border bg-card p-6">
                   <BookOpen className="h-8 w-8 text-primary mb-3" />
                   <p className="text-3xl font-bold">{completedCount}<span className="text-lg text-muted-foreground">/{totalLessons}</span></p>
@@ -160,6 +164,11 @@ export default function Dashboard() {
                   <Target className="h-8 w-8 text-accent mb-3" />
                   <p className="text-3xl font-bold">{quizPct}%</p>
                   <p className="text-sm text-muted-foreground">Acerto nos quizzes ({totalCorrect}/{totalQuestions})</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <Code2 className="h-8 w-8 text-purple-500 mb-3" />
+                  <p className="text-3xl font-bold">{exCompleted}<span className="text-lg text-muted-foreground">/{exTotal}</span></p>
+                  <p className="text-sm text-muted-foreground">Exercícios resolvidos</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-6">
                   <Trophy className="h-8 w-8 text-primary mb-3" />

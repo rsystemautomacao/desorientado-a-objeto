@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { getExerciseById } from '@/data/exercises';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgress } from '@/hooks/useProgress';
 import {
   Play, Loader2, CheckCircle2, AlertCircle, XCircle,
   ChevronLeft, Lightbulb, RotateCcw, Trophy,
@@ -124,27 +125,6 @@ interface TestResult {
   error?: string;
 }
 
-// ── localStorage helpers ──
-function loadExerciseData(uid: string | null): Record<string, { passed: boolean; attempts: number; bestScore: string }> {
-  try {
-    const raw = localStorage.getItem(`desorientado-exercises-${uid ?? 'anon'}`);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-}
-
-function saveExerciseResult(uid: string | null, exerciseId: string, passed: boolean, score: string) {
-  try {
-    const data = loadExerciseData(uid);
-    const prev = data[exerciseId];
-    data[exerciseId] = {
-      passed: prev?.passed || passed,
-      attempts: (prev?.attempts ?? 0) + 1,
-      bestScore: passed ? score : (prev?.bestScore ?? score),
-    };
-    localStorage.setItem(`desorientado-exercises-${uid ?? 'anon'}`, JSON.stringify(data));
-  } catch { /* ignore */ }
-}
-
 // Normalize output for comparison: trim, normalize line endings, remove trailing whitespace per line
 function normalizeOutput(s: string): string {
   return s.split('\n').map((l) => l.trimEnd()).join('\n').trim();
@@ -159,6 +139,7 @@ const DIFF_LABELS: Record<string, { label: string; color: string }> = {
 export default function ExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { completeExercise, saveExerciseAttempt } = useProgress();
   const exercise = useMemo(() => getExerciseById(id ?? ''), [id]);
 
   const [code, setCode] = useState(exercise?.starterCode ?? '');
@@ -308,11 +289,15 @@ export default function ExerciseDetail() {
 
       setResults(testResults);
 
-      // Save result
+      // Save result + award XP
       const passedCount = testResults.filter((r) => r.passed).length;
       const allPassed = passedCount === testResults.length;
       const score = `${passedCount}/${testResults.length}`;
-      saveExerciseResult(user?.uid ?? null, exercise.id, allPassed, score);
+      if (allPassed) {
+        completeExercise(exercise.id, exercise.xpReward);
+      } else {
+        saveExerciseAttempt(exercise.id, score);
+      }
     } catch {
       setCompileError('Erro de conexão. Verifique sua internet e tente novamente.');
     }

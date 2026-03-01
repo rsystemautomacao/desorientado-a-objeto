@@ -5,7 +5,7 @@ import { exercises, getTopicsByModule } from '@/data/exercises';
 import { modules } from '@/data/modules';
 import { Code2, Filter, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useProgress } from '@/hooks/useProgress';
 
 const DIFF_LABELS: Record<string, { label: string; color: string }> = {
   facil: { label: 'Fácil', color: 'text-green-400 bg-green-400/10 border-green-400/20' },
@@ -13,25 +13,17 @@ const DIFF_LABELS: Record<string, { label: string; color: string }> = {
   dificil: { label: 'Difícil', color: 'text-red-400 bg-red-400/10 border-red-400/20' },
 };
 
-function getCompletedExercises(uid: string | null): Set<string> {
-  try {
-    const key = `desorientado-exercises-${uid ?? 'anon'}`;
-    const raw = localStorage.getItem(key);
-    if (!raw) return new Set();
-    const data = JSON.parse(raw) as Record<string, { passed: boolean }>;
-    return new Set(Object.entries(data).filter(([, v]) => v.passed).map(([k]) => k));
-  } catch {
-    return new Set();
-  }
-}
-
 export default function Exercises() {
-  const { user } = useAuth();
-  const [selectedModule, setSelectedModule] = useState<number>(0); // 0 = todos
+  const { getExerciseData } = useProgress();
+  const [selectedModule, setSelectedModule] = useState<number>(0);
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [selectedDiff, setSelectedDiff] = useState<string>('');
 
-  const completed = useMemo(() => getCompletedExercises(user?.uid ?? null), [user?.uid]);
+  // Re-reads from localStorage on every render (cheap operation, ensures fresh data)
+  const exerciseData = getExerciseData();
+  const completed = useMemo(() => {
+    return new Set(Object.entries(exerciseData).filter(([, v]) => v.passed).map(([k]) => k));
+  }, [exerciseData]);
   const topicsByModule = useMemo(() => getTopicsByModule(), []);
 
   const availableTopics = useMemo(() => {
