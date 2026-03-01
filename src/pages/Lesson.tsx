@@ -24,17 +24,47 @@ export default function Lesson() {
   const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
 
-  // Track study time
-  const enterTimeRef = useRef(Date.now());
+  // Track study time — saves every 30s + on unmount + on tab close
+  const addStudyTimeRef = useRef(addStudyTime);
+  addStudyTimeRef.current = addStudyTime;
+  const lessonIdRef = useRef(id);
+  lessonIdRef.current = id;
+  const lastSavedRef = useRef(Date.now());
+
   useEffect(() => {
-    enterTimeRef.current = Date.now();
-    return () => {
-      if (id) {
-        const seconds = Math.floor((Date.now() - enterTimeRef.current) / 1000);
-        addStudyTime(id, seconds);
+    lastSavedRef.current = Date.now();
+
+    const flush = () => {
+      const lid = lessonIdRef.current;
+      if (!lid) return;
+      const now = Date.now();
+      const seconds = Math.floor((now - lastSavedRef.current) / 1000);
+      if (seconds >= 5) {
+        addStudyTimeRef.current(lid, seconds);
+        lastSavedRef.current = now;
       }
     };
-  }, [id, addStudyTime]);
+
+    // Save every 30 seconds while on the page
+    const interval = setInterval(flush, 30_000);
+
+    // Save when tab is closed / navigated away (browser level)
+    const handleBeforeUnload = () => flush();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Save when tab becomes hidden (mobile or tab switch)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      flush(); // save remaining time on unmount (route change)
+    };
+  }, [id]);
 
   // Feedback state
   const [myVote, setMyVote] = useState<'like' | 'dislike' | null>(null);

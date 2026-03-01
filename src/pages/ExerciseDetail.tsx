@@ -80,27 +80,39 @@ function highlightJava(code: string): string {
   return tokens.join('');
 }
 
-// ── Judge0 helper (wait=true, sem polling) ──
+// ── Judge0 helper (base64 + wait=true) ──
+function toBase64(str: string): string {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function fromBase64(b64: string): string {
+  try { return decodeURIComponent(escape(atob(b64))); } catch { return atob(b64); }
+}
+
 async function runJava(sourceCode: string, stdin = ''): Promise<{
   stdout?: string | null;
   stderr?: string | null;
   compile_output?: string | null;
   status?: { id: number };
 }> {
-  const res = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false&wait=true`, {
+  const res = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=true&wait=true`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      source_code: sourceCode,
+      source_code: toBase64(sourceCode),
       language_id: JAVA_LANGUAGE_ID,
-      stdin,
+      stdin: toBase64(stdin),
     }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message ?? err.error ?? `HTTP ${res.status}`);
   }
-  return res.json();
+  const data = await res.json();
+  if (data.stdout) data.stdout = fromBase64(data.stdout);
+  if (data.stderr) data.stderr = fromBase64(data.stderr);
+  if (data.compile_output) data.compile_output = fromBase64(data.compile_output);
+  return data;
 }
 
 interface TestResult {
