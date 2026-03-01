@@ -44,6 +44,9 @@ import {
   AlertTriangle,
   PartyPopper,
   FileText,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
@@ -460,6 +463,104 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
   );
 }
 
+// ---------- Feedback Analytics ----------
+
+function FeedbackSection({ summary }: { summary: Record<string, { likes: number; dislikes: number }> }) {
+  const data = useMemo(() => {
+    const allLessons = modules.flatMap((m) => m.lessons);
+    return allLessons.map((l) => {
+      const fb = summary[l.id] ?? { likes: 0, dislikes: 0 };
+      const total = fb.likes + fb.dislikes;
+      const approval = total > 0 ? Math.round((fb.likes / total) * 100) : -1;
+      return { id: l.id, name: getLessonTitle(l.id), ...fb, total, approval };
+    }).filter((l) => l.total > 0)
+      .sort((a, b) => a.approval - b.approval);
+  }, [summary]);
+
+  if (data.length === 0) return null;
+
+  const needsAttention = data.filter((d) => d.approval >= 0 && d.approval < 60);
+  const bestRated = [...data].filter((d) => d.approval >= 0).sort((a, b) => b.approval - a.approval).slice(0, 3);
+  const totalVotes = data.reduce((a, d) => a + d.total, 0);
+  const totalLikes = data.reduce((a, d) => a + d.likes, 0);
+  const overallApproval = totalVotes > 0 ? Math.round((totalLikes / totalVotes) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Avaliacao das Aulas (Curtidas)</h2>
+        <span className="ml-auto text-xs text-muted-foreground">{totalVotes} votos no total</span>
+      </div>
+      <div className="p-4">
+        {/* Overall approval */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-muted/30">
+          <div className="text-2xl font-bold">{overallApproval}%</div>
+          <div className="text-sm text-muted-foreground">
+            aprovacao geral
+            <span className="ml-2">
+              (<ThumbsUp className="h-3 w-3 inline" /> {totalLikes} / <ThumbsDown className="h-3 w-3 inline" /> {totalVotes - totalLikes})
+            </span>
+          </div>
+        </div>
+
+        {/* Highlights */}
+        <div className="grid gap-3 sm:grid-cols-2 mb-4">
+          {needsAttention.length > 0 && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+              <p className="text-xs font-medium text-red-600 mb-2 flex items-center gap-1">
+                <ThumbsDown className="h-3 w-3" /> Precisam de atencao (aprovacao {'<'} 60%)
+              </p>
+              {needsAttention.slice(0, 5).map((d) => (
+                <div key={d.id} className="flex items-center justify-between text-xs py-0.5">
+                  <span className="truncate mr-2" title={d.name}>{d.name}</span>
+                  <span className="font-medium text-red-500 shrink-0">{d.approval}% ({d.likes}/{d.total})</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3">
+            <p className="text-xs font-medium text-green-600 mb-2 flex items-center gap-1">
+              <ThumbsUp className="h-3 w-3" /> Mais curtidas
+            </p>
+            {bestRated.map((d) => (
+              <div key={d.id} className="flex items-center justify-between text-xs py-0.5">
+                <span className="truncate mr-2" title={d.name}>{d.name}</span>
+                <span className="font-medium text-green-600 shrink-0">{d.approval}% ({d.likes}/{d.total})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Full list */}
+        <details className="group">
+          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+            Ver todas as aulas avaliadas ({data.length})
+          </summary>
+          <div className="mt-2 space-y-1.5">
+            {data.map((d) => {
+              const barColor = d.approval >= 80 ? 'bg-green-500' : d.approval >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+              return (
+                <div key={d.id} className="flex items-center gap-3 text-xs">
+                  <span className="truncate w-44 shrink-0" title={d.name}>{d.name}</span>
+                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.max(d.approval, 3)}%` }} />
+                  </div>
+                  <span className="flex items-center gap-1 shrink-0 w-24 justify-end">
+                    <ThumbsUp className="h-3 w-3 text-green-500" /> {d.likes}
+                    <ThumbsDown className="h-3 w-3 text-red-500 ml-1" /> {d.dislikes}
+                    <span className="font-medium ml-1">({d.approval}%)</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Main Component ----------
 
 export default function Admin() {
@@ -473,6 +574,7 @@ export default function Admin() {
   const [entries, setEntries] = useState<StudyHistoryEntry[]>([]);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementEntry[]>([]);
+  const [feedbackSummary, setFeedbackSummary] = useState<Record<string, { likes: number; dislikes: number }>>({});
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
@@ -513,14 +615,16 @@ export default function Admin() {
       const data = await res.json();
       setEntries(data.entries ?? []);
 
-      // Load activities + announcements (best-effort, don't block)
+      // Load activities + announcements + feedback (best-effort, don't block)
       try {
-        const [actRes, annRes] = await Promise.all([
+        const [actRes, annRes, fbRes] = await Promise.all([
           fetch(`${base}/api/admin/activities?limit=50`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${base}/api/admin/announcements`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${base}/api/feedback`),
         ]);
         if (actRes.ok) { const d = await actRes.json(); setActivities(d.activities ?? []); }
         if (annRes.ok) { const d = await annRes.json(); setAnnouncements(d.announcements ?? []); }
+        if (fbRes.ok) { const d = await fbRes.json(); setFeedbackSummary(d.summary ?? {}); }
       } catch { /* ignore */ }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -782,6 +886,9 @@ export default function Admin() {
 
             {/* ===== Quiz Analytics ===== */}
             <QuizAnalyticsSection entries={entries} />
+
+            {/* ===== Feedback Analytics ===== */}
+            <FeedbackSection summary={feedbackSummary} />
 
             {/* ===== Activity Timeline ===== */}
             <ActivityTimeline activities={activities} />
