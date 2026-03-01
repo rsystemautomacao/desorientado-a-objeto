@@ -863,6 +863,50 @@ export default function Admin() {
               <StatCard icon={<Trophy className="h-4 w-4" />} label="Concluiram tudo" value={studentsCompleted100} sub={`de ${entries.length}`} />
             </div>
 
+            {/* ===== Inactive students alert ===== */}
+            {(() => {
+              const now = new Date();
+              const INACTIVE_DAYS = 7;
+              const inactive = entries.filter((e) => {
+                if (!e.updatedAt) return true; // never updated = inactive
+                const last = new Date(e.updatedAt);
+                const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+                return diffDays >= INACTIVE_DAYS;
+              }).map((e) => {
+                const diffDays = e.updatedAt
+                  ? Math.floor((now.getTime() - new Date(e.updatedAt).getTime()) / 86400000)
+                  : 999;
+                return { ...e, daysInactive: diffDays };
+              }).sort((a, b) => b.daysInactive - a.daysInactive);
+
+              if (inactive.length === 0) return null;
+
+              return (
+                <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-yellow-500/20 bg-yellow-500/10 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <h2 className="font-semibold text-yellow-800 text-sm">Alunos inativos ({inactive.length})</h2>
+                    <span className="ml-auto text-[10px] text-yellow-700">sem atividade ha {INACTIVE_DAYS}+ dias</span>
+                  </div>
+                  <div className="p-3 max-h-[200px] overflow-y-auto">
+                    <div className="space-y-1">
+                      {inactive.slice(0, 15).map((e) => (
+                        <div key={e.userId} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-yellow-500/10">
+                          <span className="font-medium truncate mr-2">{e.nome || 'Sem nome'}</span>
+                          <span className="text-yellow-700 shrink-0">
+                            {e.daysInactive >= 999 ? 'nunca acessou' : `${e.daysInactive} dias`}
+                          </span>
+                        </div>
+                      ))}
+                      {inactive.length > 15 && (
+                        <p className="text-[10px] text-muted-foreground text-center pt-1">+ {inactive.length - 15} mais</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ===== Announcements ===== */}
             <AnnouncementsManager
               announcements={announcements}
