@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2, Sun, Moon } from 'lucide-react';
+import { Menu, X, BookOpen, GraduationCap, BriefcaseBusiness, LayoutDashboard, Map, LogIn, LogOut, User, Loader2, Sun, Moon, Code2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 const navItems = [
   { to: '/', label: 'Home', icon: BookOpen },
   { to: '/trilha', label: 'Trilha', icon: Map },
+  { to: '/exercicios', label: 'Exercícios', icon: Code2 },
   { to: '/entrevistas', label: 'Entrevistas', icon: BriefcaseBusiness },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
