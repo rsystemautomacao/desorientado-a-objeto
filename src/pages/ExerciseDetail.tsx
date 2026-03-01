@@ -154,6 +154,7 @@ export default function ExerciseDetail() {
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [hintsShown, setHintsShown] = useState(0);
   const [compileError, setCompileError] = useState('');
+  const [activeLine, setActiveLine] = useState(-1);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
@@ -163,6 +164,14 @@ export default function ExerciseDetail() {
       preRef.current.scrollTop = textareaRef.current.scrollTop;
       preRef.current.scrollLeft = textareaRef.current.scrollLeft;
     }
+  }, []);
+
+  const updateActiveLine = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const line = ta.value.substring(0, pos).split('\n').length;
+    setActiveLine(line);
   }, []);
 
   if (!exercise) {
@@ -258,9 +267,6 @@ export default function ExerciseDetail() {
   const passedCount = results?.filter((r) => r.passed).length ?? 0;
   const totalTests = exercise.testCases.length;
   const allPassed = results != null && passedCount === totalTests;
-
-  const lineCount = code.split('\n').length;
-  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
 
   return (
     <Layout>
@@ -365,22 +371,44 @@ export default function ExerciseDetail() {
               </div>
               <div className="p-2">
                 <div className="relative rounded-lg border border-border bg-background overflow-hidden">
+                  {/* Active line highlight */}
+                  {activeLine > 0 && (
+                    <div
+                      className="absolute left-0 right-0 pointer-events-none z-[1]"
+                      style={{
+                        top: `calc(1rem + ${(activeLine - 1) * 1.625}em)`,
+                        height: '1.625em',
+                        background: 'hsl(var(--primary) / 0.08)',
+                        borderLeft: '2px solid hsl(var(--primary) / 0.5)',
+                      }}
+                    />
+                  )}
                   <div className="absolute left-0 top-0 bottom-0 w-10 bg-muted/50 border-r border-border overflow-hidden pointer-events-none z-10">
-                    <pre className="p-4 pr-2 text-right font-mono text-xs leading-[1.625] text-muted-foreground select-none">{lineNumbers}</pre>
+                    <pre className="p-4 pr-2 text-right font-mono text-xs leading-[1.625] text-muted-foreground select-none">
+                      {code.split('\n').map((_, i) => (
+                        <span key={i} className={i + 1 === activeLine ? 'text-primary font-semibold' : ''}>
+                          {i + 1}{'\n'}
+                        </span>
+                      ))}
+                    </pre>
                   </div>
                   <pre
                     ref={preRef}
-                    className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-words overflow-hidden pointer-events-none"
+                    className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-words overflow-hidden pointer-events-none z-[2]"
                     aria-hidden="true"
                     dangerouslySetInnerHTML={{ __html: highlightJava(code) + '\n' }}
                   />
                   <textarea
                     ref={textareaRef}
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
+                    onChange={(e) => { setCode(e.target.value); updateActiveLine(); }}
+                    onClick={updateActiveLine}
+                    onKeyUp={updateActiveLine}
+                    onFocus={updateActiveLine}
+                    onBlur={() => setActiveLine(-1)}
                     onScroll={syncScroll}
-                    className="relative w-full min-h-[300px] p-4 pl-14 font-mono text-sm leading-[1.625] bg-transparent resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
-                    style={{ color: 'transparent', caretColor: 'currentcolor' }}
+                    className="relative w-full min-h-[300px] p-4 pl-14 font-mono text-sm leading-[1.625] bg-transparent resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg z-[3]"
+                    style={{ color: 'transparent', caretColor: '#22c55e' }}
                     spellCheck={false}
                   />
                 </div>
