@@ -49,6 +49,50 @@
   }
 }
 
+  /* Light mode override */
+  .light-mode {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 15%;
+    --card: 0 0% 98%;
+    --card-foreground: 220 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+    --primary: 152 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 38 95% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 87%;
+    --input: 220 13% 90%;
+    --ring: 152 76% 36%;
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 152 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent-foreground: 220 15% 25%;
+    --sidebar-border: 220 13% 87%;
+    --sidebar-ring: 152 76% 36%;
+    --code-bg: 220 14% 96%;
+    --code-border: 220 13% 87%;
+    --code-keyword: 240 80% 55%;
+    --code-string: 152 60% 32%;
+    --code-comment: 215 10% 55%;
+    --code-number: 30 80% 42%;
+    --success: 152 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 100% 50%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
