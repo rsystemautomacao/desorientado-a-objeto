@@ -8,6 +8,7 @@ import {
   XP_REWARDS,
   type Progress,
 } from '@/lib/progressStore';
+import { exercises as allExercises } from '@/data/exercises';
 
 const STORAGE_KEY_PREFIX = 'desorientado-progress';
 
@@ -80,6 +81,48 @@ function migrateOldLocalProgress(uid: string): Progress | null {
   return null;
 }
 
+/**
+ * Recalcula o XP mínimo que o aluno deveria ter baseado no progresso existente.
+ * Usado para corrigir XP zerado de ações feitas antes do sistema de XP funcionar.
+ */
+function recalculateMinXp(p: Progress, uid: string | null): number {
+  let xp = 0;
+
+  // Aulas concluídas: 50 XP cada
+  xp += p.completedLessons.length * XP_REWARDS.LESSON_COMPLETE;
+
+  // Quizzes: 10-30 XP cada
+  for (const result of Object.values(p.quizResults)) {
+    xp += getQuizXp(result.score, result.total);
+  }
+
+  // Exercícios resolvidos: xpReward de cada exercício
+  try {
+    const key = `desorientado-exercises-${uid ?? 'anon'}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const data: Record<string, { passed: boolean }> = JSON.parse(raw);
+      for (const [exId, info] of Object.entries(data)) {
+        if (info.passed) {
+          const ex = allExercises.find((e) => e.id === exId);
+          if (ex) xp += ex.xpReward;
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  return xp;
+}
+
+/** Corrige XP se estiver defasado em relação ao progresso real */
+function fixXpIfNeeded(p: Progress, uid: string | null): Progress {
+  const minXp = recalculateMinXp(p, uid);
+  if (minXp > p.xp) {
+    return { ...p, xp: minXp };
+  }
+  return p;
+}
+
 export function useProgress() {
   const { user, loading: authLoading } = useAuth();
   const [progress, setProgress] = useState<Progress>(DEFAULT_PROGRESS);
@@ -106,22 +149,23 @@ export function useProgress() {
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
           const hasLocal = effectiveLocal.completedLessons.length > 0 || Object.keys(effectiveLocal.quizResults).length > 0 || effectiveLocal.favorites.length > 0;
           if (!hasRemote && hasLocal) {
-            setProgress(effectiveLocal);
+            const fixed = fixXpIfNeeded(effectiveLocal, uid);
+            setProgress(fixed);
             if (apiOkRef.current) {
-              user.getIdToken(true).then((t) => saveProgressToApi(t, effectiveLocal).catch(() => { apiOkRef.current = false; }));
+              user.getIdToken(true).then((t) => saveProgressToApi(t, fixed).catch(() => { apiOkRef.current = false; }));
             }
           } else {
-            setProgress(p);
+            setProgress(fixXpIfNeeded(p, uid));
           }
           setProgressLoaded(true);
         })
         .catch(() => {
           apiOkRef.current = false;
-          setProgress(effectiveLocal);
+          setProgress(fixXpIfNeeded(effectiveLocal, uid));
           setProgressLoaded(true);
         });
     } else {
-      setProgress(loadLocalProgress(null));
+      setProgress(fixXpIfNeeded(loadLocalProgress(null), null));
       setProgressLoaded(true);
     }
   }, [user?.uid, authLoading]);
