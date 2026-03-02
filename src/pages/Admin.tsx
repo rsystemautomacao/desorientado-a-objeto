@@ -48,6 +48,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
+  Code2,
 } from 'lucide-react';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
