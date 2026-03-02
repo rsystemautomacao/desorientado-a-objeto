@@ -7,6 +7,7 @@ import type { ServiceAccount } from 'firebase-admin/app';
 const DB_NAME = 'desorientado';
 const PROGRESS_COLLECTION = 'progress';
 const PROFILES_COLLECTION = 'profiles';
+const ACTIVITIES_COLLECTION = 'activities';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'rsautomacao2000@gmail.com';
 
 interface ProgressDoc {
@@ -14,6 +15,12 @@ interface ProgressDoc {
   completedLessons: string[];
   quizResults: Record<string, { score: number; total: number }>;
   favorites: string[];
+  updatedAt?: string;
+}
+
+interface ActivityDoc {
+  userId: string;
+  timestamp: string;
 }
 
 interface ProfileDoc {
@@ -134,15 +141,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = client.db(DB_NAME);
     const progressCol = db.collection<ProgressDoc>(PROGRESS_COLLECTION);
     const profilesCol = db.collection<ProfileDoc>(PROFILES_COLLECTION);
+    const activitiesCol = db.collection<ActivityDoc>(ACTIVITIES_COLLECTION);
 
-    const [progressList, profilesList] = await Promise.all([
+    const [progressList, profilesList, activitiesList] = await Promise.all([
       progressCol.find({}).toArray(),
       profilesCol.find({}).toArray(),
+      // Fetch only the most recent activity per user using aggregation
+      activitiesCol.aggregate<{ _id: string; lastActivity: string }>([
+        { $sort: { timestamp: -1 } },
+        { $group: { _id: '$userId', lastActivity: { $first: '$timestamp' } } },
+      ]).toArray(),
     ]);
 
     const profileByUserId = new Map<string, ProfileDoc>();
     for (const p of profilesList) {
       if (p.userId) profileByUserId.set(p.userId, p);
+    }
+
+    const lastActivityByUserId = new Map<string, string>();
+    for (const a of activitiesList) {
+      if (a._id) lastActivityByUserId.set(a._id, a.lastActivity);
+    }
+
+    // Helper: returns the most recent ISO date from multiple optional strings
+    function mostRecent(...dates: (string | undefined)[]): string {
+      let best = '';
+      for (const d of dates) {
+        if (d && d > best) best = d;
+      }
+      return best;
     }
 
     const entries: StudyHistoryEntry[] = progressList.map((doc) => {
@@ -158,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         completedCount: Array.isArray(doc.completedLessons) ? doc.completedLessons.length : 0,
         quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},
         favorites: Array.isArray(doc.favorites) ? doc.favorites : [],
-        updatedAt: profile?.updatedAt ?? '',
+        updatedAt: mostRecent(profile?.updatedAt, doc.updatedAt, lastActivityByUserId.get(doc.userId)),
       };
     });
 

@@ -170,7 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
       await col.updateOne(
         { userId },
-        { $set: progress },
+        { $set: { ...progress, updatedAt: new Date().toISOString() } },
         { upsert: true }
       );
       return res.status(200).json(progress);

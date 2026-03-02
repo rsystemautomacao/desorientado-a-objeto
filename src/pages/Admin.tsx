@@ -868,15 +868,28 @@ export default function Admin() {
             {(() => {
               const now = new Date();
               const INACTIVE_DAYS = 7;
+
+              // Build a map of latest activity timestamp per user from activities data
+              const lastActivityMap = new Map<string, string>();
+              for (const a of activities) {
+                const prev = lastActivityMap.get(a.userId);
+                if (!prev || a.timestamp > prev) lastActivityMap.set(a.userId, a.timestamp);
+              }
+
               const inactive = entries.filter((e) => {
-                if (!e.updatedAt) return true; // never updated = inactive
-                const last = new Date(e.updatedAt);
-                const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+                // Use the most recent date from: updatedAt (profile+progress) or last activity
+                const lastActivity = lastActivityMap.get(e.userId);
+                const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
+                if (candidates.length === 0) return true; // no data at all
+                const mostRecent = candidates.sort().pop()!;
+                const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
                 return diffDays >= INACTIVE_DAYS;
               }).map((e) => {
-                const diffDays = e.updatedAt
-                  ? Math.floor((now.getTime() - new Date(e.updatedAt).getTime()) / 86400000)
-                  : 999;
+                const lastActivity = lastActivityMap.get(e.userId);
+                const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
+                if (candidates.length === 0) return { ...e, daysInactive: 999 };
+                const mostRecent = candidates.sort().pop()!;
+                const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
                 return { ...e, daysInactive: diffDays };
               }).sort((a, b) => b.daysInactive - a.daysInactive);
 
