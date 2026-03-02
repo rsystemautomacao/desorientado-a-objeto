@@ -366,6 +366,8 @@ export default function Lesson() {
         {lessonQuiz.length > 0 && (
           <section className="mb-10 p-6 rounded-xl border border-border bg-card">
             <QuizComponent
+              key={`quiz-${id}-${user?.uid ?? 'anon'}`}
+              lessonId={id}
               questions={lessonQuiz}
               onComplete={(score, total) => saveQuizResult(id, score, total)}
             />

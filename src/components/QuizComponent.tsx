@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { QuizQuestion } from '@/data/types';
 import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 
 interface Props {
+  lessonId: string;
   questions: QuizQuestion[];
   onComplete?: (score: number, total: number) => void;
 }
@@ -16,13 +17,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export default function QuizComponent({ questions, onComplete }: Props) {
+export default function QuizComponent({ lessonId, questions, onComplete }: Props) {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
 
+  // Unique nonce per mount — prevents browser form state restoration across sessions
+  const sessionNonce = useRef(Math.random().toString(36).slice(2, 8));
+
   // Stabilize questions: only shuffle once on mount (or when question IDs change).
-  // Using useRef + useMemo to prevent re-shuffling when the parent re-renders
-  // and passes a new array reference with the same content.
   const questionIdsKey = questions.map((q) => q.id).join(',');
   const stableQuestionsRef = useRef<{ key: string; items: QuizQuestion[] }>({ key: '', items: [] });
 
@@ -35,8 +37,15 @@ export default function QuizComponent({ questions, onComplete }: Props) {
     return shuffled;
   }, [questionIdsKey, questions]);
 
+  // Safety net: reset quiz state when the lesson or questions change
+  // (handles cases where React reuses the component instance across route changes)
+  useEffect(() => {
+    setSelected({});
+    setSubmitted(false);
+    sessionNonce.current = Math.random().toString(36).slice(2, 8);
+  }, [lessonId, questionIdsKey]);
+
   const handleSubmit = () => {
-    // Calculate score BEFORE setting submitted, then pass to onComplete
     const finalScore = quizQuestions.reduce(
       (acc, q, i) => acc + (selected[i] === q.correct ? 1 : 0),
       0,
@@ -48,12 +57,16 @@ export default function QuizComponent({ questions, onComplete }: Props) {
   const handleRetry = () => {
     setSelected({});
     setSubmitted(false);
+    sessionNonce.current = Math.random().toString(36).slice(2, 8);
   };
 
   const score = useMemo(() => {
     if (!submitted) return 0;
     return quizQuestions.reduce((acc, q, i) => acc + (selected[i] === q.correct ? 1 : 0), 0);
   }, [submitted, selected, quizQuestions]);
+
+  // Radio name prefix unique to this lesson + session (prevents browser form state leaking)
+  const radioPrefix = `q-${lessonId}-${sessionNonce.current}`;
 
   return (
     <div className="space-y-6">
@@ -89,11 +102,12 @@ export default function QuizComponent({ questions, onComplete }: Props) {
                 <label key={oi} className={`flex items-center gap-3 p-3 rounded-lg border text-sm transition-all ${optClass} ${submitted ? 'cursor-default' : ''}`}>
                   <input
                     type="radio"
-                    name={`q-${qi}`}
+                    name={`${radioPrefix}-${qi}`}
                     checked={isSelected}
                     onChange={() => !submitted && setSelected({ ...selected, [qi]: oi })}
                     disabled={submitted}
                     className="sr-only"
+                    autoComplete="off"
                   />
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-primary' : 'border-muted-foreground/40'}`}>
                     {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
