@@ -115,17 +115,18 @@ export function addLessonTime(
 // ── XP Rewards ──
 export const XP_REWARDS = {
   LESSON_COMPLETE: 50,
-  QUIZ_GREAT: 30,    // ≥ 80%
-  QUIZ_GOOD: 20,     // ≥ 60%
-  QUIZ_ATTEMPTED: 10, // < 60%
+  QUIZ_GREAT: 30,       // ≥ 80%
+  QUIZ_GOOD: 20,        // ≥ 60%
+  QUIZ_ATTEMPTED: 10,   // < 60%
+  QUIZ_FIRST_BONUS: 15, // bônus por ≥ 80% na primeira tentativa
 } as const;
 
-export function getQuizXp(score: number, total: number): number {
+export function getQuizXp(score: number, total: number, isFirstAttempt = false): number {
   if (total === 0) return 0;
   const pct = score / total;
-  if (pct >= 0.8) return XP_REWARDS.QUIZ_GREAT;
-  if (pct >= 0.6) return XP_REWARDS.QUIZ_GOOD;
-  return XP_REWARDS.QUIZ_ATTEMPTED;
+  const base = pct >= 0.8 ? XP_REWARDS.QUIZ_GREAT : pct >= 0.6 ? XP_REWARDS.QUIZ_GOOD : XP_REWARDS.QUIZ_ATTEMPTED;
+  const bonus = isFirstAttempt && pct >= 0.8 ? XP_REWARDS.QUIZ_FIRST_BONUS : 0;
+  return base + bonus;
 }
 
 // ── Streak Logic ──

@@ -241,12 +241,14 @@ export function useProgress() {
     } catch { /* ignore */ }
 
     setProgress((p) => {
-      const xpGain = getQuizXp(score, total);
+      const isFirstAttempt = !p.quizResults[lessonId];
+      // XP e streak apenas na primeira tentativa
+      const xpGain = isFirstAttempt ? getQuizXp(score, total, true) : 0;
       return {
         ...p,
         quizResults: { ...p.quizResults, [lessonId]: { score, total } },
         xp: p.xp + xpGain,
-        streak: updateStreak(p.streak),
+        ...(isFirstAttempt ? { streak: updateStreak(p.streak) } : {}),
         lastStudied: { ...p.lastStudied, [lessonId]: todayStr() },
       };
     });

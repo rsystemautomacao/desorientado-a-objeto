@@ -13,16 +13,27 @@ import { quizQuestions } from '@/data/quizData';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, ArrowRight, CheckCircle2, Star, StarOff, Target, Printer, AlertTriangle, ThumbsUp, ThumbsDown, History } from 'lucide-react';
+import { getQuizXp } from '@/lib/progressStore';
 
 function getApiBase(): string {
   const base = import.meta.env.VITE_API_BASE_URL;
   return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : (typeof window !== 'undefined' ? window.location.origin : '');
 }
 
+const QUIZ_PASS_THRESHOLD = 0.75;
+
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
+  const { progress, isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
+
+  const [quizOutcome, setQuizOutcome] = useState<{
+    score: number;
+    total: number;
+    earnedXp: number;
+    isFirstAttempt: boolean;
+    lessonAutoCompleted: boolean;
+  } | null>(null);
 
   // Track study time — only counts when user is actively interacting
   // (mouse move, scroll, keyboard, click, touch within last 30s)
@@ -148,6 +159,9 @@ export default function Lesson() {
       });
     } catch { /* silent — optimistic update stays */ }
   }, [user, id, myVote]);
+
+  // Resetar resultado do quiz ao trocar de aula
+  useEffect(() => { setQuizOutcome(null); }, [id]);
 
   // Scroll progress indicator
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -369,7 +383,23 @@ export default function Lesson() {
               key={`quiz-${id}-${user?.uid ?? 'anon'}`}
               lessonId={id}
               questions={lessonQuiz}
-              onComplete={(score, total) => saveQuizResult(id, score, total)}
+              passThreshold={QUIZ_PASS_THRESHOLD}
+              earnedXp={quizOutcome?.earnedXp}
+              isFirstAttempt={quizOutcome?.isFirstAttempt}
+              lessonAutoCompleted={quizOutcome?.lessonAutoCompleted}
+              onRetry={() => setQuizOutcome(null)}
+              onComplete={(score, total) => {
+                const isFirstAttempt = !progress.quizResults[id];
+                const earnedXp = isFirstAttempt ? getQuizXp(score, total, true) : 0;
+                const passed = total > 0 && score / total >= QUIZ_PASS_THRESHOLD;
+                saveQuizResult(id, score, total);
+                let lessonAutoCompleted = false;
+                if (passed && !isCompleted(id)) {
+                  completeLesson(id);
+                  lessonAutoCompleted = true;
+                }
+                setQuizOutcome({ score, total, earnedXp, isFirstAttempt, lessonAutoCompleted });
+              }}
             />
           </section>
         )}

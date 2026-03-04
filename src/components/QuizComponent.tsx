@@ -6,6 +6,11 @@ interface Props {
   lessonId: string;
   questions: QuizQuestion[];
   onComplete?: (score: number, total: number) => void;
+  onRetry?: () => void;
+  passThreshold?: number; // 0–1, default 0.75
+  earnedXp?: number;
+  isFirstAttempt?: boolean;
+  lessonAutoCompleted?: boolean;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -17,7 +22,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export default function QuizComponent({ lessonId, questions, onComplete }: Props) {
+export default function QuizComponent({ lessonId, questions, onComplete, onRetry, passThreshold = 0.75, earnedXp, isFirstAttempt, lessonAutoCompleted }: Props) {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -58,6 +63,7 @@ export default function QuizComponent({ lessonId, questions, onComplete }: Props
     setSelected({});
     setSubmitted(false);
     sessionNonce.current = Math.random().toString(36).slice(2, 8);
+    onRetry?.();
   };
 
   const score = useMemo(() => {
@@ -136,18 +142,59 @@ export default function QuizComponent({ lessonId, questions, onComplete }: Props
           Verificar Respostas
         </button>
       ) : (
-        <div className="text-center space-y-4">
-          <div className="text-2xl font-bold">
-            {score}/{quizQuestions.length} acertos
-            {score === quizQuestions.length ? ' 🎉' : score >= 3 ? ' 👍' : ' 💪'}
+        <div className="space-y-4">
+          {/* Score */}
+          <div className="text-center">
+            <div className="text-3xl font-bold">{score}/{quizQuestions.length}</div>
+            <div className="text-muted-foreground text-sm mt-1">
+              {Math.round((score / quizQuestions.length) * 100)}% de acertos
+            </div>
           </div>
-          <button
-            onClick={handleRetry}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border hover:bg-secondary transition-colors font-medium"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Tentar Novamente
-          </button>
+
+          {/* Pass/fail feedback */}
+          {(() => {
+            const pct = score / quizQuestions.length;
+            const passed = pct >= passThreshold;
+            const thresholdPct = Math.round(passThreshold * 100);
+            if (passed) {
+              return (
+                <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-center space-y-1">
+                  <p className="font-semibold text-green-700 dark:text-green-400">
+                    ✅ {lessonAutoCompleted ? 'Aula concluída automaticamente!' : 'Parabéns! Você atingiu a nota mínima.'}
+                  </p>
+                  {earnedXp != null && earnedXp > 0 && (
+                    <p className="text-sm text-green-600 dark:text-green-500">
+                      +{earnedXp} XP{isFirstAttempt && pct >= 0.8 ? ' (bônus de primeira tentativa!)' : ''}
+                    </p>
+                  )}
+                </div>
+              );
+            }
+            return (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-center space-y-1">
+                <p className="font-semibold text-destructive">
+                  ❌ Você atingiu {Math.round(pct * 100)}% — mínimo exigido: {thresholdPct}%
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Revise o conteúdo e tente novamente para concluir a aula.
+                </p>
+                {earnedXp != null && earnedXp > 0 && (
+                  <p className="text-sm text-muted-foreground">+{earnedXp} XP registrado.</p>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Retry button */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleRetry}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border hover:bg-secondary transition-colors font-medium"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Tentar Novamente
+            </button>
+          </div>
         </div>
       )}
     </div>
