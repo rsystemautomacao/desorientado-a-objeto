@@ -38,8 +38,21 @@ export default function QuizComponent({ lessonId, questions, onComplete, onRetry
       return stableQuestionsRef.current.items;
     }
     const shuffled = shuffle(questions).slice(0, 5);
-    stableQuestionsRef.current = { key: questionIdsKey, items: shuffled };
-    return shuffled;
+    // Embaralha as opções de cada pergunta e atualiza o índice correto
+    const withShuffledOptions = shuffled.map((q) => {
+      const indexed = q.options.map((opt, i) => ({ opt, i }));
+      for (let j = indexed.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [indexed[j], indexed[k]] = [indexed[k], indexed[j]];
+      }
+      return {
+        ...q,
+        options: indexed.map(({ opt }) => opt),
+        correct: indexed.findIndex(({ i }) => i === q.correct),
+      };
+    });
+    stableQuestionsRef.current = { key: questionIdsKey, items: withShuffledOptions };
+    return withShuffledOptions;
   }, [questionIdsKey, questions]);
 
   // Safety net: reset quiz state when the lesson or questions change

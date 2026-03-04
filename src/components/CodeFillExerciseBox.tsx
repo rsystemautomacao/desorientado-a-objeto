@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { CodeFillExercise } from '@/data/types';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,18 @@ export default function CodeFillExerciseBox({ exercise, index }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const correct = selectedIndex === exercise.correctIndex;
+  // Embaralha as opções uma vez por montagem do componente
+  const shuffledOptions = useMemo(() => {
+    const indexed = exercise.options.map((opt, i) => ({ opt, i }));
+    for (let j = indexed.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [indexed[j], indexed[k]] = [indexed[k], indexed[j]];
+    }
+    return indexed;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shuffledCorrectIndex = shuffledOptions.findIndex(({ i }) => i === exercise.correctIndex);
+  const correct = selectedIndex === shuffledCorrectIndex;
   const showResult = submitted && selectedIndex !== null;
 
   const handleSubmit = () => {
@@ -37,9 +48,9 @@ export default function CodeFillExerciseBox({ exercise, index }: Props) {
         <div className="flex flex-wrap items-center gap-1.5 p-4 rounded-lg bg-code-bg border border-code-border font-mono text-sm min-h-[52px]">
           <span className="text-foreground/80 whitespace-pre">{exercise.snippetBefore}</span>
           <span className="inline-flex flex-wrap gap-1.5">
-            {exercise.options.map((opt, i) => {
-              const isSelected = selectedIndex === i;
-              const isCorrectOpt = i === exercise.correctIndex;
+            {shuffledOptions.map(({ opt }, si) => {
+              const isSelected = selectedIndex === si;
+              const isCorrectOpt = si === shuffledCorrectIndex;
               let btnClass = 'px-3 py-1.5 rounded border font-mono text-sm transition-colors ';
               if (!submitted) {
                 btnClass += isSelected
@@ -52,10 +63,10 @@ export default function CodeFillExerciseBox({ exercise, index }: Props) {
               }
               return (
                 <button
-                  key={i}
+                  key={si}
                   type="button"
                   className={btnClass}
-                  onClick={() => !submitted && setSelectedIndex(i)}
+                  onClick={() => !submitted && setSelectedIndex(si)}
                   disabled={submitted}
                 >
                   {opt}
