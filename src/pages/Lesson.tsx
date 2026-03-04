@@ -24,7 +24,7 @@ const QUIZ_PASS_THRESHOLD = 0.75;
 
 export default function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { progress, isCompleted, completeLesson, uncompleteLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
+  const { progress, isCompleted, completeLesson, isFavorite, toggleFavorite, saveQuizResult, getQuizHistory, addStudyTime } = useProgress();
   const { user } = useAuth();
 
   const [quizOutcome, setQuizOutcome] = useState<{
@@ -241,13 +241,12 @@ export default function Lesson() {
             <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{lessonMeta.duration}</span>
-              <button
-                onClick={() => done ? uncompleteLesson(id) : completeLesson(id)}
-                className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full transition-colors ${done ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {done ? 'Concluída' : 'Marcar como concluída'}
-              </button>
+              {done && (
+                <span className="inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full bg-primary/10 text-primary">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Concluída
+                </span>
+              )}
               <button onClick={() => toggleFavorite(id)} className="p-1">
                 {fav ? <Star className="h-5 w-5 text-accent fill-accent" /> : <StarOff className="h-5 w-5 text-muted-foreground hover:text-accent" />}
               </button>
