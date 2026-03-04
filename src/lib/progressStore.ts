@@ -209,7 +209,7 @@ export function getReviewSuggestions(progress: Progress): ReviewSuggestion[] {
   return suggestions.sort((a, b) => b.priority - a.priority).slice(0, 5);
 }
 
-export async function saveProgressToApi(token: string, progress: Progress): Promise<void> {
+export async function saveProgressToApi(token: string, progress: Progress, clientResetAt = ''): Promise<void> {
   const base = getApiBase();
   const res = await fetch(`${base}/api/progress`, {
     method: 'PUT',
@@ -217,7 +217,11 @@ export async function saveProgressToApi(token: string, progress: Progress): Prom
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(progress),
+    body: JSON.stringify({ ...progress, clientResetAt }),
   });
+  if (res.status === 409) {
+    // Server has a newer reset — throw special error so caller can handle
+    throw new Error('RESET_REQUIRED');
+  }
   if (!res.ok) throw new Error('Failed to save progress');
 }

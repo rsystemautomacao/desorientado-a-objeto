@@ -163,16 +163,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!body || typeof body !== 'object') {
       return res.status(400).json({ error: 'Invalid body' });
     }
-    const progress: ProgressDoc = {
-      userId,
-      completedLessons: Array.isArray(body.completedLessons) ? body.completedLessons : [],
-      quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
-      favorites: Array.isArray(body.favorites) ? body.favorites : [],
-      lessonTime: body.lessonTime && typeof body.lessonTime === 'object' ? body.lessonTime : {},
-    };
     try {
       const client = getMongoClient();
-      const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
+      const db = client.db(DB_NAME);
+      // Check if client is behind a global reset
+      const systemDoc = await db.collection('system').findOne({ key: 'global_reset' });
+      const serverResetAt = typeof systemDoc?.resetAt === 'string' ? systemDoc.resetAt : '';
+      const clientResetAt = typeof body.clientResetAt === 'string' ? body.clientResetAt : '';
+      if (serverResetAt && clientResetAt < serverResetAt) {
+        return res.status(409).json({ error: 'RESET_REQUIRED', resetAt: serverResetAt });
+      }
+      const progress: ProgressDoc = {
+        userId,
+        completedLessons: Array.isArray(body.completedLessons) ? body.completedLessons : [],
+        quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
+        favorites: Array.isArray(body.favorites) ? body.favorites : [],
+        lessonTime: body.lessonTime && typeof body.lessonTime === 'object' ? body.lessonTime : {},
+      };
+      const col = db.collection<ProgressDoc>(COLLECTION);
       await col.updateOne(
         { userId },
         { $set: { ...progress, updatedAt: new Date().toISOString() } },

@@ -156,6 +156,7 @@ export function useProgress() {
   const [progressLoaded, setProgressLoaded] = useState(false);
   const isSavingRef = useRef(false);
   const apiOkRef = useRef(true);
+  const serverResetAtRef = useRef('');
 
   // Só chama a API quando o Auth já terminou de carregar (evita token inválido ao abrir a página)
   useEffect(() => {
@@ -173,6 +174,9 @@ export function useProgress() {
         .getIdToken(true)
         .then((token) => getProgressFromApi(token))
         .then(({ progress: p, resetAt }) => {
+          // Guarda o resetAt do servidor para usar nos saves
+          serverResetAtRef.current = resetAt ?? '';
+
           // Se o servidor foi resetado após os dados locais, descarta tudo local
           const localResetAt = localStorage.getItem(resetAtKey(uid)) ?? '';
           if (resetAt && resetAt > localResetAt) {
@@ -189,7 +193,7 @@ export function useProgress() {
             const fixed = fixProgressIfNeeded(effectiveLocal, uid);
             setProgress(fixed);
             if (apiOkRef.current) {
-              user.getIdToken(true).then((t) => saveProgressToApi(t, fixed).catch(() => { apiOkRef.current = false; }));
+              user.getIdToken(true).then((t) => saveProgressToApi(t, fixed, serverResetAtRef.current).catch(() => { apiOkRef.current = false; }));
             }
           } else {
             setProgress(fixProgressIfNeeded(p, uid));
@@ -217,7 +221,7 @@ export function useProgress() {
       isSavingRef.current = true;
       user
         .getIdToken(true)
-        .then((token) => saveProgressToApi(token, progress))
+        .then((token) => saveProgressToApi(token, progress, serverResetAtRef.current))
         .then(() => { apiOkRef.current = true; })
         .catch(() => { apiOkRef.current = false; })
         .finally(() => {
