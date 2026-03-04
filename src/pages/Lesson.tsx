@@ -331,7 +331,7 @@ export default function Lesson() {
             </p>
             <div className="space-y-6">
               {content.codeFillExercises.map((ex, i) => (
-                <CodeFillExerciseBox key={i} exercise={ex} index={i} />
+                <CodeFillExerciseBox key={`${id}-${user?.uid ?? 'anon'}-${i}`} exercise={ex} index={i} />
               ))}
             </div>
           </section>
