@@ -3,6 +3,7 @@ export interface Profile {
   tipo: 'EM' | 'Superior';
   curso: string;
   serieOuSemestre: string;
+  turma: string;
   observacoes: string;
 }
 
@@ -11,6 +12,7 @@ const DEFAULT: Profile = {
   tipo: 'Superior',
   curso: '',
   serieOuSemestre: '',
+  turma: '',
   observacoes: '',
 };
 
@@ -31,6 +33,7 @@ export async function getProfileFromApi(token: string): Promise<Profile> {
     tipo: data.tipo === 'EM' || data.tipo === 'Superior' ? data.tipo : 'Superior',
     curso: typeof data.curso === 'string' ? data.curso : '',
     serieOuSemestre: typeof data.serieOuSemestre === 'string' ? data.serieOuSemestre : '',
+    turma: typeof data.turma === 'string' ? data.turma : '',
     observacoes: typeof data.observacoes === 'string' ? data.observacoes : '',
   };
 }
@@ -39,7 +42,8 @@ export function isProfileComplete(profile: Profile): boolean {
   return (
     profile.nome.trim().length > 0 &&
     profile.curso.trim().length > 0 &&
-    profile.serieOuSemestre.trim().length > 0
+    profile.serieOuSemestre.trim().length > 0 &&
+    profile.turma.trim().length > 0
   );
 }
 

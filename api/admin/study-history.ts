@@ -29,6 +29,7 @@ interface ProfileDoc {
   tipo: string;
   curso: string;
   serieOuSemestre: string;
+  turma: string;
   observacoes: string;
   updatedAt: string;
 }
@@ -40,6 +41,7 @@ export interface StudyHistoryEntry {
   tipo: string;
   curso: string;
   serieOuSemestre: string;
+  turma: string;
   completedLessons: string[];
   completedCount: number;
   quizResults: Record<string, { score: number; total: number }>;
@@ -181,6 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tipo: empty(profile?.tipo),
         curso: empty(profile?.curso),
         serieOuSemestre: empty(profile?.serieOuSemestre),
+        turma: empty(profile?.turma),
         completedLessons: Array.isArray(doc.completedLessons) ? doc.completedLessons : [],
         completedCount: Array.isArray(doc.completedLessons) ? doc.completedLessons.length : 0,
         quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},

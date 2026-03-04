@@ -81,6 +81,7 @@ interface StudyHistoryEntry {
   tipo: string;
   curso: string;
   serieOuSemestre: string;
+  turma: string;
   completedLessons: string[];
   completedCount: number;
   quizResults: Record<string, { score: number; total: number }>;
@@ -164,6 +165,7 @@ function sortEntries(entries: StudyHistoryEntry[], key: SortKey, dir: SortDir): 
       case 'tipo': va = a.tipo.toLowerCase(); vb = b.tipo.toLowerCase(); break;
       case 'curso': va = a.curso.toLowerCase(); vb = b.curso.toLowerCase(); break;
       case 'serie': va = a.serieOuSemestre.toLowerCase(); vb = b.serieOuSemestre.toLowerCase(); break;
+      case 'turma': va = (a.turma || '').toLowerCase(); vb = (b.turma || '').toLowerCase(); break;
       case 'completed': va = a.completedCount; vb = b.completedCount; break;
       case 'm1': va = getModuleProgress(a, 1).completed; vb = getModuleProgress(b, 1).completed; break;
       case 'm2': va = getModuleProgress(a, 2).completed; vb = getModuleProgress(b, 2).completed; break;
@@ -178,7 +180,7 @@ function sortEntries(entries: StudyHistoryEntry[], key: SortKey, dir: SortDir): 
 }
 
 function exportToCsv(entries: StudyHistoryEntry[]) {
-  const headers = ['Nome', 'UserID', 'Tipo', 'Curso', 'Serie/Semestre', 'Aulas Concluidas', 'Total Aulas', 'M1 Fundamentos', 'M2 Intermediario', 'M3 POO', 'Quizzes Feitos', 'Media Quiz %', 'Favoritos'];
+  const headers = ['Nome', 'UserID', 'Tipo', 'Curso', 'Serie/Semestre', 'Turma', 'Aulas Concluidas', 'Total Aulas', 'M1 Fundamentos', 'M2 Intermediario', 'M3 POO', 'Quizzes Feitos', 'Media Quiz %', 'Favoritos'];
   const rows = entries.map((e) => {
     const m1 = getModuleProgress(e, 1);
     const m2 = getModuleProgress(e, 2);
@@ -190,6 +192,7 @@ function exportToCsv(entries: StudyHistoryEntry[]) {
       e.tipo || '',
       e.curso || '',
       e.serieOuSemestre || '',
+      e.turma || '',
       e.completedCount,
       TOTAL_LESSONS,
       `${m1.completed}/${m1.total}`,
@@ -282,6 +285,7 @@ function exportStudentPdf(entry: StudyHistoryEntry) {
       <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Tipo:</td><td>${entry.tipo || '-'}</td></tr>
       <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Curso:</td><td>${entry.curso || '-'}</td></tr>
       <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Serie/Semestre:</td><td>${entry.serieOuSemestre || '-'}</td></tr>
+      <tr><td style="padding:2px 12px 2px 0;color:#6b7280">Turma:</td><td>${entry.turma || '-'}</td></tr>
     </table>
 
     <div class="stats">
@@ -1009,6 +1013,7 @@ export default function Admin() {
                       <ThSort label="Tipo" sortKey="tipo" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <ThSort label="Curso" sortKey="curso" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <ThSort label="Serie" sortKey="serie" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      <ThSort label="Turma" sortKey="turma" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <ThSort label="Total" sortKey="completed" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
                       <ThSort label="M1" sortKey="m1" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Fundamentos" />
                       <ThSort label="M2" sortKey="m2" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Intermediario" />
@@ -1046,6 +1051,7 @@ export default function Admin() {
                               <td className={tdCls}>{e.tipo || <span className="text-muted-foreground">-</span>}</td>
                               <td className={tdCls}>{e.curso || <span className="text-muted-foreground">-</span>}</td>
                               <td className={tdCls}>{e.serieOuSemestre || <span className="text-muted-foreground">-</span>}</td>
+                              <td className={tdCls}>{e.turma || <span className="text-muted-foreground">-</span>}</td>
                               <td className={tdCls}>
                                 <MiniProgress pct={Math.round((e.completedCount / TOTAL_LESSONS) * 100)} label={`${e.completedCount}/${TOTAL_LESSONS}`} />
                               </td>

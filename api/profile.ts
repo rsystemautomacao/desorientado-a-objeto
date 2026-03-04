@@ -13,6 +13,7 @@ export interface ProfileDoc {
   tipo: 'EM' | 'Superior';
   curso: string;
   serieOuSemestre: string;
+  turma: string;
   observacoes: string;
   updatedAt: string;
 }
@@ -22,6 +23,7 @@ const DEFAULT_PROFILE: Omit<ProfileDoc, 'userId'> = {
   tipo: 'Superior',
   curso: '',
   serieOuSemestre: '',
+  turma: '',
   observacoes: '',
   updatedAt: '',
 };
@@ -135,6 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             tipo: doc.tipo === 'EM' || doc.tipo === 'Superior' ? doc.tipo : 'Superior',
             curso: typeof doc.curso === 'string' ? doc.curso : '',
             serieOuSemestre: typeof doc.serieOuSemestre === 'string' ? doc.serieOuSemestre : '',
+            turma: typeof doc.turma === 'string' ? doc.turma : '',
             observacoes: typeof doc.observacoes === 'string' ? doc.observacoes : '',
             updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : '',
           }
@@ -164,6 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tipo: body.tipo === 'EM' || body.tipo === 'Superior' ? body.tipo : 'Superior',
       curso: typeof body.curso === 'string' ? body.curso.slice(0, 200) : '',
       serieOuSemestre: typeof body.serieOuSemestre === 'string' ? body.serieOuSemestre.slice(0, 100) : '',
+      turma: typeof body.turma === 'string' ? body.turma.slice(0, 100) : '',
       observacoes: typeof body.observacoes === 'string' ? body.observacoes.slice(0, 2000) : '',
       updatedAt: new Date().toISOString(),
     };

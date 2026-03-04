@@ -17,6 +17,13 @@ import {
 import { User, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+const PRESET_COURSES = [
+  'Análise e Desenvolvimento de Sistemas',
+  'Ciência da Computação',
+  'Engenharia da Computação',
+  'Ensino Médio Técnico em TI',
+];
+
 export default function Profile() {
   const { user, profileComplete, refreshProfileStatus } = useAuth();
   const navigate = useNavigate();
@@ -25,8 +32,10 @@ export default function Profile() {
     tipo: 'Superior',
     curso: '',
     serieOuSemestre: '',
+    turma: '',
     observacoes: '',
   });
+  const [cursoSelect, setCursoSelect] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -40,6 +49,12 @@ export default function Profile() {
       .then((token) => getProfileFromApi(token))
       .then((p) => {
         setProfile(p);
+        // Inicializa o select de curso com base no valor carregado
+        if (PRESET_COURSES.includes(p.curso)) {
+          setCursoSelect(p.curso);
+        } else if (p.curso.trim()) {
+          setCursoSelect('Outros');
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -50,8 +65,12 @@ export default function Profile() {
     if (!user) return;
 
     // Validate mandatory fields
-    if (!profile.nome.trim() || !profile.curso.trim() || !profile.serieOuSemestre.trim()) {
-      toast.error('Preencha todos os campos obrigatórios (Nome, Curso, Série/Semestre).');
+    if (!profile.nome.trim() || !profile.curso.trim() || !profile.serieOuSemestre.trim() || !profile.turma.trim()) {
+      toast.error('Preencha todos os campos obrigatórios (Nome, Curso, Série/Semestre e Turma).');
+      return;
+    }
+    if (!cursoSelect) {
+      toast.error('Selecione o curso ou área de interesse.');
       return;
     }
 
@@ -141,13 +160,36 @@ export default function Profile() {
 
           <div className="space-y-2">
             <Label htmlFor="curso">Curso ou área de interesse *</Label>
-            <Input
-              id="curso"
-              value={profile.curso}
-              onChange={(e) => setProfile((p) => ({ ...p, curso: e.target.value }))}
-              placeholder="Ex: Ciência da Computação, Desenvolvimento Web..."
-              required
-            />
+            <Select
+              value={cursoSelect}
+              onValueChange={(value) => {
+                setCursoSelect(value);
+                if (value !== 'Outros') {
+                  setProfile((p) => ({ ...p, curso: value }));
+                } else {
+                  setProfile((p) => ({ ...p, curso: '' }));
+                }
+              }}
+            >
+              <SelectTrigger id="curso">
+                <SelectValue placeholder="Selecione seu curso..." />
+              </SelectTrigger>
+              <SelectContent>
+                {PRESET_COURSES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                <SelectItem value="Outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+            {cursoSelect === 'Outros' && (
+              <Input
+                id="curso-outro"
+                value={profile.curso}
+                onChange={(e) => setProfile((p) => ({ ...p, curso: e.target.value }))}
+                placeholder="Digite seu curso ou área de interesse..."
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -163,6 +205,17 @@ export default function Profile() {
                   ? 'Ex: 2º ano, 3º ano'
                   : 'Ex: 3º semestre, 2º período'
               }
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="turma">Turma *</Label>
+            <Input
+              id="turma"
+              value={profile.turma}
+              onChange={(e) => setProfile((p) => ({ ...p, turma: e.target.value }))}
+              placeholder="Ex: A, B, Turma 1..."
               required
             />
           </div>
