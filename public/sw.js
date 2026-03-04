@@ -1,36 +1,41 @@
-const CACHE_NAME = 'dao-v1';
+// Bump this version on every deploy to force cache invalidation
+const CACHE_NAME = 'dao-v2';
 
-// Cache key assets on install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll([
-        '/',
-        '/favicon.ico',
-      ])
+      cache.addAll(['/', '/favicon.ico'])
     )
   );
+  // Activate immediately without waiting for old tabs to close
   self.skipWaiting();
 });
 
-// Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    // Remove all caches from previous versions
+    caches.keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      )
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Notify all open tabs that a new version is live → they will auto-reload
+        return self.clients.matchAll({ type: 'window' });
+      })
+      .then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'SW_UPDATED' }));
+      })
   );
-  self.clients.claim();
 });
 
-// Network-first with cache fallback (stale-while-revalidate for assets)
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Skip API calls and non-GET requests
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-  // For navigation requests, try network first
+  // Navigation requests (HTML): always network-first
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -39,23 +44,24 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+        .catch(() => caches.match('/'))
     );
     return;
   }
 
-  // For static assets: cache first, then network
+  // Static assets (Vite content-hashed): stale-while-revalidate
+  // Serve from cache immediately, update cache in the background
   if (url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)) {
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        const fetchPromise = fetch(event.request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        });
-        return cached || fetchPromise;
-      })
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          const networkFetch = fetch(event.request).then((response) => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
+          return cached || networkFetch;
+        })
+      )
     );
-    return;
   }
 });
