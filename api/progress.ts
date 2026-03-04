@@ -128,8 +128,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
     try {
       const client = getMongoClient();
-      const col = client.db(DB_NAME).collection<ProgressDoc>(COLLECTION);
-      const doc = await col.findOne({ userId });
+      const db = client.db(DB_NAME);
+      const col = db.collection<ProgressDoc>(COLLECTION);
+      const [doc, systemDoc] = await Promise.all([
+        col.findOne({ userId }),
+        db.collection('system').findOne({ key: 'global_reset' }),
+      ]);
       const progress: ProgressDoc = doc
         ? {
             userId: doc.userId,
@@ -139,7 +143,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             lessonTime: doc.lessonTime && typeof doc.lessonTime === 'object' ? doc.lessonTime : {},
           }
         : { ...DEFAULT_PROGRESS, userId };
-      return res.status(200).json(progress);
+      const resetAt = typeof systemDoc?.resetAt === 'string' ? systemDoc.resetAt : undefined;
+      return res.status(200).json({ ...progress, resetAt });
     } catch (e) {
       console.error(e);
       return res.status(500).json({ error: 'Failed to load progress' });

@@ -50,6 +50,20 @@ function storageKey(uid: string | null): string {
   return uid ? `${STORAGE_KEY_PREFIX}-${uid}` : STORAGE_KEY_PREFIX;
 }
 
+function resetAtKey(uid: string): string {
+  return `desorientado-reset-at-${uid}`;
+}
+
+/** Remove todos os dados locais de progresso do aluno */
+function clearLocalProgressData(uid: string) {
+  [
+    storageKey(uid),
+    `desorientado-exercises-${uid}`,
+    `desorientado-quiz-history-${uid}`,
+    `desorientado-study-time-${uid}`,
+  ].forEach((k) => localStorage.removeItem(k));
+}
+
 function loadLocalProgress(uid: string | null): Progress {
   try {
     const raw = localStorage.getItem(storageKey(uid));
@@ -158,7 +172,17 @@ export function useProgress() {
       user
         .getIdToken(true)
         .then((token) => getProgressFromApi(token))
-        .then((p) => {
+        .then(({ progress: p, resetAt }) => {
+          // Se o servidor foi resetado após os dados locais, descarta tudo local
+          const localResetAt = localStorage.getItem(resetAtKey(uid)) ?? '';
+          if (resetAt && resetAt > localResetAt) {
+            clearLocalProgressData(uid);
+            localStorage.setItem(resetAtKey(uid), resetAt);
+            setProgress({ ...DEFAULT_PROGRESS });
+            setProgressLoaded(true);
+            return;
+          }
+
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
           const hasLocal = effectiveLocal.completedLessons.length > 0 || Object.keys(effectiveLocal.quizResults).length > 0 || effectiveLocal.favorites.length > 0;
           if (!hasRemote && hasLocal) {

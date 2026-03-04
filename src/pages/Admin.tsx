@@ -683,6 +683,11 @@ export default function Admin() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
 
+  // Reset state
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState<{ deletedProgress: number; deletedActivities: number } | null>(null);
+
   // UI state
   const [sortKey, setSortKey] = useState<SortKey>('completed');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -742,6 +747,28 @@ export default function Admin() {
   useEffect(() => {
     if (isAdmin && user) loadHistory();
   }, [isAdmin, user?.uid]);
+
+  const handleReset = async () => {
+    if (!user) return;
+    setResetting(true);
+    try {
+      const token = await user.getIdToken(true);
+      const base = getApiBase();
+      const res = await fetch(`${base}/api/admin/reset`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setResetDone({ deletedProgress: data.deletedProgress ?? 0, deletedActivities: data.deletedActivities ?? 0 });
+        setEntries([]);
+        setActivities([]);
+      }
+    } catch { /* ignore */ } finally {
+      setResetting(false);
+      setResetConfirm(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -920,6 +947,59 @@ export default function Admin() {
                 </div>
               );
             })()}
+
+            {/* ===== Danger Zone: Reset ===== */}
+            <div className="rounded-xl border-2 border-destructive/40 bg-destructive/5 overflow-hidden">
+              <div className="px-4 py-3 border-b border-destructive/20 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <h2 className="font-semibold text-destructive text-sm">Zona de Perigo</h2>
+              </div>
+              <div className="p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Resetar todos os dados dos alunos</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Remove XP, aulas concluídas, resultados de quiz e histórico de atividades de todos os alunos.
+                    Perfis e feedbacks são mantidos. Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+                {resetDone && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    Reset concluído — {resetDone.deletedProgress} progresso(s) e {resetDone.deletedActivities} atividade(s) removidos.
+                    Os alunos verão os dados zerados na próxima vez que acessarem o site.
+                  </div>
+                )}
+                {!resetConfirm ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => { setResetConfirm(true); setResetDone(null); }}
+                  >
+                    Resetar Dados dos Alunos
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/40 bg-destructive/10">
+                    <p className="text-sm font-medium text-destructive flex-1">Tem certeza? Esta ação é irreversível.</p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleReset}
+                      disabled={resetting}
+                    >
+                      {resetting ? 'Resetando...' : 'Confirmar Reset'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setResetConfirm(false)}
+                      disabled={resetting}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* ===== Announcements ===== */}
             <AnnouncementsManager

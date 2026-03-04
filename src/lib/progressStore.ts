@@ -48,13 +48,13 @@ function getApiBase(): string {
   return typeof base === 'string' && base.length > 0 ? base.replace(/\/$/, '') : '';
 }
 
-export async function getProgressFromApi(token: string): Promise<Progress> {
+export async function getProgressFromApi(token: string): Promise<{ progress: Progress; resetAt?: string }> {
   const apiBase = getApiBase();
   const res = await fetch(`${apiBase}/api/progress`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) throw new Error('UNAUTHORIZED');
-  if (!res.ok) return { ...DEFAULT };
+  if (!res.ok) return { progress: { ...DEFAULT } };
   const data = await res.json();
   const parsed: Progress = {
     completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : [],
@@ -70,14 +70,14 @@ export async function getProgressFromApi(token: string): Promise<Progress> {
         }
       : { current: 0, longest: 0, lastDate: '' },
   };
-  // quizHistory não vem da API hoje; mantemos vazio aqui (client-side only)
   if (data.quizHistory && typeof data.quizHistory === 'object') {
     parsed.quizHistory = data.quizHistory as QuizHistory;
   }
   if (data.lessonTime && typeof data.lessonTime === 'object') {
     parsed.lessonTime = data.lessonTime as Record<string, number>;
   }
-  return parsed;
+  const resetAt = typeof data.resetAt === 'string' ? data.resetAt : undefined;
+  return { progress: parsed, resetAt };
 }
 
 export function addQuizAttempt(
