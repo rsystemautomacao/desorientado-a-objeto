@@ -10,6 +10,7 @@ interface ProgressDoc {
   userId: string;
   completedLessons: string[];
   quizResults: Record<string, { score: number; total: number }>;
+  xp?: number;
 }
 
 interface ProfileDoc {
@@ -17,7 +18,7 @@ interface ProfileDoc {
   nome: string;
 }
 
-// Same XP formulas as client-side (progressStore.ts)
+// Same XP formulas as client-side (progressStore.ts) — used as fallback for legacy records
 const XP_REWARDS = {
   LESSON_COMPLETE: 50,
   QUIZ_GREAT: 30,
@@ -26,6 +27,10 @@ const XP_REWARDS = {
 };
 
 function calcXp(doc: ProgressDoc): number {
+  // Use stored XP when available (includes exercises, streaks, bonuses)
+  if (typeof doc.xp === 'number' && doc.xp > 0) return doc.xp;
+
+  // Legacy fallback: recalculate from lessons and quizzes only
   let xp = 0;
   const lessons = Array.isArray(doc.completedLessons) ? doc.completedLessons : [];
   xp += lessons.length * XP_REWARDS.LESSON_COMPLETE;

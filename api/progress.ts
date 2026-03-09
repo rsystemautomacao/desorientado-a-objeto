@@ -14,6 +14,10 @@ export interface ProgressDoc {
   favorites: string[];
   /** Tempo total de estudo por aula, em segundos (opcional e aditivo) */
   lessonTime?: Record<string, number>;
+  xp?: number;
+  streak?: { current: number; longest: number; lastDate: string };
+  lastStudied?: Record<string, string>;
+  completedExercises?: Record<string, { passed: boolean; attempts?: number; bestScore?: string }>;
 }
 
 const DEFAULT_PROGRESS: ProgressDoc = {
@@ -22,6 +26,10 @@ const DEFAULT_PROGRESS: ProgressDoc = {
   quizResults: {},
   favorites: [],
   lessonTime: {},
+  xp: 0,
+  streak: { current: 0, longest: 0, lastDate: '' },
+  lastStudied: {},
+  completedExercises: {},
 };
 
 function getMongoClient() {
@@ -141,6 +149,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             quizResults: doc.quizResults && typeof doc.quizResults === 'object' ? doc.quizResults : {},
             favorites: Array.isArray(doc.favorites) ? doc.favorites : [],
             lessonTime: doc.lessonTime && typeof doc.lessonTime === 'object' ? doc.lessonTime : {},
+            xp: typeof doc.xp === 'number' ? doc.xp : 0,
+            streak: doc.streak && typeof doc.streak === 'object' ? doc.streak : { current: 0, longest: 0, lastDate: '' },
+            lastStudied: doc.lastStudied && typeof doc.lastStudied === 'object' ? doc.lastStudied : {},
+            completedExercises: doc.completedExercises && typeof doc.completedExercises === 'object' ? doc.completedExercises : {},
           }
         : { ...DEFAULT_PROGRESS, userId };
       const resetAt = typeof systemDoc?.resetAt === 'string' ? systemDoc.resetAt : undefined;
@@ -179,6 +191,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
         favorites: Array.isArray(body.favorites) ? body.favorites : [],
         lessonTime: body.lessonTime && typeof body.lessonTime === 'object' ? body.lessonTime : {},
+        xp: typeof body.xp === 'number' ? body.xp : 0,
+        streak: body.streak && typeof body.streak === 'object' ? body.streak : undefined,
+        lastStudied: body.lastStudied && typeof body.lastStudied === 'object' ? body.lastStudied : undefined,
+        completedExercises: body.completedExercises && typeof body.completedExercises === 'object' ? body.completedExercises : undefined,
       };
       const col = db.collection<ProgressDoc>(COLLECTION);
       await col.updateOne(

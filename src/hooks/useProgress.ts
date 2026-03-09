@@ -40,6 +40,7 @@ const DEFAULT_PROGRESS: Progress = {
   xp: 0,
   streak: { current: 0, longest: 0, lastDate: '' },
   lastStudied: {},
+  completedExercises: {},
 };
 
 function todayStr(): string {
@@ -111,19 +112,31 @@ function recalculateMinXp(p: Progress, uid: string | null): number {
   }
 
   // Exercícios resolvidos: xpReward de cada exercício
-  try {
-    const key = `desorientado-exercises-${uid ?? 'anon'}`;
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const data: Record<string, { passed: boolean }> = JSON.parse(raw);
-      for (const [exId, info] of Object.entries(data)) {
-        if (info.passed) {
-          const ex = allExercises.find((e) => e.id === exId);
-          if (ex) xp += ex.xpReward;
-        }
+  // Primeiro tenta usar completedExercises do próprio objeto de progresso (sincronizado com servidor)
+  const exercisesFromState = p.completedExercises;
+  if (exercisesFromState && Object.keys(exercisesFromState).length > 0) {
+    for (const [exId, info] of Object.entries(exercisesFromState)) {
+      if (info.passed) {
+        const ex = allExercises.find((e) => e.id === exId);
+        if (ex) xp += ex.xpReward;
       }
     }
-  } catch { /* ignore */ }
+  } else {
+    // Fallback: lê do localStorage (compatibilidade com dados antigos)
+    try {
+      const key = `desorientado-exercises-${uid ?? 'anon'}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const data: Record<string, { passed: boolean }> = JSON.parse(raw);
+        for (const [exId, info] of Object.entries(data)) {
+          if (info.passed) {
+            const ex = allExercises.find((e) => e.id === exId);
+            if (ex) xp += ex.xpReward;
+          }
+        }
+      }
+    } catch { /* ignore */ }
+  }
 
   return xp;
 }
@@ -190,12 +203,36 @@ export function useProgress() {
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
           const hasLocal = effectiveLocal.completedLessons.length > 0 || Object.keys(effectiveLocal.quizResults).length > 0 || effectiveLocal.favorites.length > 0;
           if (!hasRemote && hasLocal) {
-            const fixed = fixProgressIfNeeded(effectiveLocal, uid);
+            // Servidor vazio: sobe dados locais, incluindo exercícios do localStorage
+            let fixed = fixProgressIfNeeded(effectiveLocal, uid);
+            if (!fixed.completedExercises || Object.keys(fixed.completedExercises).length === 0) {
+              try {
+                const exKey = `desorientado-exercises-${uid}`;
+                const raw = localStorage.getItem(exKey);
+                if (raw) {
+                  const data = JSON.parse(raw) as Record<string, { passed: boolean; attempts: number; bestScore: string }>;
+                  if (Object.keys(data).length > 0) fixed = { ...fixed, completedExercises: data };
+                }
+              } catch { /* ignore */ }
+            }
             setProgress(fixed);
             if (apiOkRef.current) {
               user.getIdToken(true).then((t) => saveProgressToApi(t, fixed, serverResetAtRef.current).catch(() => { apiOkRef.current = false; }));
             }
           } else {
+            // Servidor tem dados — sincroniza exercícios do servidor para localStorage
+            // (garante que outro dispositivo veja os exercícios resolvidos corretamente)
+            const serverExercises = p.completedExercises;
+            if (serverExercises && Object.keys(serverExercises).length > 0) {
+              try {
+                const exKey = `desorientado-exercises-${uid}`;
+                const localRaw = localStorage.getItem(exKey);
+                const localEx: Record<string, { passed: boolean; attempts: number; bestScore: string }> = localRaw ? JSON.parse(localRaw) : {};
+                // Mescla: servidor define quais passaram; dados locais de tentativas são preservados
+                const merged = { ...serverExercises, ...localEx };
+                localStorage.setItem(exKey, JSON.stringify(merged));
+              } catch { /* ignore */ }
+            }
             setProgress(fixProgressIfNeeded(p, uid));
           }
           setProgressLoaded(true);
@@ -327,26 +364,37 @@ export function useProgress() {
 
   /** Registra exercício completo e adiciona XP */
   const completeExercise = useCallback((exerciseId: string, xpReward: number) => {
-    // Save to exercise-specific localStorage
+    // Verifica no localStorage se já foi resolvido (guard contra double-counting)
     try {
       const key = `desorientado-exercises-${user?.uid ?? 'anon'}`;
       const raw = localStorage.getItem(key);
       const data: Record<string, { passed: boolean; attempts: number; bestScore: string }> = raw ? JSON.parse(raw) : {};
       if (data[exerciseId]?.passed) return; // already awarded XP for this exercise
-      data[exerciseId] = {
-        ...data[exerciseId],
-        passed: true,
-      };
+      data[exerciseId] = { ...data[exerciseId], passed: true };
       localStorage.setItem(key, JSON.stringify(data));
     } catch { /* ignore */ }
 
-    // Add XP + update streak via main progress
+    // Log activity (fire-and-forget)
     if (user) user.getIdToken().then((t) => logActivity(t, { type: 'exercise_complete', lessonId: exerciseId }));
-    setProgress((p) => ({
-      ...p,
-      xp: p.xp + xpReward,
-      streak: updateStreak(p.streak),
-    }));
+
+    // Adiciona XP + streak + marca exercício no estado principal (sincronizado com servidor)
+    setProgress((p) => {
+      const exercises = p.completedExercises ?? {};
+      if (exercises[exerciseId]?.passed) return p; // guard no estado
+      return {
+        ...p,
+        xp: p.xp + xpReward,
+        streak: updateStreak(p.streak),
+        completedExercises: {
+          ...exercises,
+          [exerciseId]: {
+            passed: true,
+            attempts: (exercises[exerciseId]?.attempts ?? 0) + 1,
+            bestScore: exercises[exerciseId]?.bestScore ?? '',
+          },
+        },
+      };
+    });
   }, [user]);
 
   /** Registra tentativa de exercício (sem XP) */
@@ -363,6 +411,23 @@ export function useProgress() {
       };
       localStorage.setItem(key, JSON.stringify(data));
     } catch { /* ignore */ }
+
+    // Atualiza estado principal para sincronizar tentativas com o servidor
+    setProgress((p) => {
+      const exercises = p.completedExercises ?? {};
+      const prev = exercises[exerciseId];
+      return {
+        ...p,
+        completedExercises: {
+          ...exercises,
+          [exerciseId]: {
+            passed: prev?.passed ?? false,
+            attempts: (prev?.attempts ?? 0) + 1,
+            bestScore: prev?.bestScore ?? score,
+          },
+        },
+      };
+    });
   }, [user?.uid]);
 
   /** Retorna dados de exercícios completados */

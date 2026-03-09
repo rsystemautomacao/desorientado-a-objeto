@@ -22,6 +22,8 @@ export interface Progress {
   quizHistory?: QuizHistory;
   /** Tempo total de estudo por aula, em segundos (opcional e aditivo) */
   lessonTime?: Record<string, number>;
+  /** Exercícios resolvidos — sincronizado com o servidor para multi-device */
+  completedExercises?: Record<string, { passed: boolean; attempts?: number; bestScore?: string }>;
 }
 
 const DEFAULT: Progress = {
@@ -75,6 +77,9 @@ export async function getProgressFromApi(token: string): Promise<{ progress: Pro
   }
   if (data.lessonTime && typeof data.lessonTime === 'object') {
     parsed.lessonTime = data.lessonTime as Record<string, number>;
+  }
+  if (data.completedExercises && typeof data.completedExercises === 'object') {
+    parsed.completedExercises = data.completedExercises as Record<string, { passed: boolean; attempts?: number; bestScore?: string }>;
   }
   const resetAt = typeof data.resetAt === 'string' ? data.resetAt : undefined;
   return { progress: parsed, resetAt };
