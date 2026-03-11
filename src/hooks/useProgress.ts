@@ -237,7 +237,9 @@ export function useProgress() {
           }
           setProgressLoaded(true);
         })
-        .catch(() => {
+        .catch((err) => {
+          // Log para diagnosticar problemas de multi-dispositivo (API /api/progress)
+          console.error('useProgress: falha ao carregar progresso do servidor', err);
           apiOkRef.current = false;
           setProgress(fixProgressIfNeeded(effectiveLocal, uid));
           setProgressLoaded(true);
@@ -260,7 +262,11 @@ export function useProgress() {
         .getIdToken(true)
         .then((token) => saveProgressToApi(token, progress, serverResetAtRef.current))
         .then(() => { apiOkRef.current = true; })
-        .catch(() => { apiOkRef.current = false; })
+        .catch((err) => {
+          // Log para entender por que o progresso nao esta sendo salvo no servidor
+          console.error('useProgress: falha ao salvar progresso no servidor', err);
+          apiOkRef.current = false;
+        })
         .finally(() => {
           isSavingRef.current = false;
         });
