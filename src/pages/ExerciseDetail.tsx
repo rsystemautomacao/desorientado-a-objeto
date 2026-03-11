@@ -390,7 +390,7 @@ export default function ExerciseDetail() {
           <p className="text-sm text-muted-foreground">{exercise.topicLabel}</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="grid gap-6">
           {/* Left: Description */}
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
@@ -500,7 +500,7 @@ export default function ExerciseDetail() {
                   </div>
                   <pre
                     ref={preRef}
-                    className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-words overflow-hidden pointer-events-none z-[2]"
+                    className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap overflow-hidden pointer-events-none z-[2]"
                     aria-hidden="true"
                     dangerouslySetInnerHTML={{ __html: highlightJava(code) + '\n' }}
                   />

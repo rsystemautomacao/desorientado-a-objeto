@@ -335,7 +335,7 @@ export default function TryItBox({ initialCode, prompt, className = '' }: TryItB
           {/* Highlighted code (background layer) */}
           <pre
             ref={preRef}
-            className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap break-words overflow-hidden pointer-events-none z-[2]"
+            className="absolute inset-0 p-4 pl-14 font-mono text-sm leading-[1.625] whitespace-pre-wrap overflow-hidden pointer-events-none z-[2]"
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: highlightJava(code) + '\n' }}
           />
