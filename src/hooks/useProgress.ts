@@ -195,9 +195,9 @@ export function useProgress() {
           if (resetAt && resetAt > localResetAt) {
             clearLocalProgressData(uid);
             localStorage.setItem(resetAtKey(uid), resetAt);
-            setProgress({ ...DEFAULT_PROGRESS });
-            setProgressLoaded(true);
-            return;
+            // Importante: em um dispositivo novo, localResetAt pode estar vazio.
+            // Nesse caso, nao devemos "zerar" o progresso do aluno — apenas limpar caches locais antigos
+            // e seguir usando o progresso retornado pelo servidor.
           }
 
           const hasRemote = p.completedLessons.length > 0 || Object.keys(p.quizResults).length > 0 || p.favorites.length > 0;
