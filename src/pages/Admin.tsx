@@ -339,7 +339,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
       try {
         const token = await getToken();
         const base = getApiBase();
-        const res = await fetch(`${base}/api/admin/exercise-submissions?userId=${encodeURIComponent(entry.userId)}`, {
+        const res = await fetch(`${base}/api/exercise?userId=${encodeURIComponent(entry.userId)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed');
@@ -370,7 +370,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
     try {
       const token = await getToken();
       const base = getApiBase();
-      await fetch(`${base}/api/admin/grade`, {
+      await fetch(`${base}/api/exercise`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: entry.userId, exerciseId, grade: gradeNum, gradeNote: gradeNoteInputs[exerciseId] ?? '' }),

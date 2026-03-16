@@ -176,7 +176,7 @@ async function saveSubmissionToApi(
 ) {
   try {
     const base = getApiBase();
-    await fetch(`${base}/api/exercise-submission`, {
+    await fetch(`${base}/api/exercise`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ exerciseId, code, passedTests, totalTests, passed }),
