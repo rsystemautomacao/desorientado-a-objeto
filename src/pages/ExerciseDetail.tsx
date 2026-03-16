@@ -158,6 +158,34 @@ function clearDraft(exerciseId: string) {
   try { localStorage.removeItem(getDraftKey(exerciseId)); } catch { /* ignore */ }
 }
 
+function getApiBase(): string {
+  const base = import.meta.env.VITE_API_BASE_URL;
+  if (typeof base === 'string' && base.length > 0) return base.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return window.location.origin;
+  return '';
+}
+
+/** Fire-and-forget: salva a submissão no backend para o painel do professor */
+async function saveSubmissionToApi(
+  token: string,
+  exerciseId: string,
+  code: string,
+  passedTests: number,
+  totalTests: number,
+  passed: boolean,
+) {
+  try {
+    const base = getApiBase();
+    await fetch(`${base}/api/exercise-submission`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exerciseId, code, passedTests, totalTests, passed }),
+    });
+  } catch {
+    // silently ignore — submission log is best-effort
+  }
+}
+
 export default function ExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -348,6 +376,13 @@ export default function ExerciseDetail() {
         setHasDraft(false);
       } else {
         saveExerciseAttempt(exercise.id, score);
+      }
+
+      // Salva submissão no backend para visualização do professor (fire-and-forget)
+      if (user) {
+        user.getIdToken().then((token) =>
+          saveSubmissionToApi(token, exercise.id, code, passedCount, testResults.length, allPassed)
+        );
       }
     } catch {
       setCompileError('Erro de conexão. Verifique sua internet e tente novamente.');

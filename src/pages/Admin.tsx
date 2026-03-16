@@ -75,6 +75,20 @@ interface ActivityEntry {
   timestamp: string;
 }
 
+interface ExerciseSubmission {
+  exerciseId: string;
+  attempts: number;
+  passed: boolean;
+  bestPassedTests: number;
+  totalTests: number;
+  grade?: number;
+  gradeNote?: string;
+  gradedAt?: string;
+  lastCode: string;
+  lastSubmittedAt: string;
+  history: { code: string; passedTests: number; totalTests: number; passed: boolean; timestamp: string }[];
+}
+
 interface StudyHistoryEntry {
   userId: string;
   nome: string;
@@ -309,11 +323,91 @@ function exportStudentPdf(entry: StudyHistoryEntry) {
   }
 }
 
-function StudentDetail({ entry }: { entry: StudyHistoryEntry }) {
+function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken: () => Promise<string> }) {
+  const [submissions, setSubmissions] = useState<ExerciseSubmission[]>([]);
+  const [loadingEx, setLoadingEx] = useState(true);
+  const [codeModal, setCodeModal] = useState<{ title: string; code: string; history: ExerciseSubmission['history'] } | null>(null);
+  const [gradeInputs, setGradeInputs] = useState<Record<string, string>>({});
+  const [gradeNoteInputs, setGradeNoteInputs] = useState<Record<string, string>>({});
+  const [savingGrade, setSavingGrade] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'aulas' | 'exercicios'>('aulas');
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoadingEx(true);
+      try {
+        const token = await getToken();
+        const base = getApiBase();
+        const res = await fetch(`${base}/api/admin/exercise-submissions?userId=${encodeURIComponent(entry.userId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json() as { submissions: ExerciseSubmission[] };
+        if (!cancelled) {
+          setSubmissions(data.submissions);
+          const initGrades: Record<string, string> = {};
+          const initNotes: Record<string, string> = {};
+          for (const s of data.submissions) {
+            initGrades[s.exerciseId] = s.grade !== undefined ? String(s.grade) : '';
+            initNotes[s.exerciseId] = s.gradeNote ?? '';
+          }
+          setGradeInputs(initGrades);
+          setGradeNoteInputs(initNotes);
+        }
+      } catch { /* silently ignore */ }
+      if (!cancelled) setLoadingEx(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [entry.userId]);
+
+  const handleSaveGrade = async (exerciseId: string) => {
+    const rawGrade = gradeInputs[exerciseId] ?? '';
+    const gradeNum = rawGrade === '' ? null : parseFloat(rawGrade);
+    if (gradeNum !== null && (isNaN(gradeNum) || gradeNum < 0 || gradeNum > 10)) return;
+    setSavingGrade(exerciseId);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/admin/grade`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: entry.userId, exerciseId, grade: gradeNum, gradeNote: gradeNoteInputs[exerciseId] ?? '' }),
+      });
+      setSubmissions((prev) => prev.map((s) => s.exerciseId === exerciseId
+        ? { ...s, grade: gradeNum ?? undefined, gradeNote: gradeNoteInputs[exerciseId] }
+        : s
+      ));
+    } catch { /* ignore */ }
+    setSavingGrade(null);
+  };
+
+  const diffColor = (d: string) =>
+    d === 'facil' ? 'text-green-500 bg-green-500/10 border-green-500/20'
+    : d === 'medio' ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+    : 'text-red-500 bg-red-500/10 border-red-500/20';
+
+  const diffLabel = (d: string) => d === 'facil' ? 'Fácil' : d === 'medio' ? 'Médio' : 'Difícil';
+
   return (
     <div className="px-4 py-4 bg-muted/10 space-y-4">
-      {/* PDF export button */}
-      <div className="flex justify-end">
+      {/* Header: PDF + tabs */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-1 text-xs font-medium border border-border rounded-lg overflow-hidden">
+          <button
+            onClick={() => setActiveTab('aulas')}
+            className={`px-3 py-1.5 transition-colors ${activeTab === 'aulas' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+          >
+            Aulas & Quizzes
+          </button>
+          <button
+            onClick={() => setActiveTab('exercicios')}
+            className={`px-3 py-1.5 transition-colors ${activeTab === 'exercicios' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+          >
+            Exercícios {submissions.length > 0 && `(${submissions.length})`}
+          </button>
+        </div>
         <button
           onClick={(e) => { e.stopPropagation(); exportStudentPdf(entry); }}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted transition-colors"
@@ -321,55 +415,224 @@ function StudentDetail({ entry }: { entry: StudyHistoryEntry }) {
           <FileText className="h-3.5 w-3.5" /> Exportar PDF
         </button>
       </div>
-      {/* Module breakdown */}
-      {modules.map((mod) => {
-        const prog = getModuleProgress(entry, mod.id);
-        return (
-          <div key={mod.id} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">
-                {mod.icon} {mod.title}
-                <span className="text-muted-foreground font-normal ml-2">
-                  {prog.completed}/{prog.total} aulas ({prog.pct}%)
-                </span>
-              </h4>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-              {mod.lessons.map((lesson) => {
-                const done = entry.completedLessons.includes(lesson.id);
-                const quiz = entry.quizResults[lesson.id];
-                const quizPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
-                return (
-                  <div
-                    key={lesson.id}
-                    className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}
-                  >
-                    {done ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                    ) : (
-                      <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
-                    )}
-                    <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>
-                      {lesson.title}
+
+      {/* ── Tab: Aulas & Quizzes ── */}
+      {activeTab === 'aulas' && (
+        <>
+          {modules.map((mod) => {
+            const prog = getModuleProgress(entry, mod.id);
+            return (
+              <div key={mod.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">
+                    {mod.icon} {mod.title}
+                    <span className="text-muted-foreground font-normal ml-2">
+                      {prog.completed}/{prog.total} aulas ({prog.pct}%)
                     </span>
-                    {quiz && (
-                      <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>
-                        {quiz.score}/{quiz.total}
-                      </span>
-                    )}
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                  {mod.lessons.map((lesson) => {
+                    const done = entry.completedLessons.includes(lesson.id);
+                    const quiz = entry.quizResults[lesson.id];
+                    const quizPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
+                    return (
+                      <div
+                        key={lesson.id}
+                        className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}
+                      >
+                        {done ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                        ) : (
+                          <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
+                        )}
+                        <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>
+                          {lesson.title}
+                        </span>
+                        {quiz && (
+                          <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>
+                            {quiz.score}/{quiz.total}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {entry.updatedAt && (
+            <p className="text-xs text-muted-foreground">
+              Perfil atualizado em: {new Date(entry.updatedAt).toLocaleDateString('pt-BR')}
+            </p>
+          )}
+        </>
+      )}
+
+      {/* ── Tab: Exercícios ── */}
+      {activeTab === 'exercicios' && (
+        <div className="space-y-3">
+          {loadingEx ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando exercícios...
+            </div>
+          ) : submissions.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">Nenhum exercício submetido ainda.</p>
+          ) : (
+            <>
+              {/* Group by module */}
+              {([1, 2, 3] as const).map((modId) => {
+                const modEx = allExercisesData.filter((e) => e.moduleId === modId);
+                const modSubs = submissions.filter((s) => modEx.some((e) => e.id === s.exerciseId));
+                if (modSubs.length === 0) return null;
+                const mod = modules.find((m) => m.id === modId);
+                return (
+                  <div key={modId} className="space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      {mod?.icon} {mod?.title}
+                    </h4>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/30">
+                            <th className="text-left px-3 py-2 font-medium">Exercício</th>
+                            <th className="text-center px-3 py-2 font-medium">Dif.</th>
+                            <th className="text-center px-3 py-2 font-medium">Status</th>
+                            <th className="text-center px-3 py-2 font-medium">Melhor</th>
+                            <th className="text-center px-3 py-2 font-medium">Tentativas</th>
+                            <th className="text-center px-3 py-2 font-medium">Última sub.</th>
+                            <th className="text-center px-3 py-2 font-medium w-32">Nota (0–10)</th>
+                            <th className="text-center px-3 py-2 font-medium">Código</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {modSubs.map((sub) => {
+                            const ex = allExercisesData.find((e) => e.id === sub.exerciseId);
+                            if (!ex) return null;
+                            const isSaving = savingGrade === sub.exerciseId;
+                            const gradeVal = gradeInputs[sub.exerciseId] ?? '';
+                            return (
+                              <tr key={sub.exerciseId} className="border-b border-border/50 hover:bg-muted/10">
+                                <td className="px-3 py-2 max-w-[180px]">
+                                  <span className="font-medium truncate block" title={ex.title}>{ex.title}</span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${diffColor(ex.difficulty)}`}>
+                                    {diffLabel(ex.difficulty)}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {sub.passed ? (
+                                    <span className="text-green-500 font-bold">AC</span>
+                                  ) : sub.bestPassedTests > 0 ? (
+                                    <span className="text-yellow-500 font-bold">WA</span>
+                                  ) : (
+                                    <span className="text-red-500 font-bold">WA</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center font-mono">
+                                  {sub.bestPassedTests}/{sub.totalTests}
+                                </td>
+                                <td className="px-3 py-2 text-center">{sub.attempts}</td>
+                                <td className="px-3 py-2 text-center text-muted-foreground">
+                                  {new Date(sub.lastSubmittedAt).toLocaleDateString('pt-BR')}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1 justify-center">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="10"
+                                      step="0.5"
+                                      value={gradeVal}
+                                      onChange={(e) => setGradeInputs((p) => ({ ...p, [sub.exerciseId]: e.target.value }))}
+                                      className="w-14 text-center border border-border rounded px-1 py-0.5 bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                      placeholder="—"
+                                    />
+                                    <button
+                                      onClick={() => handleSaveGrade(sub.exerciseId)}
+                                      disabled={isSaving}
+                                      className="px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/80 disabled:opacity-50 transition-colors"
+                                    >
+                                      {isSaving ? '...' : 'OK'}
+                                    </button>
+                                  </div>
+                                  {(sub.grade !== undefined) && (
+                                    <div className="text-center text-[10px] text-muted-foreground mt-0.5">
+                                      Salvo: {sub.grade}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <button
+                                    onClick={() => setCodeModal({ title: ex.title, code: sub.lastCode, history: sub.history })}
+                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded border border-border hover:bg-muted transition-colors text-[10px] font-medium"
+                                  >
+                                    <Code2 className="h-3 w-3" /> Ver
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
               })}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Code Viewer Modal ── */}
+      {codeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setCodeModal(null)}
+        >
+          <div
+            className="bg-background border border-border rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="flex items-center gap-2">
+                <Code2 className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">{codeModal.title}</span>
+                <span className="text-xs text-muted-foreground">— última submissão</span>
+              </div>
+              <button onClick={() => setCodeModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Code content */}
+            <div className="overflow-auto flex-1 p-4">
+              <pre className="text-xs font-mono bg-muted/30 border border-border rounded-lg p-4 whitespace-pre overflow-x-auto leading-relaxed">
+                {codeModal.code}
+              </pre>
+              {/* Submission history */}
+              {codeModal.history.length > 1 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Histórico de submissões ({codeModal.history.length})</p>
+                  <div className="space-y-1">
+                    {codeModal.history.map((h, i) => (
+                      <div key={i} className={`flex items-center gap-2 text-xs px-2 py-1 rounded border ${h.passed ? 'border-green-500/30 bg-green-500/5' : 'border-border/50'}`}>
+                        <span className={`font-bold w-6 ${h.passed ? 'text-green-500' : 'text-yellow-500'}`}>
+                          {h.passed ? 'AC' : 'WA'}
+                        </span>
+                        <span className="font-mono">{h.passedTests}/{h.totalTests} testes</span>
+                        <span className="text-muted-foreground ml-auto">
+                          {new Date(h.timestamp).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        );
-      })}
-
-      {/* Updated at */}
-      {entry.updatedAt && (
-        <p className="text-xs text-muted-foreground">
-          Perfil atualizado em: {new Date(entry.updatedAt).toLocaleDateString('pt-BR')}
-        </p>
+        </div>
       )}
     </div>
   );
@@ -1025,7 +1288,7 @@ export default function Admin() {
                   <tbody>
                     {sorted.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
                           {entries.length === 0 ? 'Nenhum dado de estudo ainda.' : 'Nenhum aluno encontrado com esse filtro.'}
                         </td>
                       </tr>
@@ -1065,8 +1328,8 @@ export default function Admin() {
                             </tr>
                             {expanded && (
                               <tr>
-                                <td colSpan={11} className="p-0">
-                                  <StudentDetail entry={e} />
+                                <td colSpan={12} className="p-0">
+                                  <StudentDetail entry={e} getToken={() => user!.getIdToken(true)} />
                                 </td>
                               </tr>
                             )}
