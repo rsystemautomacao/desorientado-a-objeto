@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { exercises as platformExercises } from '@/data/exercises';
 import {
-  Plus, Trash2, Eye, EyeOff, Copy, RefreshCw, Loader2, ChevronDown, ChevronUp,
+  Plus, Trash2, Eye, EyeOff, Copy, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronRight,
   FileText, CheckCircle2, XCircle, Code2, ClipboardList, Users, Lock, KeyRound,
   Database, Download, Search, Check, BookOpen, Edit3,
 } from 'lucide-react';
@@ -67,19 +67,33 @@ function getApiBase(): string {
   return '';
 }
 
-// ── Unified item for the import modal (bank question OR platform exercise) ──
+// ── Unified item for the import modal ──
 interface ImportableItem {
-  key: string; // unique id
+  key: string;
   title: string;
   description: string;
   starterCode: string;
   testCases: TestCase[];
   difficulty: string;
-  tags: string[];
+  topic: string;       // grouping label (topicLabel for platform, first tag for bank)
   source: 'banco' | 'plataforma';
 }
 
-// ── Import Modal: shows both bank questions AND platform exercises ───
+// Topic ordering (same order as the course curriculum)
+const TOPIC_ORDER: string[] = [
+  'Entrada e Saída', 'Variáveis e Tipos', 'Operadores', 'Strings',
+  'if/else e switch', 'Laços', 'Vetores e Matrizes', 'Funções (Métodos)',
+  'Collections', 'Classes e Objetos', 'Encapsulamento', 'Herança',
+  'Polimorfismo', 'Interfaces', 'Classes Abstratas', 'Composição',
+  'Exceções', 'SOLID',
+];
+
+function topicSortIndex(topic: string): number {
+  const idx = TOPIC_ORDER.findIndex((t) => t.toLowerCase() === topic.toLowerCase());
+  return idx >= 0 ? idx : 999;
+}
+
+// ── Import Modal: grouped by topic ──────────────────────────────────
 function ImportQuestionsModal({
   bankQuestions,
   onImport,
@@ -92,6 +106,7 @@ function ImportQuestionsModal({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'banco' | 'plataforma'>('all');
+  const [collapsedTopics, setCollapsedTopics] = useState<Set<string>>(new Set());
 
   // Build unified list
   const allItems: ImportableItem[] = [
@@ -102,7 +117,7 @@ function ImportQuestionsModal({
       starterCode: q.starterCode,
       testCases: q.testCases,
       difficulty: q.difficulty,
-      tags: q.tags,
+      topic: q.tags[0] || 'Sem categoria',
       source: 'banco' as const,
     })),
     ...platformExercises.map((ex) => ({
@@ -112,22 +127,55 @@ function ImportQuestionsModal({
       starterCode: ex.starterCode,
       testCases: ex.testCases,
       difficulty: ex.difficulty,
-      tags: [ex.topicLabel],
+      topic: ex.topicLabel,
       source: 'plataforma' as const,
     })),
   ];
 
+  // Filter
   const filtered = allItems.filter((item) => {
     if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
-    return item.title.toLowerCase().includes(s) || item.description.toLowerCase().includes(s) || item.tags.some((t) => t.toLowerCase().includes(s));
+    return item.title.toLowerCase().includes(s) || item.description.toLowerCase().includes(s) || item.topic.toLowerCase().includes(s);
   });
+
+  // Group by topic
+  const grouped: Record<string, ImportableItem[]> = {};
+  for (const item of filtered) {
+    const t = item.topic || 'Sem categoria';
+    if (!grouped[t]) grouped[t] = [];
+    grouped[t].push(item);
+  }
+  const sortedTopics = Object.keys(grouped).sort((a, b) => topicSortIndex(a) - topicSortIndex(b));
 
   const toggle = (key: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleTopic = (topic: string) => {
+    setCollapsedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(topic)) next.delete(topic); else next.add(topic);
+      return next;
+    });
+  };
+
+  // Select/deselect all in a topic
+  const toggleAllInTopic = (topic: string) => {
+    const items = grouped[topic] || [];
+    const allSelected = items.every((i) => selected.has(i.key));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        items.forEach((i) => next.delete(i.key));
+      } else {
+        items.forEach((i) => next.add(i.key));
+      }
       return next;
     });
   };
@@ -145,6 +193,7 @@ function ImportQuestionsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="font-semibold flex items-center gap-2">
             <Database className="h-4 w-4 text-primary" />
@@ -152,6 +201,8 @@ function ImportQuestionsModal({
           </h3>
           <span className="text-xs text-muted-foreground">{selected.size} selecionada(s)</span>
         </div>
+
+        {/* Search + filter */}
         <div className="px-4 py-2 border-b border-border shrink-0 flex gap-2 items-center">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -159,7 +210,7 @@ function ImportQuestionsModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar questao..."
+              placeholder="Buscar por titulo, descricao ou assunto..."
               className="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
           </div>
@@ -173,53 +224,95 @@ function ImportQuestionsModal({
             <option value="plataforma">Exercicios da plataforma</option>
           </select>
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {filtered.length === 0 ? (
+
+        {/* Grouped list */}
+        <div className="flex-1 overflow-y-auto">
+          {sortedTopics.length === 0 ? (
             <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma questao encontrada.</p>
           ) : (
-            <div className="space-y-1">
-              {filtered.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => toggle(item.key)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                    selected.has(item.key) ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted/30'
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.has(item.key) ? 'bg-primary border-primary' : 'border-border'}`}>
-                      {selected.has(item.key) && <Check className="h-3 w-3 text-primary-foreground" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{item.title}</span>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                          item.source === 'banco' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
-                        }`}>
-                          {item.source === 'banco' ? 'BANCO' : 'PLATAFORMA'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.description || 'Sem descricao'}</div>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {item.difficulty && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                            item.difficulty === 'facil' ? 'bg-green-500/20 text-green-600' :
-                            item.difficulty === 'medio' ? 'bg-yellow-500/20 text-yellow-600' :
-                            'bg-red-500/20 text-red-600'
-                          }`}>{item.difficulty}</span>
-                        )}
-                        <span className="text-[10px] text-muted-foreground">{item.testCases.length} teste(s)</span>
-                        {item.tags.slice(0, 3).map((t) => (
-                          <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{t}</span>
-                        ))}
-                      </div>
-                    </div>
+            sortedTopics.map((topic) => {
+              const items = grouped[topic];
+              const collapsed = collapsedTopics.has(topic);
+              const selectedInTopic = items.filter((i) => selected.has(i.key)).length;
+              const allInTopicSelected = selectedInTopic === items.length;
+
+              return (
+                <div key={topic} className="border-b border-border/50 last:border-b-0">
+                  {/* Topic header */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 sticky top-0 z-[1]">
+                    <button
+                      onClick={() => toggleTopic(topic)}
+                      className="flex items-center gap-2 flex-1 text-left"
+                    >
+                      {collapsed
+                        ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      }
+                      <span className="font-semibold text-sm">{topic}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        ({items.length} questao(oes){selectedInTopic > 0 && `, ${selectedInTopic} selecionada(s)`})
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => toggleAllInTopic(topic)}
+                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors shrink-0 ${
+                        allInTopicSelected
+                          ? 'border-primary bg-primary/20 text-primary'
+                          : 'border-border hover:bg-muted/50 text-muted-foreground'
+                      }`}
+                    >
+                      {allInTopicSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+                    </button>
                   </div>
-                </button>
-              ))}
-            </div>
+
+                  {/* Items */}
+                  {!collapsed && (
+                    <div className="px-2 py-1 space-y-1">
+                      {items.map((item) => (
+                        <button
+                          key={item.key}
+                          onClick={() => toggle(item.key)}
+                          className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+                            selected.has(item.key) ? 'border-primary bg-primary/10' : 'border-border/50 hover:bg-muted/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.has(item.key) ? 'bg-primary border-primary' : 'border-border'}`}>
+                              {selected.has(item.key) && <Check className="h-3 w-3 text-primary-foreground" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{item.title}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  item.source === 'banco' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
+                                }`}>
+                                  {item.source === 'banco' ? 'BANCO' : 'PLATAFORMA'}
+                                </span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.description || 'Sem descricao'}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {item.difficulty && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                    item.difficulty === 'facil' ? 'bg-green-500/20 text-green-600' :
+                                    item.difficulty === 'medio' ? 'bg-yellow-500/20 text-yellow-600' :
+                                    'bg-red-500/20 text-red-600'
+                                  }`}>{item.difficulty}</span>
+                                )}
+                                <span className="text-[10px] text-muted-foreground">{item.testCases.length} teste(s)</span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
+
+        {/* Footer */}
         <div className="px-4 py-3 border-t border-border flex justify-end gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={onClose}>Cancelar</Button>
           <Button
