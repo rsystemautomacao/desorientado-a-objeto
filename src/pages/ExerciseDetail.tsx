@@ -236,6 +236,17 @@ export default function ExerciseDetail() {
 
   const submitRef = useRef<() => void>();
 
+  // Block paste and drag-drop — students must type their code
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+  }, []);
+  const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+  }, []);
+
+  // Auto-close pairs: { → {}, ( → (), [ → [], " → "", ' → ''
+  const AUTO_PAIRS: Record<string, string> = { '{': '}', '(': ')', '[': ']', '"': '"', "'": "'" };
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+Enter or Cmd+Enter → submit code
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -246,6 +257,63 @@ export default function ExerciseDetail() {
 
     const ta = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = ta;
+
+    // Auto-close brackets, parens, quotes
+    if (e.key in AUTO_PAIRS) {
+      const closing = AUTO_PAIRS[e.key];
+      // For quotes, skip auto-close if the char before cursor is alphanumeric (likely mid-word)
+      if ((e.key === '"' || e.key === "'") && start > 0 && /\w/.test(value[start - 1])) {
+        // let default behavior handle it
+      }
+      // If the next char is already the closing char (for quotes), just move cursor forward
+      else if ((e.key === '"' || e.key === "'") && value[start] === closing) {
+        e.preventDefault();
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + 1;
+          updateActiveLine();
+        });
+        return;
+      } else {
+        e.preventDefault();
+        const inserted = e.key + closing;
+        const next = value.substring(0, start) + inserted + value.substring(end);
+        setCode(next);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + 1; // cursor between the pair
+          updateActiveLine();
+        });
+        return;
+      }
+    }
+
+    // Skip over closing bracket/paren/quote if already there
+    if ((e.key === ')' || e.key === ']' || e.key === '}') && value[start] === e.key) {
+      // For }, still allow dedent logic below; for ) and ], just skip
+      if (e.key !== '}') {
+        e.preventDefault();
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + 1;
+          updateActiveLine();
+        });
+        return;
+      }
+    }
+
+    // Backspace: delete matching pair if cursor is between them
+    if (e.key === 'Backspace' && start === end && start > 0) {
+      const before = value[start - 1];
+      const after = value[start];
+      if (before in AUTO_PAIRS && AUTO_PAIRS[before] === after) {
+        e.preventDefault();
+        const next = value.substring(0, start - 1) + value.substring(start + 1);
+        setCode(next);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start - 1;
+          updateActiveLine();
+        });
+        return;
+      }
+    }
 
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -280,6 +348,19 @@ export default function ExerciseDetail() {
       const trimmed = value.substring(0, start).trimEnd();
       const extra = trimmed.endsWith('{') ? '    ' : '';
       const insertion = '\n' + indent + extra;
+
+      // If cursor is between { and }, add closing line too
+      if (trimmed.endsWith('{') && value[start] === '}') {
+        const full = '\n' + indent + extra + '\n' + indent;
+        const next = value.substring(0, start) + full + value.substring(start);
+        setCode(next);
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + insertion.length;
+          updateActiveLine();
+        });
+        return;
+      }
+
       const next = value.substring(0, start) + insertion + value.substring(end);
       setCode(next);
       requestAnimationFrame(() => {
@@ -294,13 +375,25 @@ export default function ExerciseDetail() {
       const beforeCursor = value.substring(lineStart, start);
       if (/^\s{4,}$/.test(beforeCursor)) {
         e.preventDefault();
-        const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + '}' + value.substring(end);
-        const newPos = start - 4 + 1;
-        setCode(dedented);
-        requestAnimationFrame(() => {
-          ta.selectionStart = ta.selectionEnd = newPos;
-          updateActiveLine();
-        });
+        if (value[start] === '}') {
+          // Skip over auto-closed } and dedent
+          const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + value.substring(start);
+          const newPos = start - 4;
+          setCode(dedented);
+          requestAnimationFrame(() => {
+            ta.selectionStart = ta.selectionEnd = newPos;
+            updateActiveLine();
+          });
+        } else {
+          // Normal dedent + insert }
+          const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + '}' + value.substring(end);
+          const newPos = start - 4 + 1;
+          setCode(dedented);
+          requestAnimationFrame(() => {
+            ta.selectionStart = ta.selectionEnd = newPos;
+            updateActiveLine();
+          });
+        }
         return;
       }
     }
@@ -544,6 +637,8 @@ export default function ExerciseDetail() {
                     value={code}
                     onChange={(e) => { setCode(e.target.value); updateActiveLine(); }}
                     onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    onDrop={handleDrop}
                     onClick={updateActiveLine}
                     onKeyUp={updateActiveLine}
                     onFocus={updateActiveLine}
