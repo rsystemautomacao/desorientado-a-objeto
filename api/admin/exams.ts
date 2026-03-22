@@ -117,9 +117,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const client = getMongoClient();
     const col = client.db(DB_NAME).collection<ExamDoc>(COLLECTION);
+    const bankCol = client.db(DB_NAME).collection('question_bank');
 
-    // ── GET: list exams OR get results for a specific exam ──
+    // ── GET: list exams, results, OR question bank ──
     if (req.method === 'GET') {
+      // ?bank=1 → list question bank
+      if (req.query.bank === '1') {
+        const questions = await bankCol.find({}).sort({ updatedAt: -1 }).toArray();
+        return res.status(200).json({
+          questions: questions.map((q) => ({
+            id: String(q._id),
+            title: q.title,
+            description: q.description,
+            starterCode: q.starterCode,
+            testCases: q.testCases,
+            tags: q.tags || [],
+            difficulty: q.difficulty || '',
+            createdAt: q.createdAt,
+            updatedAt: q.updatedAt,
+          })),
+        });
+      }
+
       // If ?results=examId, return submissions grouped by student
       const resultsFor = req.query.results;
       if (typeof resultsFor === 'string' && resultsFor.length >= 10) {
@@ -174,8 +193,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const body = parseBody(req.body);
       if (!body) return res.status(400).json({ error: 'Invalid body' });
 
+      const actionVal = (body as Record<string, unknown>).action;
+
+      // ── Bank: save question ──
+      if (actionVal === 'bank_save') {
+        const b = body as Record<string, unknown>;
+        const title = typeof b.title === 'string' ? b.title.trim() : '';
+        if (!title) return res.status(400).json({ error: 'title required' });
+
+        const question = {
+          title,
+          description: typeof b.description === 'string' ? b.description.trim() : '',
+          starterCode: typeof b.starterCode === 'string' ? b.starterCode : '',
+          testCases: Array.isArray(b.testCases) ? (b.testCases as { input: string; expectedOutput: string; visible: boolean }[]).map((tc) => ({
+            input: typeof tc.input === 'string' ? tc.input : '',
+            expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
+            visible: typeof tc.visible === 'boolean' ? tc.visible : true,
+          })) : [],
+          tags: Array.isArray(b.tags) ? (b.tags as string[]).filter((t) => typeof t === 'string') : [],
+          difficulty: typeof b.difficulty === 'string' ? b.difficulty : '',
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Update existing or insert new
+        if (typeof b.id === 'string' && b.id.length >= 10) {
+          try {
+            await bankCol.updateOne({ _id: new ObjectId(b.id) }, { $set: question });
+            return res.status(200).json({ ok: true, id: b.id });
+          } catch { return res.status(400).json({ error: 'Invalid id' }); }
+        }
+
+        const result = await bankCol.insertOne({ ...question, createdAt: new Date().toISOString() });
+        return res.status(201).json({ ok: true, id: String(result.insertedId) });
+      }
+
+      // ── Bank: bulk import (multiple questions at once) ──
+      if (actionVal === 'bank_import') {
+        const items = (body as Record<string, unknown>).questions;
+        if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'questions array required' });
+
+        const docs = items.map((item: Record<string, unknown>) => ({
+          title: typeof item.title === 'string' ? item.title.trim() : 'Sem titulo',
+          description: typeof item.description === 'string' ? item.description.trim() : '',
+          starterCode: typeof item.starterCode === 'string' ? item.starterCode : '',
+          testCases: Array.isArray(item.testCases) ? (item.testCases as { input: string; expectedOutput: string; visible: boolean }[]).map((tc) => ({
+            input: typeof tc.input === 'string' ? tc.input : '',
+            expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
+            visible: typeof tc.visible === 'boolean' ? tc.visible : true,
+          })) : [],
+          tags: Array.isArray(item.tags) ? (item.tags as string[]).filter((t) => typeof t === 'string') : [],
+          difficulty: typeof item.difficulty === 'string' ? item.difficulty : '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+
+        const result = await bankCol.insertMany(docs);
+        return res.status(201).json({ ok: true, inserted: result.insertedCount });
+      }
+
+      // ── Bank: delete question ──
+      if (actionVal === 'bank_delete') {
+        const id = (body as Record<string, unknown>).id;
+        if (typeof id !== 'string') return res.status(400).json({ error: 'id required' });
+        try {
+          await bankCol.deleteOne({ _id: new ObjectId(id) });
+          return res.status(200).json({ ok: true });
+        } catch { return res.status(400).json({ error: 'Invalid id' }); }
+      }
+
       // Check if this is a code-generation request
-      if ((body as Record<string, unknown>).action === 'generate_code') {
+      if (actionVal === 'generate_code') {
         const examId = (body as Record<string, unknown>).examId;
         if (typeof examId !== 'string') return res.status(400).json({ error: 'examId required' });
         const newCode = generateCode();
