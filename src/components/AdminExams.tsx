@@ -1805,6 +1805,27 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
     } catch { /* ignore */ }
   };
 
+  const handleDuplicate = async (exam: Exam) => {
+    setSaving(true);
+    try {
+      const token = await getToken();
+      const resp = await fetch(`${base}/api/admin/exams`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${exam.title} (copia)`,
+          description: exam.description,
+          exercises: exam.exercises,
+          maxSubmissions: exam.maxSubmissions,
+          shuffleQuestions: exam.shuffleQuestions,
+          shuffleOptions: exam.shuffleOptions,
+        }),
+      });
+      if (resp.ok) await fetchExams();
+    } catch { /* ignore */ }
+    setSaving(false);
+  };
+
   const handleGenerateCode = async (exam: Exam) => {
     try {
       const token = await getToken();
@@ -1930,6 +1951,9 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => { setSelectedExam(exam); setView('edit'); }}>
                     <FileText className="h-3.5 w-3.5 mr-1" /> Editar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDuplicate(exam)} disabled={saving} title="Duplicar prova">
+                    <Copy className="h-3.5 w-3.5 mr-1" /> Copiar
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => handleToggleActive(exam)}>
                     {exam.active ? <Lock className="h-3.5 w-3.5 mr-1" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
