@@ -828,6 +828,7 @@ function AntiCheatBanner({
 export default function Exam() {
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const [accessCode, setAccessCode] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [loadingExam, setLoadingExam] = useState(false);
   const [error, setError] = useState('');
@@ -946,6 +947,11 @@ export default function Exam() {
 
   const handleAccessCode = async () => {
     if (!user || !accessCode.trim()) return;
+    const trimmedName = studentName.trim();
+    if (trimmedName.length < 5 || !trimmedName.includes(' ')) {
+      setError('Digite seu nome COMPLETO (nome e sobrenome).');
+      return;
+    }
     setLoadingExam(true);
     setError('');
 
@@ -955,7 +961,7 @@ export default function Exam() {
       const resp = await fetch(`${base}/api/exams`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'access', code: accessCode.trim() }),
+        body: JSON.stringify({ action: 'access', code: accessCode.trim(), studentName: trimmedName }),
       });
       const data = await resp.json();
       if (resp.ok) {
@@ -1115,7 +1121,19 @@ export default function Exam() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold mb-1">Codigo de acesso</label>
+                <label className="block text-sm font-semibold mb-1">Nome completo *</label>
+                <input
+                  type="text"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  placeholder="Ex: Joao da Silva Santos"
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoFocus
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">Digite seu nome e sobrenome como consta na chamada.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Codigo de acesso *</label>
                 <input
                   type="text"
                   value={accessCode}
@@ -1124,7 +1142,6 @@ export default function Exam() {
                   placeholder="Ex: AB12CD"
                   className="w-full px-4 py-3 rounded-lg border border-border bg-background text-center text-2xl font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-primary/50"
                   maxLength={10}
-                  autoFocus
                 />
               </div>
 
@@ -1136,7 +1153,7 @@ export default function Exam() {
 
               <Button
                 onClick={handleAccessCode}
-                disabled={loadingExam || accessCode.trim().length < 4}
+                disabled={loadingExam || accessCode.trim().length < 4 || studentName.trim().length < 5}
                 className="w-full"
                 size="lg"
               >

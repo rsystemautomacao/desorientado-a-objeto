@@ -116,6 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── ACTION: access — validate code and return exam ──
     if (action === 'access') {
       const code = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
+      const studentName = typeof body.studentName === 'string' ? body.studentName.trim() : '';
       if (!code || code.length < 4) return res.status(400).json({ error: 'Codigo invalido' });
 
       const exam = await db.collection(EXAMS_COL).findOne({ active: true, accessCodes: code });
@@ -144,10 +145,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           examId,
           userId: user.uid,
           userEmail: user.email,
+          userName: studentName,
           finalized: false,
           accessedAt: new Date().toISOString(),
           finalizedAt: null,
         });
+      } else if (studentName && studentName !== existingSession.userName) {
+        // Update name if provided and different
+        await db.collection('exam_sessions').updateOne(
+          { examId, userId: user.uid },
+          { $set: { userName: studentName } },
+        );
       }
 
       // Get student's existing submissions
@@ -292,8 +300,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       let userName = user.email;
       try {
-        const profile = await db.collection('profiles').findOne({ userId: user.uid });
-        if (profile?.nome) userName = profile.nome as string;
+        // First try exam session name (typed by student before exam)
+        const examSession = await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
+        if (examSession?.userName) {
+          userName = examSession.userName as string;
+        } else {
+          // Fallback to profile
+          const profile = await db.collection('profiles').findOne({ userId: user.uid });
+          if (profile?.nome) userName = profile.nome as string;
+        }
       } catch { /* use email as fallback */ }
 
       const submission: SubmissionDoc = {
