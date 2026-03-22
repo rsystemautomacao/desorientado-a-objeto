@@ -465,6 +465,857 @@ public class Main {
     hints: ['Converta para minúsculas primeiro: s.toLowerCase()', 'Compare caractere a caractere das pontas para o centro'],
     xpReward: 20,
   },
+
+  // ── Entrada e Saída (Scanner) ──
+  {
+    id: 'ex-m1-io-01',
+    moduleId: 1,
+    topic: 'io',
+    topicLabel: 'Entrada e Saída',
+    title: 'Ler nome e idade',
+    description: 'Leia o nome (nextLine) e a idade (nextInt) de uma pessoa. Imprima no formato:\n\n"Nome: X, Idade: Y anos"',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: 'Maria\n25', expectedOutput: 'Nome: Maria, Idade: 25 anos', visible: true },
+      { input: 'Joao\n30', expectedOutput: 'Nome: Joao, Idade: 30 anos', visible: true },
+      { input: 'Ana\n0', expectedOutput: 'Nome: Ana, Idade: 0 anos', visible: false },
+    ],
+    hints: ['Use sc.nextLine() para ler o nome e sc.nextInt() para a idade', 'System.out.println("Nome: " + nome + ", Idade: " + idade + " anos");'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-io-02',
+    moduleId: 1,
+    topic: 'io',
+    topicLabel: 'Entrada e Saída',
+    title: 'Calculadora simples',
+    description: 'Leia dois números double e um operador (+, -, *, /). Imprima o resultado com 2 casas decimais no formato "Resultado: X.XX".\nSe a operação for divisão e o segundo número for 0, imprima "Erro: divisao por zero".\n\nFormato de entrada:\n5.0\n3.0\n+',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5.0\n3.0\n+', expectedOutput: 'Resultado: 8.00', visible: true },
+      { input: '10.0\n4.0\n/', expectedOutput: 'Resultado: 2.50', visible: true },
+      { input: '7.0\n0.0\n/', expectedOutput: 'Erro: divisao por zero', visible: false },
+    ],
+    hints: ['Use sc.nextDouble() para os números e sc.next() para o operador', 'Use String.format("Resultado: %.2f", resultado) para formatar'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-io-03',
+    moduleId: 1,
+    topic: 'io',
+    topicLabel: 'Entrada e Saída',
+    title: 'Dados do produto',
+    description: 'Leia o nome do produto (String), a quantidade (int) e o preço unitário (double). Imprima:\n\n"Produto: X"\n"Quantidade: Y"\n"Total: R$ Z.ZZ"\n\nOnde Z.ZZ é quantidade * preço unitário com 2 casas decimais.',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: 'Caneta\n10\n2.50', expectedOutput: 'Produto: Caneta\nQuantidade: 10\nTotal: R$ 25.00', visible: true },
+      { input: 'Caderno\n3\n15.99', expectedOutput: 'Produto: Caderno\nQuantidade: 3\nTotal: R$ 47.97', visible: true },
+      { input: 'Borracha\n1\n1.00', expectedOutput: 'Produto: Borracha\nQuantidade: 1\nTotal: R$ 1.00', visible: false },
+    ],
+    hints: ['Use sc.nextLine() para o nome, sc.nextInt() para quantidade e sc.nextDouble() para preço', 'Use String.format("Total: R$ %.2f", quantidade * preco) para formatar o total'],
+    xpReward: 15,
+  },
+
+  // ── if/else (extras) ──
+  {
+    id: 'ex-m1-if-03',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Classificar numero',
+    description: 'Leia um número inteiro e imprima:\n- "positivo" se for maior que zero\n- "negativo" se for menor que zero\n- "zero" se for igual a zero',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5', expectedOutput: 'positivo', visible: true },
+      { input: '-3', expectedOutput: 'negativo', visible: true },
+      { input: '0', expectedOutput: 'zero', visible: false },
+    ],
+    hints: ['Use if (n > 0) para verificar se é positivo', 'Use else if (n < 0) para negativo e else para zero'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-if-04',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Maior de tres',
+    description: 'Leia três números inteiros e imprima o maior deles.',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '3\n7\n5', expectedOutput: '7', visible: true },
+      { input: '10\n10\n5', expectedOutput: '10', visible: true },
+      { input: '-1\n-5\n-3', expectedOutput: '-1', visible: false },
+    ],
+    hints: ['Use Math.max(a, Math.max(b, c)) para encontrar o maior', 'Ou use if/else if comparando os três valores'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-if-05',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Classificar triangulo',
+    description: 'Leia três valores double representando os lados de um triângulo. Verifique se formam um triângulo válido (a soma de dois lados deve ser maior que o terceiro). Se não formar, imprima "Nao forma triangulo".\nSe formar, classifique:\n- "Equilatero" (3 lados iguais)\n- "Isosceles" (2 lados iguais)\n- "Escaleno" (3 lados diferentes)',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '3.0\n3.0\n3.0', expectedOutput: 'Equilatero', visible: true },
+      { input: '3.0\n3.0\n5.0', expectedOutput: 'Isosceles', visible: true },
+      { input: '1.0\n2.0\n10.0', expectedOutput: 'Nao forma triangulo', visible: false },
+      { input: '3.0\n4.0\n5.0', expectedOutput: 'Escaleno', visible: false },
+    ],
+    hints: ['Condição de triângulo: a + b > c && a + c > b && b + c > a', 'Verifique igualdade dos lados com == para doubles com os mesmos valores de entrada'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-if-06',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Calculadora de IMC',
+    description: 'Leia o peso (double, em kg) e a altura (double, em metros). Calcule o IMC = peso / (altura * altura).\nImprima "IMC: X.X" (1 casa decimal) e a classificação:\n- "Abaixo do peso" se IMC < 18.5\n- "Normal" se IMC >= 18.5 e < 25.0\n- "Sobrepeso" se IMC >= 25.0 e < 30.0\n- "Obeso" se IMC >= 30.0',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '70.0\n1.75', expectedOutput: 'IMC: 22.9\nNormal', visible: true },
+      { input: '50.0\n1.70', expectedOutput: 'IMC: 17.3\nAbaixo do peso', visible: true },
+      { input: '90.0\n1.70', expectedOutput: 'IMC: 31.1\nObeso', visible: false },
+      { input: '80.0\n1.75', expectedOutput: 'IMC: 26.1\nSobrepeso', visible: false },
+    ],
+    hints: ['double imc = peso / (altura * altura);', 'Use String.format("IMC: %.1f", imc) para formatar com 1 casa decimal'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-if-07',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Faixa etaria',
+    description: 'Leia uma idade (int) e classifique:\n- "Bebe" se 0 a 1\n- "Crianca" se 2 a 12\n- "Adolescente" se 13 a 17\n- "Adulto" se 18 a 59\n- "Idoso" se 60 ou mais\n- "Idade invalida" se negativa',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '0', expectedOutput: 'Bebe', visible: true },
+      { input: '10', expectedOutput: 'Crianca', visible: true },
+      { input: '-5', expectedOutput: 'Idade invalida', visible: false },
+      { input: '15', expectedOutput: 'Adolescente', visible: false },
+      { input: '65', expectedOutput: 'Idoso', visible: false },
+    ],
+    hints: ['Verifique primeiro se a idade é negativa', 'Use if/else if encadeados para cada faixa etária'],
+    xpReward: 15,
+  },
+
+  // ── Switch ──
+  {
+    id: 'ex-m1-sw-01',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Dia da semana',
+    description: 'Leia um número inteiro de 1 a 7 e imprima o dia da semana correspondente:\n1=Domingo, 2=Segunda, 3=Terca, 4=Quarta, 5=Quinta, 6=Sexta, 7=Sabado.\nSe o número for inválido, imprima "Dia invalido".',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '1', expectedOutput: 'Domingo', visible: true },
+      { input: '4', expectedOutput: 'Quarta', visible: true },
+      { input: '8', expectedOutput: 'Dia invalido', visible: false },
+    ],
+    hints: ['Use switch(n) com case 1: ... case 7:', 'Use default: para o caso inválido'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-sw-02',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Mes do ano',
+    description: 'Leia um número inteiro de 1 a 12 e imprima o nome do mês correspondente:\n1=Janeiro, 2=Fevereiro, 3=Marco, 4=Abril, 5=Maio, 6=Junho, 7=Julho, 8=Agosto, 9=Setembro, 10=Outubro, 11=Novembro, 12=Dezembro.\nSe inválido, imprima "Mes invalido".',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '1', expectedOutput: 'Janeiro', visible: true },
+      { input: '7', expectedOutput: 'Julho', visible: true },
+      { input: '13', expectedOutput: 'Mes invalido', visible: false },
+    ],
+    hints: ['Use switch(n) com case 1 a 12', 'Use default: para imprimir "Mes invalido"'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-sw-03',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Operacao matematica',
+    description: 'Leia dois números inteiros e um inteiro representando a operação:\n1=soma, 2=subtracao, 3=multiplicacao, 4=divisao.\nUse switch para calcular e imprima "Resultado: X".\nSe for divisão por zero, imprima "Erro: divisao por zero".\nSe a operação for inválida, imprima "Operacao invalida".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '10\n5\n1', expectedOutput: 'Resultado: 15', visible: true },
+      { input: '10\n0\n4', expectedOutput: 'Erro: divisao por zero', visible: true },
+      { input: '8\n3\n5', expectedOutput: 'Operacao invalida', visible: false },
+      { input: '12\n4\n4', expectedOutput: 'Resultado: 3', visible: false },
+    ],
+    hints: ['Use switch(op) com case 1, 2, 3, 4', 'No case 4, verifique se o segundo número é zero antes de dividir'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-sw-04',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Estacao do ano',
+    description: 'Leia um número inteiro representando o mês (1-12). Use switch para imprimir a estação do ano:\n- Meses 12, 1, 2: "Verao"\n- Meses 3, 4, 5: "Outono"\n- Meses 6, 7, 8: "Inverno"\n- Meses 9, 10, 11: "Primavera"\nSe inválido, imprima "Mes invalido".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '1', expectedOutput: 'Verao', visible: true },
+      { input: '6', expectedOutput: 'Inverno', visible: true },
+      { input: '13', expectedOutput: 'Mes invalido', visible: false },
+      { input: '9', expectedOutput: 'Primavera', visible: false },
+    ],
+    hints: ['Agrupe cases: case 12: case 1: case 2: println("Verao"); break;', 'Use default para meses inválidos'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-sw-05',
+    moduleId: 1,
+    topic: 'condicionais',
+    topicLabel: 'if/else e switch',
+    title: 'Nota para conceito',
+    description: 'Leia uma nota double (0 a 10). Converta para conceito usando switch sobre (int)nota:\n- 10, 9: "A"\n- 8, 7: "B"\n- 6, 5: "C"\n- 4, 3: "D"\n- 2, 1, 0: "F"\nSe a nota for menor que 0 ou maior que 10, imprima "Nota invalida".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '9.5', expectedOutput: 'A', visible: true },
+      { input: '7.0', expectedOutput: 'B', visible: true },
+      { input: '-1.0', expectedOutput: 'Nota invalida', visible: false },
+      { input: '4.0', expectedOutput: 'D', visible: false },
+    ],
+    hints: ['Use int notaInt = (int) nota; e depois switch(notaInt)', 'Verifique antes do switch se a nota está fora do intervalo 0-10'],
+    xpReward: 15,
+  },
+
+  // ── Loops (extras) ──
+
+  // FOR loops
+  {
+    id: 'ex-m1-loop-05',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Tabuada completa',
+    description: 'Leia um número inteiro N e imprima sua tabuada de 1 a 10.\nCada linha no formato: "N x I = R" (ex: "5 x 1 = 5")',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '7', expectedOutput: '7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35\n7 x 6 = 42\n7 x 7 = 49\n7 x 8 = 56\n7 x 9 = 63\n7 x 10 = 70', visible: true },
+      { input: '1', expectedOutput: '1 x 1 = 1\n1 x 2 = 2\n1 x 3 = 3\n1 x 4 = 4\n1 x 5 = 5\n1 x 6 = 6\n1 x 7 = 7\n1 x 8 = 8\n1 x 9 = 9\n1 x 10 = 10', visible: true },
+      { input: '0', expectedOutput: '0 x 1 = 0\n0 x 2 = 0\n0 x 3 = 0\n0 x 4 = 0\n0 x 5 = 0\n0 x 6 = 0\n0 x 7 = 0\n0 x 8 = 0\n0 x 9 = 0\n0 x 10 = 0', visible: false },
+    ],
+    hints: ['Use for (int i = 1; i <= 10; i++)', 'System.out.println(n + " x " + i + " = " + (n * i));'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-loop-06',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Soma de 1 a N',
+    description: 'Leia um número inteiro N e imprima a soma de todos os números de 1 até N.\nSaída: "Soma: X"',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '10', expectedOutput: 'Soma: 55', visible: true },
+      { input: '5', expectedOutput: 'Soma: 15', visible: true },
+      { input: '1', expectedOutput: 'Soma: 1', visible: false },
+    ],
+    hints: ['Use for (int i = 1; i <= n; i++) e acumule em uma variável soma', 'A fórmula direta é n * (n + 1) / 2, mas use loop para praticar'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-loop-07',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Numeros pares',
+    description: 'Leia um número inteiro N e imprima todos os números pares de 1 até N (inclusive), separados por espaço.',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '10', expectedOutput: '2 4 6 8 10', visible: true },
+      { input: '7', expectedOutput: '2 4 6', visible: true },
+      { input: '1', expectedOutput: '', visible: false },
+    ],
+    hints: ['Use for (int i = 2; i <= n; i += 2)', 'Cuidado com o espaço: use StringBuilder ou condição para não ter espaço extra'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-08',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Fatorial com for',
+    description: 'Leia um número inteiro N (0 a 20) e imprima seu fatorial.\nSaída: "N! = X"\nLembre-se: 0! = 1',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5', expectedOutput: '5! = 120', visible: true },
+      { input: '0', expectedOutput: '0! = 1', visible: true },
+      { input: '10', expectedOutput: '10! = 3628800', visible: false },
+      { input: '20', expectedOutput: '20! = 2432902008176640000', visible: false },
+    ],
+    hints: ['Use long para armazenar o resultado, pois int estoura para N > 12', 'Comece com long fat = 1 e multiplique de 1 a N'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-09',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Fibonacci com for',
+    description: 'Leia um número inteiro N e imprima os N primeiros termos da sequência de Fibonacci, separados por espaço.\nSequência: 0 1 1 2 3 5 8 ...',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '7', expectedOutput: '0 1 1 2 3 5 8', visible: true },
+      { input: '1', expectedOutput: '0', visible: true },
+      { input: '2', expectedOutput: '0 1', visible: false },
+      { input: '10', expectedOutput: '0 1 1 2 3 5 8 13 21 34', visible: false },
+    ],
+    hints: ['Use duas variáveis a = 0, b = 1 e vá atualizando: temp = a + b; a = b; b = temp;', 'Cuidado com o espaço entre os números — use StringBuilder'],
+    xpReward: 15,
+  },
+
+  // WHILE loops
+  {
+    id: 'ex-m1-loop-10',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Contagem regressiva',
+    description: 'Leia um número inteiro N e imprima uma contagem regressiva de N até 0, cada número em uma linha separada.',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5', expectedOutput: '5\n4\n3\n2\n1\n0', visible: true },
+      { input: '3', expectedOutput: '3\n2\n1\n0', visible: true },
+      { input: '0', expectedOutput: '0', visible: false },
+    ],
+    hints: ['Use while (n >= 0) e decremente n a cada iteração', 'System.out.println(n); n--;'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-loop-11',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Soma ate zero',
+    description: 'Leia números inteiros até que o valor 0 seja digitado. Imprima a soma de todos os valores lidos (sem incluir o zero).\nSaída: "Soma: X"',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n3\n2\n0', expectedOutput: 'Soma: 10', visible: true },
+      { input: '10\n-3\n0', expectedOutput: 'Soma: 7', visible: true },
+      { input: '0', expectedOutput: 'Soma: 0', visible: false },
+    ],
+    hints: ['Use while e leia o número dentro do loop. Se for 0, pare', 'int soma = 0; int n = sc.nextInt(); while (n != 0) { soma += n; n = sc.nextInt(); }'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-12',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Maior valor',
+    description: 'Leia N (quantidade de números) e depois N números inteiros. Imprima o maior valor lido.\nSaída: "Maior: X"',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n3 7 2 9 4', expectedOutput: 'Maior: 9', visible: true },
+      { input: '3\n-1 -5 -2', expectedOutput: 'Maior: -1', visible: true },
+      { input: '1\n42', expectedOutput: 'Maior: 42', visible: false },
+    ],
+    hints: ['Inicialize o maior com o primeiro número lido', 'Use while ou for para ler os próximos e comparar com Math.max()'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-13',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Potencia de 2',
+    description: 'Leia um número inteiro N e imprima todas as potências de 2 que são menores ou iguais a N, uma por linha.\nExemplo: para N=20, imprima 1, 2, 4, 8, 16 (cada um em uma linha)',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '20', expectedOutput: '1\n2\n4\n8\n16', visible: true },
+      { input: '1', expectedOutput: '1', visible: true },
+      { input: '64', expectedOutput: '1\n2\n4\n8\n16\n32\n64', visible: false },
+    ],
+    hints: ['Comece com pot = 1 e multiplique por 2 enquanto pot <= n', 'while (pot <= n) { println(pot); pot *= 2; }'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-14',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Numero primo',
+    description: 'Leia um número inteiro N e imprima "Primo" se for primo ou "Nao primo" caso contrário.\nLembre-se: 1 não é primo, 2 é primo.',
+    difficulty: 'dificil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '7', expectedOutput: 'Primo', visible: true },
+      { input: '4', expectedOutput: 'Nao primo', visible: true },
+      { input: '1', expectedOutput: 'Nao primo', visible: false },
+      { input: '2', expectedOutput: 'Primo', visible: false },
+    ],
+    hints: ['Se n < 2, não é primo. Teste divisores de 2 até Math.sqrt(n)', 'Se encontrar algum divisor, não é primo. Use um boolean ehPrimo = true;'],
+    xpReward: 25,
+  },
+
+  // DO-WHILE loops
+  {
+    id: 'ex-m1-loop-15',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Menu simples',
+    description: 'Exiba um menu que lê opções (int) até o usuário digitar 0:\n- Opção 1: imprima "Opcao 1 selecionada"\n- Opção 2: imprima "Opcao 2 selecionada"\n- Opção 0: imprima "Saindo..."\n- Qualquer outra: imprima "Opcao invalida"',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '1\n2\n3\n0', expectedOutput: 'Opcao 1 selecionada\nOpcao 2 selecionada\nOpcao invalida\nSaindo...', visible: true },
+      { input: '0', expectedOutput: 'Saindo...', visible: true },
+      { input: '1\n0', expectedOutput: 'Opcao 1 selecionada\nSaindo...', visible: false },
+    ],
+    hints: ['Use do { ... } while (opcao != 0);', 'Dentro do do, leia a opção e use switch ou if/else para tratar cada caso'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-loop-16',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Adivinhar numero',
+    description: 'O número secreto é 42. Leia tentativas do usuário até acertar.\nPara cada tentativa errada, imprima "Tente novamente".\nQuando acertar, imprima "Acertou em N tentativa(s)!".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '10\n20\n42', expectedOutput: 'Tente novamente\nTente novamente\nAcertou em 3 tentativa(s)!', visible: true },
+      { input: '42', expectedOutput: 'Acertou em 1 tentativa(s)!', visible: true },
+      { input: '1\n42', expectedOutput: 'Tente novamente\nAcertou em 2 tentativa(s)!', visible: false },
+    ],
+    hints: ['Use do { ... } while (palpite != 42); e um contador de tentativas', 'Incremente o contador a cada leitura, imprima "Tente novamente" se errou'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-17',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Validar entrada',
+    description: 'Leia números inteiros até que um valor entre 1 e 10 (inclusive) seja digitado.\nPara cada valor inválido, imprima "Valor invalido! Digite entre 1 e 10:".\nQuando o valor for válido, imprima "Valor aceito: X".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '0\n15\n5', expectedOutput: 'Valor invalido! Digite entre 1 e 10:\nValor invalido! Digite entre 1 e 10:\nValor aceito: 5', visible: true },
+      { input: '7', expectedOutput: 'Valor aceito: 7', visible: true },
+      { input: '-1\n11\n10', expectedOutput: 'Valor invalido! Digite entre 1 e 10:\nValor invalido! Digite entre 1 e 10:\nValor aceito: 10', visible: false },
+    ],
+    hints: ['Use do { ... } while (n < 1 || n > 10);', 'Dentro do loop, leia e verifique se é válido. Se não, imprima a mensagem de erro'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-18',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Soma positivos',
+    description: 'Leia números inteiros em loop.\n- Se o número for positivo, some ao total.\n- Se for negativo, imprima "Negativo ignorado".\n- Se for 0, pare e imprima "Soma: X".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n-2\n3\n0', expectedOutput: 'Negativo ignorado\nSoma: 8', visible: true },
+      { input: '10\n20\n0', expectedOutput: 'Soma: 30', visible: true },
+      { input: '-1\n-2\n0', expectedOutput: 'Negativo ignorado\nNegativo ignorado\nSoma: 0', visible: false },
+    ],
+    hints: ['Use do { ... } while (n != 0); com verificações dentro do loop', 'Se n > 0, soma += n. Se n < 0, imprima "Negativo ignorado". Se n == 0, pare'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-loop-19',
+    moduleId: 1,
+    topic: 'loops',
+    topicLabel: 'Laços',
+    title: 'Calculadora repetida',
+    description: 'Implemente uma calculadora em loop:\n1. Leia dois doubles e um operador (+, -, *, /)\n2. Imprima "= X.XX" (2 casas decimais)\n3. Leia "s" para continuar ou "n" para parar\n\nQuando parar, imprima "Total de X operacao(oes)".',
+    difficulty: 'dificil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5.0\n3.0\n+\ns\n10.0\n2.0\n*\nn', expectedOutput: '= 8.00\n= 20.00\nTotal de 2 operacao(oes)', visible: true },
+      { input: '4.0\n2.0\n/\nn', expectedOutput: '= 2.00\nTotal de 1 operacao(oes)', visible: true },
+      { input: '7.0\n3.0\n-\ns\n1.0\n1.0\n+\ns\n9.0\n3.0\n/\nn', expectedOutput: '= 4.00\n= 2.00\n= 3.00\nTotal de 3 operacao(oes)', visible: false },
+    ],
+    hints: ['Use do { ... } while (continuar.equals("s")); e um contador', 'Use String.format("= %.2f", resultado) para formatar o resultado'],
+    xpReward: 25,
+  },
+
+  // ── Vetores e Matrizes (extras) ──
+  {
+    id: 'ex-m1-arr-04',
+    moduleId: 1,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Inverter vetor',
+    description: 'Leia N (tamanho do vetor) e depois N números inteiros. Imprima os elementos na ordem inversa, separados por espaço.',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n1 2 3 4 5', expectedOutput: '5 4 3 2 1', visible: true },
+      { input: '3\n10 20 30', expectedOutput: '30 20 10', visible: true },
+      { input: '1\n7', expectedOutput: '7', visible: false },
+    ],
+    hints: ['Leia todos os valores em um array e depois percorra de trás pra frente', 'for (int i = n - 1; i >= 0; i--)'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-arr-05',
+    moduleId: 1,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Media do vetor',
+    description: 'Leia N e depois N números double. Calcule e imprima a média aritmética.\nSaída: "Media: X.XX" (2 casas decimais)',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '4\n10.0 20.0 30.0 40.0', expectedOutput: 'Media: 25.00', visible: true },
+      { input: '3\n5.0 5.0 5.0', expectedOutput: 'Media: 5.00', visible: true },
+      { input: '2\n0.0 10.0', expectedOutput: 'Media: 5.00', visible: false },
+    ],
+    hints: ['Some todos os elementos e divida pelo tamanho N', 'Use String.format("Media: %.2f", soma / n)'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m1-arr-06',
+    moduleId: 1,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Contar pares e impares',
+    description: 'Leia N e depois N números inteiros. Conte quantos são pares e quantos são ímpares.\nImprima:\n"Pares: X"\n"Impares: Y"',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n1 2 3 4 5', expectedOutput: 'Pares: 2\nImpares: 3', visible: true },
+      { input: '4\n2 4 6 8', expectedOutput: 'Pares: 4\nImpares: 0', visible: true },
+      { input: '3\n1 3 5', expectedOutput: 'Pares: 0\nImpares: 3', visible: false },
+    ],
+    hints: ['Use n % 2 == 0 para verificar se é par', 'Mantenha dois contadores: pares e impares'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-arr-07',
+    moduleId: 1,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Segundo maior',
+    description: 'Leia N (>= 2) e depois N números inteiros. Encontre e imprima o segundo maior valor.\nSaída: "Segundo maior: X"',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n3 7 2 9 4', expectedOutput: 'Segundo maior: 7', visible: true },
+      { input: '3\n10 10 5', expectedOutput: 'Segundo maior: 10', visible: true },
+      { input: '2\n1 2', expectedOutput: 'Segundo maior: 1', visible: false },
+    ],
+    hints: ['Mantenha duas variáveis: maior e segundoMaior', 'Se o novo valor for maior que maior, segundoMaior = maior e maior = novo valor'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m1-arr-08',
+    moduleId: 1,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Ordenar vetor',
+    description: 'Leia N e depois N números inteiros. Ordene-os em ordem crescente usando Bubble Sort e imprima separados por espaço.',
+    difficulty: 'dificil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n5 3 1 4 2', expectedOutput: '1 2 3 4 5', visible: true },
+      { input: '3\n3 2 1', expectedOutput: '1 2 3', visible: true },
+      { input: '4\n1 2 3 4', expectedOutput: '1 2 3 4', visible: false },
+    ],
+    hints: ['Bubble Sort: dois loops aninhados, compare elementos adjacentes e troque se necessário', 'for (int i = 0; i < n-1; i++) for (int j = 0; j < n-1-i; j++) if (v[j] > v[j+1]) troque'],
+    xpReward: 25,
+  },
 ];
 
 // ─── Módulo 2: Intermediário ─────────────────────────────────────────
@@ -628,6 +1479,266 @@ public class Main {
       { input: '3\na b c', expectedOutput: 'a: 1\nb: 1\nc: 1', visible: false },
     ],
     hints: ['Use TreeMap<String, Integer> para ordenar automaticamente', 'map.merge(palavra, 1, Integer::sum)'],
+    xpReward: 25,
+  },
+
+  // ── Matrizes ──
+  {
+    id: 'ex-m2-mat-01',
+    moduleId: 2,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Soma elementos da matriz',
+    description: 'Leia M (linhas) e N (colunas), depois leia M*N números inteiros formando uma matriz. Imprima a soma de todos os elementos.\nSaída: "Soma: X"',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '2\n3\n1 2 3\n4 5 6', expectedOutput: 'Soma: 21', visible: true },
+      { input: '3\n3\n1 0 0\n0 1 0\n0 0 1', expectedOutput: 'Soma: 3', visible: true },
+      { input: '1\n4\n10 20 30 40', expectedOutput: 'Soma: 100', visible: false },
+    ],
+    hints: ['Use dois loops aninhados para percorrer todas as posições da matriz', 'Acumule a soma em uma variável: soma += matriz[i][j]'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m2-mat-02',
+    moduleId: 2,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Diagonal principal',
+    description: 'Leia N (matriz quadrada NxN), depois leia N*N números inteiros. Imprima os elementos da diagonal principal separados por espaço.',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '3\n1 2 3\n4 5 6\n7 8 9', expectedOutput: '1 5 9', visible: true },
+      { input: '2\n10 20\n30 40', expectedOutput: '10 40', visible: true },
+      { input: '4\n1 0 0 0\n0 2 0 0\n0 0 3 0\n0 0 0 4', expectedOutput: '1 2 3 4', visible: false },
+    ],
+    hints: ['Os elementos da diagonal principal têm índice i == j', 'Percorra com um único loop: matriz[i][i]'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m2-mat-03',
+    moduleId: 2,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Maior de cada linha',
+    description: 'Leia M (linhas) e N (colunas), depois leia os valores da matriz. Imprima o maior valor de cada linha, um por linha.',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '2\n3\n1 5 3\n8 2 4', expectedOutput: '5\n8', visible: true },
+      { input: '3\n2\n10 20\n5 15\n30 25', expectedOutput: '20\n15\n30', visible: true },
+      { input: '1\n4\n3 1 4 1', expectedOutput: '4', visible: false },
+    ],
+    hints: ['Para cada linha, inicialize o maior com o primeiro elemento e compare com os demais', 'Use dois loops: o externo para linhas e o interno para colunas'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m2-mat-04',
+    moduleId: 2,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Transposta',
+    description: 'Leia M (linhas) e N (colunas), depois leia os valores da matriz. Imprima a matriz transposta (troque linhas por colunas).\nCada linha da saída deve ter os valores separados por espaço.',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '2\n3\n1 2 3\n4 5 6', expectedOutput: '1 4\n2 5\n3 6', visible: true },
+      { input: '3\n2\n1 2\n3 4\n5 6', expectedOutput: '1 3 5\n2 4 6', visible: true },
+      { input: '1\n3\n10 20 30', expectedOutput: '10\n20\n30', visible: false },
+    ],
+    hints: ['A transposta de uma matriz MxN é uma matriz NxM', 'transposta[j][i] = original[i][j]'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m2-mat-05',
+    moduleId: 2,
+    topic: 'arrays',
+    topicLabel: 'Vetores e Matrizes',
+    title: 'Soma de matrizes',
+    description: 'Leia M (linhas) e N (colunas), depois leia duas matrizes MxN de inteiros. Imprima a soma das duas matrizes.\nCada linha da saída deve ter os valores separados por espaço.',
+    difficulty: 'dificil',
+    starterCode: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '2\n2\n1 2\n3 4\n5 6\n7 8', expectedOutput: '6 8\n10 12', visible: true },
+      { input: '2\n3\n1 0 0\n0 1 0\n0 0 1\n0 1 0', expectedOutput: '1 0 1\n0 2 0', visible: true },
+      { input: '1\n3\n1 2 3\n4 5 6', expectedOutput: '5 7 9', visible: false },
+    ],
+    hints: ['Leia as duas matrizes separadamente em dois arrays bidimensionais', 'Some elemento a elemento: resultado[i][j] = a[i][j] + b[i][j]'],
+    xpReward: 25,
+  },
+
+  // ── Collections (extras) ──
+  {
+    id: 'ex-m2-col-03',
+    moduleId: 2,
+    topic: 'collections',
+    topicLabel: 'Collections',
+    title: 'Lista de nomes',
+    description: 'Leia N e depois N nomes. Imprima a lista ordenada alfabeticamente, um nome por linha.',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.Collections;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '3\nCarlos\nAna\nBruno', expectedOutput: 'Ana\nBruno\nCarlos', visible: true },
+      { input: '4\nZara\nMaria\nLucia\nBeatriz', expectedOutput: 'Beatriz\nLucia\nMaria\nZara', visible: true },
+      { input: '2\nBob\nAna', expectedOutput: 'Ana\nBob', visible: false },
+    ],
+    hints: ['Use ArrayList<String> e Collections.sort() para ordenar', 'sc.nextLine() para ler cada nome'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m2-col-04',
+    moduleId: 2,
+    topic: 'collections',
+    topicLabel: 'Collections',
+    title: 'Remover duplicatas',
+    description: 'Leia N e depois N números inteiros. Imprima apenas os valores únicos na ordem em que aparecem, separados por espaço.',
+    difficulty: 'facil',
+    starterCode: `import java.util.Scanner;
+import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '7\n1 2 3 2 1 4 3', expectedOutput: '1 2 3 4', visible: true },
+      { input: '5\n5 5 5 5 5', expectedOutput: '5', visible: true },
+      { input: '4\n1 2 3 4', expectedOutput: '1 2 3 4', visible: false },
+    ],
+    hints: ['Use um ArrayList e antes de adicionar, verifique se já contém o elemento com contains()', 'Ou use LinkedHashSet que mantém a ordem e remove duplicatas automaticamente'],
+    xpReward: 10,
+  },
+  {
+    id: 'ex-m2-col-05',
+    moduleId: 2,
+    topic: 'collections',
+    topicLabel: 'Collections',
+    title: 'Lista de compras',
+    description: 'Leia itens (String) até que "fim" seja digitado. Imprima a lista numerada e o total de itens.\nFormato:\n"1. Item1"\n"2. Item2"\n...\n"Total: X item(ns)"',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: 'Arroz\nFeijao\nMacarrao\nfim', expectedOutput: '1. Arroz\n2. Feijao\n3. Macarrao\nTotal: 3 item(ns)', visible: true },
+      { input: 'Leite\nfim', expectedOutput: '1. Leite\nTotal: 1 item(ns)', visible: true },
+      { input: 'Pao\nQueijo\nfim', expectedOutput: '1. Pao\n2. Queijo\nTotal: 2 item(ns)', visible: false },
+    ],
+    hints: ['Leia com sc.nextLine() em loop até que a linha seja "fim"', 'Use ArrayList para armazenar os itens e depois imprima com índice + 1'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m2-col-06',
+    moduleId: 2,
+    topic: 'collections',
+    topicLabel: 'Collections',
+    title: 'Filtrar maiores',
+    description: 'Leia N, depois N números inteiros, e depois um valor T (threshold). Imprima todos os valores maiores que T separados por espaço.\nSe nenhum valor for encontrado, imprima "Nenhum valor encontrado".',
+    difficulty: 'medio',
+    starterCode: `import java.util.Scanner;
+import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: '5\n3 7 2 9 4\n5', expectedOutput: '7 9', visible: true },
+      { input: '4\n1 2 3 4\n10', expectedOutput: 'Nenhum valor encontrado', visible: true },
+      { input: '3\n10 20 30\n5', expectedOutput: '10 20 30', visible: false },
+    ],
+    hints: ['Percorra a lista e adicione a uma nova lista os valores > T', 'Se a lista filtrada estiver vazia, imprima "Nenhum valor encontrado"'],
+    xpReward: 15,
+  },
+  {
+    id: 'ex-m2-col-07',
+    moduleId: 2,
+    topic: 'collections',
+    topicLabel: 'Collections',
+    title: 'Frequencia de palavras',
+    description: 'Leia uma linha de texto. Imprima cada palavra única e sua frequência na ordem em que aparecem.\nFormato: "palavra: X" (uma por linha).\nAs palavras devem ser convertidas para minúsculas.',
+    difficulty: 'dificil',
+    starterCode: `import java.util.Scanner;
+import java.util.ArrayList;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Seu codigo aqui
+
+    }
+}`,
+    testCases: [
+      { input: 'Java java Python java python', expectedOutput: 'java: 3\npython: 2', visible: true },
+      { input: 'Hello World Hello', expectedOutput: 'hello: 2\nworld: 1', visible: true },
+      { input: 'um dois tres', expectedOutput: 'um: 1\ndois: 1\ntres: 1', visible: false },
+    ],
+    hints: ['Use split(" ") para separar as palavras e toLowerCase() para converter', 'Use um LinkedHashMap<String, Integer> para manter a ordem de inserção e contar frequências'],
     xpReward: 25,
   },
 ];
