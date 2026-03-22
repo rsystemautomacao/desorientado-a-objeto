@@ -3,13 +3,14 @@ import { MongoClient } from 'mongodb';
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import type { ServiceAccount } from 'firebase-admin/app';
+import { sanitiseActivity } from './_validation';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'activities';
 
 export interface ActivityDoc {
   userId: string;
-  type: 'lesson_complete' | 'quiz_complete';
+  type: 'lesson_complete' | 'quiz_complete' | 'exercise_complete';
   lessonId: string;
   score?: number;
   total?: number;
@@ -102,22 +103,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!body || typeof body !== 'object') return res.status(400).json({ error: 'Invalid body' });
 
-    const type = body.type;
-    const lessonId = typeof body.lessonId === 'string' ? body.lessonId : '';
-    if (!['lesson_complete', 'quiz_complete'].includes(type) || !lessonId) {
-      return res.status(400).json({ error: 'Invalid type or lessonId' });
+    const validated = sanitiseActivity(body);
+    if (!validated) {
+      return res.status(400).json({ error: 'Invalid activity data' });
     }
 
     const doc: ActivityDoc = {
       userId,
-      type,
-      lessonId,
+      type: validated.type as ActivityDoc['type'],
+      lessonId: validated.lessonId,
       timestamp: new Date().toISOString(),
     };
-    if (type === 'quiz_complete') {
-      doc.score = typeof body.score === 'number' ? body.score : 0;
-      doc.total = typeof body.total === 'number' ? body.total : 0;
-    }
+    if (validated.score !== undefined) doc.score = validated.score;
+    if (validated.total !== undefined) doc.total = validated.total;
 
     const client = getMongoClient();
     const col = client.db(DB_NAME).collection<ActivityDoc>(COLLECTION);

@@ -3,6 +3,16 @@ import { MongoClient } from 'mongodb';
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import type { ServiceAccount } from 'firebase-admin/app';
+import {
+  sanitiseLessons,
+  sanitiseQuizResults,
+  sanitiseFavorites,
+  sanitiseLessonTime,
+  sanitiseStreak,
+  sanitiseLastStudied,
+  sanitiseCompletedExercises,
+  recalculateXp,
+} from './_validation';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'progress';
@@ -185,16 +195,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (serverResetAt && clientResetAt < serverResetAt) {
         return res.status(409).json({ error: 'RESET_REQUIRED', resetAt: serverResetAt });
       }
+      // Sanitise all fields — never trust client values
+      const completedLessons = sanitiseLessons(body.completedLessons);
+      const quizResults = sanitiseQuizResults(body.quizResults);
+      const completedExercises = sanitiseCompletedExercises(body.completedExercises);
       const progress: ProgressDoc = {
         userId,
-        completedLessons: Array.isArray(body.completedLessons) ? body.completedLessons : [],
-        quizResults: body.quizResults && typeof body.quizResults === 'object' ? body.quizResults : {},
-        favorites: Array.isArray(body.favorites) ? body.favorites : [],
-        lessonTime: body.lessonTime && typeof body.lessonTime === 'object' ? body.lessonTime : {},
-        xp: typeof body.xp === 'number' ? body.xp : 0,
-        streak: body.streak && typeof body.streak === 'object' ? body.streak : undefined,
-        lastStudied: body.lastStudied && typeof body.lastStudied === 'object' ? body.lastStudied : undefined,
-        completedExercises: body.completedExercises && typeof body.completedExercises === 'object' ? body.completedExercises : undefined,
+        completedLessons,
+        quizResults,
+        favorites: sanitiseFavorites(body.favorites),
+        lessonTime: sanitiseLessonTime(body.lessonTime),
+        xp: recalculateXp(completedLessons, quizResults, completedExercises),
+        streak: sanitiseStreak(body.streak),
+        lastStudied: sanitiseLastStudied(body.lastStudied),
+        completedExercises,
       };
       const col = db.collection<ProgressDoc>(COLLECTION);
       await col.updateOne(
