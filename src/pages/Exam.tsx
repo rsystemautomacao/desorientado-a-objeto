@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   Play, Loader2, CheckCircle2, AlertCircle, XCircle,
   Lock, LogIn, ShieldCheck, Send, RotateCcw, Trophy,
-  EyeOff, AlertTriangle,
+  EyeOff, AlertTriangle, LogOut, CheckCircle,
 } from 'lucide-react';
 
 // ── Java Syntax Highlighter ──────────────────────────────────────────
@@ -676,6 +676,9 @@ export default function Exam() {
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [loadingExam, setLoadingExam] = useState(false);
   const [error, setError] = useState('');
+  const [finalized, setFinalized] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
 
   // ── Tab-switch / focus-loss detection ──
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -799,6 +802,10 @@ export default function Exam() {
       const data = await resp.json();
       if (resp.ok) {
         setExamData(data);
+      } else if (data.finalized) {
+        // Student already finalized this exam
+        setFinalized(true);
+        setError('');
       } else {
         setError(data.error || 'Codigo invalido');
       }
@@ -807,6 +814,26 @@ export default function Exam() {
     }
 
     setLoadingExam(false);
+  };
+
+  const handleFinalize = async () => {
+    if (!user || !examData || finalizing) return;
+    setFinalizing(true);
+    try {
+      const token = await user.getIdToken();
+      const base = getApiBase();
+      const resp = await fetch(`${base}/api/exams`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'finalize', examId: examData.examId }),
+      });
+      if (resp.ok) {
+        setFinalized(true);
+        setExamData(null);
+        setShowFinalizeConfirm(false);
+      }
+    } catch { /* ignore */ }
+    setFinalizing(false);
   };
 
   const getToken = useCallback(async () => {
@@ -837,6 +864,24 @@ export default function Exam() {
           <Button onClick={signInWithGoogle} size="lg">
             <LogIn className="h-5 w-5 mr-2" /> Entrar com Google
           </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Exam already finalized
+  if (finalized) {
+    return (
+      <Layout>
+        <div className="container max-w-lg py-16 text-center">
+          <CheckCircle className="h-16 w-16 mx-auto text-green-400 mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Prova Encerrada</h1>
+          <p className="text-muted-foreground mb-6">
+            Sua prova foi encerrada com sucesso. Suas respostas foram registradas e enviadas ao professor.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Nao e possivel acessar esta prova novamente.
+          </p>
         </div>
       </Layout>
     );
@@ -940,6 +985,59 @@ export default function Exam() {
               onCheatAttempt={handleCheatAttempt}
             />
           ))}
+        </div>
+
+        {/* Encerrar Prova */}
+        <div className="mt-10 border-t border-border pt-8 pb-4">
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <h3 className="font-semibold text-lg mb-2">Finalizar Prova</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Ao encerrar a prova, suas respostas serao enviadas e voce <strong>nao podera acessar novamente</strong>.
+              Certifique-se de ter respondido todos os exercicios antes de encerrar.
+            </p>
+            {!showFinalizeConfirm ? (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowFinalizeConfirm(true)}
+                className="border-destructive/50 text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Encerrar Prova
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                  <p className="text-destructive font-semibold text-sm flex items-center justify-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Tem certeza? Esta acao e irreversivel!
+                  </p>
+                  <p className="text-xs text-destructive/70 mt-1">
+                    Voce nao podera voltar a esta prova depois de encerrar.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFinalizeConfirm(false)}
+                    disabled={finalizing}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleFinalize}
+                    disabled={finalizing}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                  >
+                    {finalizing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                    {finalizing ? 'Encerrando...' : 'Confirmar Encerramento'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

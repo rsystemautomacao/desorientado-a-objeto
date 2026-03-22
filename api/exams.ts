@@ -121,9 +121,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const exam = await db.collection(EXAMS_COL).findOne({ active: true, accessCodes: code });
       if (!exam) return res.status(404).json({ error: 'Codigo invalido ou prova inativa' });
 
+      const examId = String(exam._id);
+
+      // Check if student already has a session
+      const existingSession = await db.collection('exam_sessions').findOne({
+        examId, userId: user.uid,
+      });
+
+      // If finalized, deny access
+      if (existingSession?.finalized) {
+        return res.status(403).json({
+          error: 'Voce ja encerrou esta prova. Nao e possivel acessar novamente.',
+          finalized: true,
+          finalizedAt: existingSession.finalizedAt,
+        });
+      }
+
+      // Create or update session (mark as accessed)
+      if (!existingSession) {
+        await db.collection('exam_sessions').insertOne({
+          examId,
+          userId: user.uid,
+          userEmail: user.email,
+          finalized: false,
+          accessedAt: new Date().toISOString(),
+          finalizedAt: null,
+        });
+      }
+
       // Get student's existing submissions
       const submissions = await db.collection(SUBMISSIONS_COL)
-        .find({ examId: String(exam._id), userId: user.uid })
+        .find({ examId, userId: user.uid })
         .toArray();
 
       const submissionCounts: Record<number, number> = {};
@@ -148,12 +176,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }));
 
       return res.status(200).json({
-        examId: String(exam._id),
+        examId,
         title: exam.title,
         description: exam.description,
         exercises,
         maxSubmissions: exam.maxSubmissions,
       });
+    }
+
+    // ── ACTION: finalize — student finishes the exam permanently ──
+    if (action === 'finalize') {
+      const examId = typeof body.examId === 'string' ? body.examId : '';
+      if (!examId) return res.status(400).json({ error: 'examId is required' });
+
+      const result = await db.collection('exam_sessions').updateOne(
+        { examId, userId: user.uid },
+        {
+          $set: {
+            finalized: true,
+            finalizedAt: new Date().toISOString(),
+          },
+        },
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: 'Sessao nao encontrada' });
+      }
+
+      return res.status(200).json({ ok: true, finalized: true });
     }
 
     // ── ACTION: submit — submit exercise answer ──
@@ -167,6 +217,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!examId || exerciseIndex < 0 || !code) {
         return res.status(400).json({ error: 'examId, exerciseIndex, and code are required' });
+      }
+
+      // Check if student already finalized
+      const session = await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
+      if (session?.finalized) {
+        return res.status(403).json({ error: 'Prova ja foi encerrada. Nao e possivel submeter.' });
       }
 
       let exam;

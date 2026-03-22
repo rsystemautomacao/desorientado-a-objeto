@@ -421,6 +421,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await client.db(DB_NAME).collection('exam_submissions').deleteMany({ examId: id });
         await client.db(DB_NAME).collection('exam_tab_switches').deleteMany({ examId: id });
         await client.db(DB_NAME).collection('exam_cheat_attempts').deleteMany({ examId: id });
+        await client.db(DB_NAME).collection('exam_sessions').deleteMany({ examId: id });
         return res.status(200).json({ ok: true });
       } catch {
         return res.status(400).json({ error: 'Invalid id' });
