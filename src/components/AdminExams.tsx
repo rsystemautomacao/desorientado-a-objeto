@@ -34,10 +34,18 @@ interface ExamExercise {
 
 interface BankQuestion {
   id: string;
+  type: QuestionType;
   title: string;
   description: string;
   starterCode: string;
   testCases: TestCase[];
+  // Objective question fields
+  options?: string[];
+  correctIndex?: number;
+  codeSnippet?: string;
+  snippetBefore?: string;
+  snippetAfter?: string;
+  explanation?: string;
   tags: string[];
   difficulty: string;
   createdAt: string;
@@ -86,10 +94,17 @@ function getApiBase(): string {
 // ── Unified item for the import modal ──
 interface ImportableItem {
   key: string;
+  type: QuestionType;
   title: string;
   description: string;
   starterCode: string;
   testCases: TestCase[];
+  options?: string[];
+  correctIndex?: number;
+  codeSnippet?: string;
+  snippetBefore?: string;
+  snippetAfter?: string;
+  explanation?: string;
   difficulty: string;
   topic: string;       // grouping label (topicLabel for platform, first tag for bank)
   source: 'banco' | 'plataforma';
@@ -128,16 +143,24 @@ function ImportQuestionsModal({
   const allItems: ImportableItem[] = [
     ...bankQuestions.map((q) => ({
       key: `bank-${q.id}`,
+      type: q.type || 'code' as QuestionType,
       title: q.title,
       description: q.description,
       starterCode: q.starterCode,
       testCases: q.testCases,
+      options: q.options,
+      correctIndex: q.correctIndex,
+      codeSnippet: q.codeSnippet,
+      snippetBefore: q.snippetBefore,
+      snippetAfter: q.snippetAfter,
+      explanation: q.explanation,
       difficulty: q.difficulty,
       topic: q.tags[0] || 'Sem categoria',
       source: 'banco' as const,
     })),
     ...platformExercises.map((ex) => ({
       key: `platform-${ex.id}`,
+      type: 'code' as QuestionType,
       title: ex.title,
       description: ex.description,
       starterCode: ex.starterCode,
@@ -198,13 +221,22 @@ function ImportQuestionsModal({
 
   const handleImport = () => {
     const items = allItems.filter((i) => selected.has(i.key));
-    onImport(items.map((i) => ({
-      type: 'code' as QuestionType,
-      title: i.title,
-      description: i.description,
-      starterCode: i.starterCode,
-      testCases: i.testCases,
-    })));
+    onImport(items.map((i) => {
+      const base: ExamExercise = {
+        type: i.type || 'code',
+        title: i.title,
+        description: i.description,
+        starterCode: i.starterCode,
+        testCases: i.testCases,
+      };
+      if (i.options) base.options = i.options;
+      if (i.correctIndex !== undefined) base.correctIndex = i.correctIndex;
+      if (i.codeSnippet) base.codeSnippet = i.codeSnippet;
+      if (i.snippetBefore) base.snippetBefore = i.snippetBefore;
+      if (i.snippetAfter) base.snippetAfter = i.snippetAfter;
+      if (i.explanation) base.explanation = i.explanation;
+      return base;
+    }));
   };
 
   return (
@@ -305,6 +337,15 @@ function ImportQuestionsModal({
                                 }`}>
                                   {item.source === 'banco' ? 'BANCO' : 'PLATAFORMA'}
                                 </span>
+                                {item.type && item.type !== 'code' && (
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                                    item.type === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
+                                    item.type === 'true-false' ? 'bg-green-500/20 text-green-400' :
+                                    'bg-yellow-500/20 text-yellow-400'
+                                  }`}>
+                                    {item.type === 'multiple-choice' ? 'Alternativas' : item.type === 'true-false' ? 'V/F' : 'Preencher'}
+                                  </span>
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.description || 'Sem descricao'}</div>
                               <div className="flex items-center gap-2 mt-1">
@@ -909,10 +950,17 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
         body: JSON.stringify({
           action: 'bank_save',
           id: q.id,
+          type: q.type || 'code',
           title: q.title,
           description: q.description || '',
           starterCode: q.starterCode || '',
           testCases: q.testCases || [],
+          options: q.options || [],
+          correctIndex: q.correctIndex ?? 0,
+          codeSnippet: q.codeSnippet || '',
+          snippetBefore: q.snippetBefore || '',
+          snippetAfter: q.snippetAfter || '',
+          explanation: q.explanation || '',
           tags: q.tags || [],
           difficulty: q.difficulty || '',
         }),
@@ -951,7 +999,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
   // Editing/creating a question
   if (editForm || showNew) {
     const q = editForm || {
-      id: '', title: '', description: '', starterCode: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}',
+      id: '', type: 'code' as QuestionType, title: '', description: '', starterCode: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}',
       testCases: [{ input: '', expectedOutput: '', visible: true }] as TestCase[],
       tags: [] as string[], difficulty: '', createdAt: '', updatedAt: '',
     };
@@ -999,7 +1047,17 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
           {filtered.map((q) => (
             <div key={q.id} className="rounded-lg border border-border bg-card px-4 py-3 flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm">{q.title}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">{q.title}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                    (q.type || 'code') === 'code' ? 'bg-blue-500/20 text-blue-400' :
+                    q.type === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
+                    q.type === 'true-false' ? 'bg-green-500/20 text-green-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                  }`}>
+                    {(q.type || 'code') === 'code' ? 'Codigo' : q.type === 'multiple-choice' ? 'Alternativas' : q.type === 'true-false' ? 'V/F' : 'Preencher'}
+                  </span>
+                </div>
                 <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{q.description || 'Sem descricao'}</div>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {q.difficulty && (
@@ -1009,7 +1067,12 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
                       'bg-red-500/20 text-red-600'
                     }`}>{q.difficulty}</span>
                   )}
-                  <span className="text-[10px] text-muted-foreground">{q.testCases.length} teste(s)</span>
+                  {(q.type || 'code') === 'code' && (
+                    <span className="text-[10px] text-muted-foreground">{q.testCases.length} teste(s)</span>
+                  )}
+                  {q.type === 'multiple-choice' && (
+                    <span className="text-[10px] text-muted-foreground">{(q.options || []).length} opcoes</span>
+                  )}
                   {q.tags.map((t) => (
                     <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{t}</span>
                   ))}
@@ -1043,12 +1106,69 @@ function QuestionEditor({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const [type, setType] = useState<QuestionType>((question as BankQuestion).type || 'code');
   const [title, setTitle] = useState(question.title);
   const [description, setDescription] = useState(question.description || '');
   const [starterCode, setStarterCode] = useState(question.starterCode || '');
   const [testCases, setTestCases] = useState<TestCase[]>(question.testCases);
   const [tags, setTags] = useState(question.tags?.join(', ') || '');
   const [difficulty, setDifficulty] = useState(question.difficulty || '');
+  // Objective question fields
+  const [options, setOptions] = useState<string[]>(question.options || (type === 'true-false' ? ['Verdadeiro', 'Falso'] : ['', '', '', '']));
+  const [correctIndex, setCorrectIndex] = useState(question.correctIndex ?? 0);
+  const [codeSnippet, setCodeSnippet] = useState(question.codeSnippet || '');
+  const [snippetBefore, setSnippetBefore] = useState(question.snippetBefore || '');
+  const [snippetAfter, setSnippetAfter] = useState(question.snippetAfter || '');
+  const [explanation, setExplanation] = useState(question.explanation || '');
+
+  const handleTypeChange = (newType: QuestionType) => {
+    setType(newType);
+    if (newType === 'true-false') {
+      setOptions(['Verdadeiro', 'Falso']);
+      setCorrectIndex(0);
+    } else if (newType === 'multiple-choice') {
+      if (options.length < 2) setOptions(['', '', '', '']);
+      setCorrectIndex(0);
+    } else if (newType === 'fill-blank') {
+      setOptions(['', '', '', '']);
+      setCorrectIndex(0);
+      if (!snippetBefore) setSnippetBefore('// codigo antes\n');
+      if (!snippetAfter) setSnippetAfter('\n// codigo depois');
+    }
+  };
+
+  const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+    'code': 'Codigo',
+    'multiple-choice': 'Alternativas',
+    'true-false': 'Verdadeiro/Falso',
+    'fill-blank': 'Preencher trecho',
+  };
+
+  const handleSaveClick = () => {
+    const base: Partial<BankQuestion> & { title: string } = {
+      id: question.id,
+      type,
+      title,
+      description,
+      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      difficulty,
+      starterCode: type === 'code' ? starterCode : '',
+      testCases: type === 'code' ? testCases : [],
+    };
+    if (type === 'multiple-choice' || type === 'true-false' || type === 'fill-blank') {
+      base.options = options;
+      base.correctIndex = correctIndex;
+      base.explanation = explanation;
+    }
+    if (type === 'multiple-choice' || type === 'true-false') {
+      base.codeSnippet = codeSnippet;
+    }
+    if (type === 'fill-blank') {
+      base.snippetBefore = snippetBefore;
+      base.snippetAfter = snippetAfter;
+    }
+    onSave(base);
+  };
 
   return (
     <div className="space-y-4">
@@ -1056,15 +1176,55 @@ function QuestionEditor({
         <h2 className="text-xl font-bold">{question.id ? 'Editar Questao' : 'Nova Questao'}</h2>
       </div>
       <div className="space-y-3">
+        {/* Type selector */}
+        {!question.id && (
+          <div>
+            <label className="block text-sm font-semibold mb-1">Tipo da questao</label>
+            <div className="flex gap-2 flex-wrap">
+              {(['code', 'multiple-choice', 'true-false', 'fill-blank'] as QuestionType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handleTypeChange(t)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                    type === t
+                      ? 'border-primary bg-primary/10 text-primary font-medium'
+                      : 'border-border hover:bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  {t === 'code' && <Code2 className="h-3.5 w-3.5" />}
+                  {t === 'multiple-choice' && <ClipboardList className="h-3.5 w-3.5" />}
+                  {t === 'true-false' && <CheckCircle2 className="h-3.5 w-3.5" />}
+                  {t === 'fill-blank' && <Edit3 className="h-3.5 w-3.5" />}
+                  {QUESTION_TYPE_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Show type badge when editing */}
+        {question.id && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Tipo:</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              type === 'code' ? 'bg-blue-500/20 text-blue-400' :
+              type === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
+              type === 'true-false' ? 'bg-green-500/20 text-green-400' :
+              'bg-yellow-500/20 text-yellow-400'
+            }`}>{QUESTION_TYPE_LABELS[type]}</span>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-semibold mb-1">Titulo *</label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
         </div>
         <div>
-          <label className="block text-sm font-semibold mb-1">Enunciado</label>
+          <label className="block text-sm font-semibold mb-1">{type === 'code' ? 'Enunciado' : 'Pergunta'}</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder={type === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -1084,53 +1244,214 @@ function QuestionEditor({
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">Codigo inicial</label>
-          <textarea value={starterCode} onChange={(e) => setStarterCode(e.target.value)}
-            className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50" />
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-semibold">Casos de teste ({testCases.length})</label>
-            <Button variant="ghost" size="sm" onClick={() => setTestCases((prev) => [...prev, { input: '', expectedOutput: '', visible: true }])} className="h-6 text-xs">
-              <Plus className="h-3 w-3 mr-1" /> Teste
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {testCases.map((tc, i) => (
-              <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/20 border border-border">
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Entrada</label>
-                    <input type="text" value={tc.input}
-                      onChange={(e) => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, input: e.target.value } : t))}
-                      className="w-full px-2 py-1 rounded border border-border bg-background text-xs font-mono" placeholder="(vazio)" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-muted-foreground mb-0.5">Saida esperada</label>
-                    <input type="text" value={tc.expectedOutput}
-                      onChange={(e) => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, expectedOutput: e.target.value } : t))}
-                      className="w-full px-2 py-1 rounded border border-border bg-background text-xs font-mono" />
-                  </div>
-                </div>
-                <button type="button" onClick={() => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, visible: !t.visible } : t))}
-                  className={`mt-4 p-1 rounded ${tc.visible ? 'text-primary' : 'text-muted-foreground'}`}
-                  title={tc.visible ? 'Visivel' : 'Oculto'}>
-                  {tc.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </button>
-                {testCases.length > 1 && (
-                  <button type="button" onClick={() => setTestCases((prev) => prev.filter((_, j) => j !== i))} className="mt-4 p-1 text-destructive">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
+
+        {/* ── CODE type fields ── */}
+        {type === 'code' && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Codigo inicial</label>
+              <textarea value={starterCode} onChange={(e) => setStarterCode(e.target.value)}
+                className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold">Casos de teste ({testCases.length})</label>
+                <Button variant="ghost" size="sm" onClick={() => setTestCases((prev) => [...prev, { input: '', expectedOutput: '', visible: true }])} className="h-6 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Teste
+                </Button>
               </div>
-            ))}
+              <div className="space-y-2">
+                {testCases.map((tc, i) => (
+                  <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/20 border border-border">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-muted-foreground mb-0.5">Entrada</label>
+                        <input type="text" value={tc.input}
+                          onChange={(e) => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, input: e.target.value } : t))}
+                          className="w-full px-2 py-1 rounded border border-border bg-background text-xs font-mono" placeholder="(vazio)" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-muted-foreground mb-0.5">Saida esperada</label>
+                        <input type="text" value={tc.expectedOutput}
+                          onChange={(e) => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, expectedOutput: e.target.value } : t))}
+                          className="w-full px-2 py-1 rounded border border-border bg-background text-xs font-mono" />
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setTestCases((prev) => prev.map((t, j) => j === i ? { ...t, visible: !t.visible } : t))}
+                      className={`mt-4 p-1 rounded ${tc.visible ? 'text-primary' : 'text-muted-foreground'}`}
+                      title={tc.visible ? 'Visivel' : 'Oculto'}>
+                      {tc.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                    {testCases.length > 1 && (
+                      <button type="button" onClick={() => setTestCases((prev) => prev.filter((_, j) => j !== i))} className="mt-4 p-1 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── MULTIPLE CHOICE type fields ── */}
+        {type === 'multiple-choice' && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Trecho de codigo (opcional)</label>
+              <textarea value={codeSnippet} onChange={(e) => setCodeSnippet(e.target.value)}
+                className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Cole aqui um trecho de codigo para exibir junto com a pergunta (opcional)" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold">Alternativas ({options.length})</label>
+                <Button variant="ghost" size="sm" onClick={() => setOptions((prev) => [...prev, ''])} className="h-6 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Opcao
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCorrectIndex(i)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        correctIndex === i ? 'border-green-500 bg-green-500/20' : 'border-border hover:border-primary/50'
+                      }`}
+                      title="Marcar como correta"
+                    >
+                      {correctIndex === i && <Check className="h-3.5 w-3.5 text-green-500" />}
+                    </button>
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => setOptions((prev) => prev.map((o, j) => j === i ? e.target.value : o))}
+                      className="flex-1 px-3 py-1.5 rounded border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      placeholder={`Alternativa ${String.fromCharCode(65 + i)}`}
+                    />
+                    {options.length > 2 && (
+                      <button type="button" onClick={() => {
+                        setOptions((prev) => prev.filter((_, j) => j !== i));
+                        if (correctIndex >= options.length - 1) setCorrectIndex(0);
+                      }} className="p-1 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Clique no circulo para marcar a alternativa correta.</p>
+            </div>
+          </>
+        )}
+
+        {/* ── TRUE/FALSE type fields ── */}
+        {type === 'true-false' && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Trecho de codigo (opcional)</label>
+              <textarea value={codeSnippet} onChange={(e) => setCodeSnippet(e.target.value)}
+                className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Cole aqui um trecho de codigo para exibir junto com a pergunta (opcional)" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Resposta correta</label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCorrectIndex(0)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
+                    correctIndex === 0 ? 'border-green-500 bg-green-500/20 text-green-400 font-medium' : 'border-border hover:bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Verdadeiro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCorrectIndex(1)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
+                    correctIndex === 1 ? 'border-red-500 bg-red-500/20 text-red-400 font-medium' : 'border-border hover:bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  <XCircle className="h-4 w-4" /> Falso
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── FILL-BLANK type fields ── */}
+        {type === 'fill-blank' && (
+          <>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Codigo antes do trecho em branco</label>
+              <textarea value={snippetBefore} onChange={(e) => setSnippetBefore(e.target.value)}
+                className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="// codigo que aparece antes do campo de preencher" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Codigo depois do trecho em branco</label>
+              <textarea value={snippetAfter} onChange={(e) => setSnippetAfter(e.target.value)}
+                className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="// codigo que aparece depois do campo de preencher" />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold">Opcoes de preenchimento ({options.length})</label>
+                <Button variant="ghost" size="sm" onClick={() => setOptions((prev) => [...prev, ''])} className="h-6 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Opcao
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCorrectIndex(i)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        correctIndex === i ? 'border-green-500 bg-green-500/20' : 'border-border hover:border-primary/50'
+                      }`}
+                      title="Marcar como correta"
+                    >
+                      {correctIndex === i && <Check className="h-3.5 w-3.5 text-green-500" />}
+                    </button>
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => setOptions((prev) => prev.map((o, j) => j === i ? e.target.value : o))}
+                      className="flex-1 px-3 py-1.5 rounded border border-border bg-background text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      placeholder={`Opcao ${i + 1}`}
+                    />
+                    {options.length > 2 && (
+                      <button type="button" onClick={() => {
+                        setOptions((prev) => prev.filter((_, j) => j !== i));
+                        if (correctIndex >= options.length - 1) setCorrectIndex(0);
+                      }} className="p-1 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Clique no circulo para marcar a opcao correta que preenche o trecho.</p>
+            </div>
+          </>
+        )}
+
+        {/* Explanation (for objective types) */}
+        {type !== 'code' && (
+          <div>
+            <label className="block text-sm font-semibold mb-1">Explicacao (opcional, para referencia do professor)</label>
+            <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)}
+              className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="Por que esta e a resposta correta? (nao sera exibida ao aluno durante a prova)" />
           </div>
-        </div>
+        )}
       </div>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button onClick={() => onSave({ id: question.id, title, description, starterCode, testCases, tags: tags.split(',').map((t) => t.trim()).filter(Boolean), difficulty })} disabled={saving || !title.trim()}>
+        <Button onClick={handleSaveClick} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           Salvar
         </Button>

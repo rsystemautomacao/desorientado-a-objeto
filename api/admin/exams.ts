@@ -266,7 +266,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const title = typeof b.title === 'string' ? b.title.trim() : '';
         if (!title) return res.status(400).json({ error: 'title required' });
 
-        const question = {
+        const validTypes = ['code', 'multiple-choice', 'true-false', 'fill-blank'];
+        const question: Record<string, unknown> = {
+          type: typeof b.type === 'string' && validTypes.includes(b.type) ? b.type : 'code',
           title,
           description: typeof b.description === 'string' ? b.description.trim() : '',
           starterCode: typeof b.starterCode === 'string' ? b.starterCode : '',
@@ -275,6 +277,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
             visible: typeof tc.visible === 'boolean' ? tc.visible : true,
           })) : [],
+          options: Array.isArray(b.options) ? (b.options as string[]).map((o) => typeof o === 'string' ? o : '') : [],
+          correctIndex: typeof b.correctIndex === 'number' ? b.correctIndex : 0,
+          codeSnippet: typeof b.codeSnippet === 'string' ? b.codeSnippet : '',
+          snippetBefore: typeof b.snippetBefore === 'string' ? b.snippetBefore : '',
+          snippetAfter: typeof b.snippetAfter === 'string' ? b.snippetAfter : '',
+          explanation: typeof b.explanation === 'string' ? b.explanation : '',
           tags: Array.isArray(b.tags) ? (b.tags as string[]).filter((t) => typeof t === 'string') : [],
           difficulty: typeof b.difficulty === 'string' ? b.difficulty : '',
           updatedAt: new Date().toISOString(),
@@ -297,7 +305,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const items = (body as Record<string, unknown>).questions;
         if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'questions array required' });
 
+        const validTypes = ['code', 'multiple-choice', 'true-false', 'fill-blank'];
         const docs = items.map((item: Record<string, unknown>) => ({
+          type: typeof item.type === 'string' && validTypes.includes(item.type) ? item.type : 'code',
           title: typeof item.title === 'string' ? item.title.trim() : 'Sem titulo',
           description: typeof item.description === 'string' ? item.description.trim() : '',
           starterCode: typeof item.starterCode === 'string' ? item.starterCode : '',
@@ -306,6 +316,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
             visible: typeof tc.visible === 'boolean' ? tc.visible : true,
           })) : [],
+          options: Array.isArray(item.options) ? (item.options as string[]).map((o) => typeof o === 'string' ? o : '') : [],
+          correctIndex: typeof item.correctIndex === 'number' ? item.correctIndex : 0,
+          codeSnippet: typeof item.codeSnippet === 'string' ? item.codeSnippet : '',
+          snippetBefore: typeof item.snippetBefore === 'string' ? item.snippetBefore : '',
+          snippetAfter: typeof item.snippetAfter === 'string' ? item.snippetAfter : '',
+          explanation: typeof item.explanation === 'string' ? item.explanation : '',
           tags: Array.isArray(item.tags) ? (item.tags as string[]).filter((t) => typeof t === 'string') : [],
           difficulty: typeof item.difficulty === 'string' ? item.difficulty : '',
           createdAt: new Date().toISOString(),
