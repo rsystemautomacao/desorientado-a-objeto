@@ -93,24 +93,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const adminEmail = await requireAdminEmail(req);
-    if (!adminEmail) return res.status(403).json({ error: 'Forbidden' });
-
     const client = getMongoClient();
     const col = client.db(DB_NAME).collection<AnnouncementDoc>(COLLECTION);
 
-    // GET — list all (including inactive)
+    // GET — public (no auth): return active announcements only
+    //        admin (with auth): return all (including inactive)
     if (req.method === 'GET') {
-      const docs = await col.find({}).sort({ createdAt: -1 }).limit(20).toArray();
-      const announcements = docs.map((d) => ({
-        id: String(d._id),
-        message: d.message,
-        type: d.type,
-        active: d.active,
-        createdAt: d.createdAt,
-      }));
-      return res.status(200).json({ announcements });
+      const adminEmail = await requireAdminEmail(req);
+      if (adminEmail) {
+        // Admin: all announcements
+        const docs = await col.find({}).sort({ createdAt: -1 }).limit(20).toArray();
+        const announcements = docs.map((d) => ({
+          id: String(d._id),
+          message: d.message,
+          type: d.type,
+          active: d.active,
+          createdAt: d.createdAt,
+        }));
+        return res.status(200).json({ announcements });
+      } else {
+        // Public: only active announcements
+        const docs = await col.find({ active: true }).sort({ createdAt: -1 }).limit(10).toArray();
+        const announcements = docs.map((d) => ({
+          id: String(d._id),
+          message: d.message,
+          type: d.type,
+          createdAt: d.createdAt,
+        }));
+        return res.status(200).json({ announcements });
+      }
     }
+
+    // POST and DELETE require admin
+    const adminEmail = await requireAdminEmail(req);
+    if (!adminEmail) return res.status(403).json({ error: 'Forbidden' });
 
     // POST — create new announcement
     if (req.method === 'POST') {

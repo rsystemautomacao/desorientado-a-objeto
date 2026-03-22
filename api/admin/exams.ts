@@ -47,8 +47,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = getMongoClient();
     const col = client.db(DB_NAME).collection<ExamDoc>(COLLECTION);
 
-    // ── GET: list exams ──
+    // ── GET: list exams OR get results for a specific exam ──
     if (req.method === 'GET') {
+      // If ?results=examId, return submissions grouped by student
+      const resultsFor = req.query.results;
+      if (typeof resultsFor === 'string' && resultsFor.length >= 10) {
+        const submissions = await client.db(DB_NAME)
+          .collection('exam_submissions')
+          .find({ examId: resultsFor })
+          .sort({ submittedAt: -1 })
+          .toArray();
+
+        const byStudent: Record<string, {
+          userId: string; userName: string; userEmail: string;
+          submissions: Array<{ exerciseIndex: number; code: string; passedTests: number; totalTests: number; allPassed: boolean; attemptNumber: number; submittedAt: string }>;
+        }> = {};
+
+        for (const sub of submissions) {
+          const uid = sub.userId as string;
+          if (!byStudent[uid]) {
+            byStudent[uid] = { userId: uid, userName: sub.userName as string, userEmail: sub.userEmail as string, submissions: [] };
+          }
+          byStudent[uid].submissions.push({
+            exerciseIndex: sub.exerciseIndex as number,
+            code: sub.code as string,
+            passedTests: sub.passedTests as number,
+            totalTests: sub.totalTests as number,
+            allPassed: sub.allPassed as boolean,
+            attemptNumber: sub.attemptNumber as number,
+            submittedAt: sub.submittedAt as string,
+          });
+        }
+
+        return res.status(200).json({ students: Object.values(byStudent), totalSubmissions: submissions.length });
+      }
+
+      // Default: list all exams
       const docs = await col.find({}).sort({ createdAt: -1 }).toArray();
       const exams = docs.map((d) => ({
         id: String(d._id),

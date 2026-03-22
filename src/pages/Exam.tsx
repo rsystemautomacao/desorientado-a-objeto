@@ -343,10 +343,11 @@ function ExamExerciseEditor({
       try {
         const token = await getToken();
         const base = getApiBase();
-        const resp = await fetch(`${base}/api/exams/submit`, {
+        const resp = await fetch(`${base}/api/exams`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            action: 'submit',
             examId,
             exerciseIndex,
             code,
@@ -560,10 +561,10 @@ export default function Exam() {
     try {
       const token = await user.getIdToken();
       const base = getApiBase();
-      const resp = await fetch(`${base}/api/exams/access`, {
+      const resp = await fetch(`${base}/api/exams`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: accessCode.trim() }),
+        body: JSON.stringify({ action: 'access', code: accessCode.trim() }),
       });
       const data = await resp.json();
       if (resp.ok) {

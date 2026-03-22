@@ -36,7 +36,7 @@ export default function Dashboard() {
     const base = import.meta.env.VITE_API_BASE_URL
       ? String(import.meta.env.VITE_API_BASE_URL).replace(/\/$/, '')
       : (typeof window !== 'undefined' ? window.location.origin : '');
-    fetch(`${base}/api/announcements`)
+    fetch(`${base}/api/admin/announcements`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.announcements) setAnnouncements(d.announcements); })
       .catch(() => {});

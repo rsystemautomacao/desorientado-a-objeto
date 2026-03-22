@@ -285,7 +285,7 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
       try {
         const token = await getToken();
         const base = getApiBase();
-        const resp = await fetch(`${base}/api/admin/exam-results?examId=${examId}`, {
+        const resp = await fetch(`${base}/api/admin/exams?results=${examId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await resp.json();
