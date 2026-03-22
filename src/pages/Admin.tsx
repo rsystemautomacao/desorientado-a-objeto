@@ -49,6 +49,8 @@ import {
   ThumbsDown,
   MessageSquare,
   Code2,
+  LayoutDashboard,
+  FileCheck,
 } from 'lucide-react';
 import AdminExams from '@/components/AdminExams';
 
@@ -957,6 +959,8 @@ export default function Admin() {
   const [resetDone, setResetDone] = useState<{ deletedProgress: number; deletedActivities: number } | null>(null);
 
   // UI state
+  type AdminTab = 'dashboard' | 'alunos' | 'desempenho' | 'provas';
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [sortKey, setSortKey] = useState<SortKey>('completed');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1113,10 +1117,17 @@ export default function Admin() {
 
   const tdCls = 'px-3 py-2.5 text-sm';
 
+  const TAB_ITEMS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
+    { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+    { key: 'alunos', label: 'Alunos', icon: <Users className="h-4 w-4" /> },
+    { key: 'desempenho', label: 'Desempenho', icon: <BarChart3 className="h-4 w-4" /> },
+    { key: 'provas', label: 'Provas', icon: <FileCheck className="h-4 w-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
         <div className="container flex items-center justify-between h-14">
           <h1 className="text-lg font-semibold flex items-center gap-2">
             <GraduationCap className="h-5 w-5 text-primary" />
@@ -1131,6 +1142,25 @@ export default function Admin() {
               <LogOut className="h-4 w-4" /> Sair
             </Button>
           </div>
+        </div>
+        {/* Tab Navigation */}
+        <div className="container">
+          <nav className="flex gap-1 -mb-px overflow-x-auto">
+            {TAB_ITEMS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
@@ -1149,275 +1179,284 @@ export default function Admin() {
           </div>
         ) : (
           <>
-            {/* ===== Stats Cards ===== */}
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-              <StatCard icon={<Users className="h-4 w-4" />} label="Alunos" value={entries.length} />
-              <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Conclusao media" value={`${avgCompletion}%`} />
-              <StatCard icon={<BookOpen className="h-4 w-4" />} label="Aulas concluidas" value={`${totalCompletedLessons}`} sub={`de ${entries.length * TOTAL_LESSONS}`} />
-              <StatCard icon={<ClipboardList className="h-4 w-4" />} label="Quizzes feitos" value={totalQuizzesDone} />
-              <StatCard icon={<BarChart3 className="h-4 w-4" />} label="Media quizzes" value={`${avgQuizScore}%`} color={scoreColor(avgQuizScore)} />
-              <StatCard icon={<Trophy className="h-4 w-4" />} label="Concluiram tudo" value={studentsCompleted100} sub={`de ${entries.length}`} />
-            </div>
+            {/* ===== TAB: Dashboard ===== */}
+            {activeTab === 'dashboard' && (
+              <>
+                {/* Stats Cards */}
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                  <StatCard icon={<Users className="h-4 w-4" />} label="Alunos" value={entries.length} />
+                  <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Conclusao media" value={`${avgCompletion}%`} />
+                  <StatCard icon={<BookOpen className="h-4 w-4" />} label="Aulas concluidas" value={`${totalCompletedLessons}`} sub={`de ${entries.length * TOTAL_LESSONS}`} />
+                  <StatCard icon={<ClipboardList className="h-4 w-4" />} label="Quizzes feitos" value={totalQuizzesDone} />
+                  <StatCard icon={<BarChart3 className="h-4 w-4" />} label="Media quizzes" value={`${avgQuizScore}%`} color={scoreColor(avgQuizScore)} />
+                  <StatCard icon={<Trophy className="h-4 w-4" />} label="Concluiram tudo" value={studentsCompleted100} sub={`de ${entries.length}`} />
+                </div>
 
-            {/* ===== Inactive students alert ===== */}
-            {(() => {
-              const now = new Date();
-              const INACTIVE_DAYS = 7;
+                {/* Inactive students alert */}
+                {(() => {
+                  const now = new Date();
+                  const INACTIVE_DAYS = 7;
 
-              // Build a map of latest activity timestamp per user from activities data
-              const lastActivityMap = new Map<string, string>();
-              for (const a of activities) {
-                const prev = lastActivityMap.get(a.userId);
-                if (!prev || a.timestamp > prev) lastActivityMap.set(a.userId, a.timestamp);
-              }
+                  const lastActivityMap = new Map<string, string>();
+                  for (const a of activities) {
+                    const prev = lastActivityMap.get(a.userId);
+                    if (!prev || a.timestamp > prev) lastActivityMap.set(a.userId, a.timestamp);
+                  }
 
-              const inactive = entries.filter((e) => {
-                // Use the most recent date from: updatedAt (profile+progress) or last activity
-                const lastActivity = lastActivityMap.get(e.userId);
-                const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
-                if (candidates.length === 0) return true; // no data at all
-                const mostRecent = candidates.sort().pop()!;
-                const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
-                return diffDays >= INACTIVE_DAYS;
-              }).map((e) => {
-                const lastActivity = lastActivityMap.get(e.userId);
-                const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
-                if (candidates.length === 0) return { ...e, daysInactive: 999 };
-                const mostRecent = candidates.sort().pop()!;
-                const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
-                return { ...e, daysInactive: diffDays };
-              }).sort((a, b) => b.daysInactive - a.daysInactive);
+                  const inactive = entries.filter((e) => {
+                    const lastActivity = lastActivityMap.get(e.userId);
+                    const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
+                    if (candidates.length === 0) return true;
+                    const mostRecent = candidates.sort().pop()!;
+                    const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
+                    return diffDays >= INACTIVE_DAYS;
+                  }).map((e) => {
+                    const lastActivity = lastActivityMap.get(e.userId);
+                    const candidates = [e.updatedAt, lastActivity].filter(Boolean) as string[];
+                    if (candidates.length === 0) return { ...e, daysInactive: 999 };
+                    const mostRecent = candidates.sort().pop()!;
+                    const diffDays = Math.floor((now.getTime() - new Date(mostRecent).getTime()) / 86400000);
+                    return { ...e, daysInactive: diffDays };
+                  }).sort((a, b) => b.daysInactive - a.daysInactive);
 
-              if (inactive.length === 0) return null;
+                  if (inactive.length === 0) return null;
 
-              return (
-                <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-yellow-500/20 bg-yellow-500/10 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    <h2 className="font-semibold text-yellow-800 text-sm">Alunos inativos ({inactive.length})</h2>
-                    <span className="ml-auto text-[10px] text-yellow-700">sem atividade ha {INACTIVE_DAYS}+ dias</span>
-                  </div>
-                  <div className="p-3 max-h-[200px] overflow-y-auto">
-                    <div className="space-y-1">
-                      {inactive.slice(0, 15).map((e) => (
-                        <div key={e.userId} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-yellow-500/10">
-                          <span className="font-medium truncate mr-2">{e.nome || 'Sem nome'}</span>
-                          <span className="text-yellow-700 shrink-0">
-                            {e.daysInactive >= 999 ? 'nunca acessou' : `${e.daysInactive} dias`}
-                          </span>
+                  return (
+                    <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-yellow-500/20 bg-yellow-500/10 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <h2 className="font-semibold text-yellow-800 text-sm">Alunos inativos ({inactive.length})</h2>
+                        <span className="ml-auto text-[10px] text-yellow-700">sem atividade ha {INACTIVE_DAYS}+ dias</span>
+                      </div>
+                      <div className="p-3 max-h-[200px] overflow-y-auto">
+                        <div className="space-y-1">
+                          {inactive.slice(0, 15).map((e) => (
+                            <div key={e.userId} className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-yellow-500/10">
+                              <span className="font-medium truncate mr-2">{e.nome || 'Sem nome'}</span>
+                              <span className="text-yellow-700 shrink-0">
+                                {e.daysInactive >= 999 ? 'nunca acessou' : `${e.daysInactive} dias`}
+                              </span>
+                            </div>
+                          ))}
+                          {inactive.length > 15 && (
+                            <p className="text-[10px] text-muted-foreground text-center pt-1">+ {inactive.length - 15} mais</p>
+                          )}
                         </div>
-                      ))}
-                      {inactive.length > 15 && (
-                        <p className="text-[10px] text-muted-foreground text-center pt-1">+ {inactive.length - 15} mais</p>
-                      )}
+                      </div>
                     </div>
+                  );
+                })()}
+
+                {/* Announcements */}
+                <AnnouncementsManager
+                  announcements={announcements}
+                  onUpdate={setAnnouncements}
+                  getToken={() => user!.getIdToken(true)}
+                />
+
+                {/* Activity Timeline */}
+                <ActivityTimeline activities={activities} />
+              </>
+            )}
+
+            {/* ===== TAB: Alunos ===== */}
+            {activeTab === 'alunos' && (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                {/* Toolbar */}
+                <div className="px-4 py-3 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Relatorio por Aluno
+                  </h2>
+                  <div className="flex-1" />
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Buscar aluno..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8 pr-3 py-1.5 text-xs rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/50 w-44"
+                    />
                   </div>
-                </div>
-              );
-            })()}
-
-            {/* ===== Announcements ===== */}
-            <AnnouncementsManager
-              announcements={announcements}
-              onUpdate={setAnnouncements}
-              getToken={() => user!.getIdToken(true)}
-            />
-
-            {/* ===== Student Table ===== */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              {/* Toolbar */}
-              <div className="px-4 py-3 border-b border-border bg-muted/30 flex flex-wrap items-center gap-3">
-                <h2 className="font-semibold flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  Por aluno
-                </h2>
-                <div className="flex-1" />
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Buscar aluno..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 text-xs rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/50 w-44"
-                  />
-                </div>
-                {/* Filter Tipo */}
-                {tipos.length > 0 && (
-                  <select
-                    value={filterTipo}
-                    onChange={(e) => setFilterTipo(e.target.value)}
-                    className="text-xs rounded-md border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                  >
-                    <option value="">Todos os tipos</option>
-                    {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                )}
-                {/* Actions */}
-                <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => loadHistory()}>
-                  <RefreshCw className="h-3 w-3" /> Atualizar
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => exportToCsv(filtered)}>
-                  <Download className="h-3 w-3" /> CSV
-                </Button>
-              </div>
-
-              <p className="px-4 py-1.5 text-[10px] text-muted-foreground border-b border-border/50">
-                Clique no nome do aluno para expandir detalhes. Clique nos cabecalhos para ordenar. {filtered.length !== entries.length && <span className="font-medium">Mostrando {filtered.length} de {entries.length} alunos.</span>}
-              </p>
-
-              {/* Table */}
-              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 z-10 bg-card">
-                    <tr className="border-b border-border bg-muted/20">
-                      <th className="w-6 px-2" />
-                      <ThSort label="Nome" sortKey="nome" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Tipo" sortKey="tipo" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Curso" sortKey="curso" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Serie" sortKey="serie" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Turma" sortKey="turma" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Total" sortKey="completed" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="M1" sortKey="m1" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Fundamentos" />
-                      <ThSort label="M2" sortKey="m2" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Intermediario" />
-                      <ThSort label="M3" sortKey="m3" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="POO" />
-                      <ThSort label="Quiz Avg" sortKey="quizAvg" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                      <ThSort label="Quizzes" sortKey="quizzes" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.length === 0 ? (
-                      <tr>
-                        <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
-                          {entries.length === 0 ? 'Nenhum dado de estudo ainda.' : 'Nenhum aluno encontrado com esse filtro.'}
-                        </td>
-                      </tr>
-                    ) : (
-                      sorted.map((e) => {
-                        const expanded = expandedUserId === e.userId;
-                        const m1 = getModuleProgress(e, 1);
-                        const m2 = getModuleProgress(e, 2);
-                        const m3 = getModuleProgress(e, 3);
-                        const avg = getAvgQuizScore(e);
-                        return (
-                          <Fragment key={e.userId}>
-                            <tr
-                              className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${expanded ? 'bg-muted/20' : ''}`}
-                              onClick={() => setExpandedUserId(expanded ? null : e.userId)}
-                            >
-                              <td className="px-2 py-2.5">
-                                {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                              </td>
-                              <td className={tdCls} title={e.userId}>
-                                {e.nome ? <span className="font-medium">{e.nome}</span> : <span className="text-muted-foreground">id: {e.userId.slice(0, 10)}...</span>}
-                              </td>
-                              <td className={tdCls}>{e.tipo || <span className="text-muted-foreground">-</span>}</td>
-                              <td className={tdCls}>{e.curso || <span className="text-muted-foreground">-</span>}</td>
-                              <td className={tdCls}>{e.serieOuSemestre || <span className="text-muted-foreground">-</span>}</td>
-                              <td className={tdCls}>{e.turma || <span className="text-muted-foreground">-</span>}</td>
-                              <td className={tdCls}>
-                                <MiniProgress pct={Math.round((e.completedCount / TOTAL_LESSONS) * 100)} label={`${e.completedCount}/${TOTAL_LESSONS}`} />
-                              </td>
-                              <td className={tdCls}><MiniProgress pct={m1.pct} label={`${m1.completed}/${m1.total}`} /></td>
-                              <td className={tdCls}><MiniProgress pct={m2.pct} label={`${m2.completed}/${m2.total}`} /></td>
-                              <td className={tdCls}><MiniProgress pct={m3.pct} label={`${m3.completed}/${m3.total}`} /></td>
-                              <td className={tdCls}>
-                                {avg >= 0 ? <span className={`font-medium ${scoreColor(avg)}`}>{avg}%</span> : <span className="text-muted-foreground">-</span>}
-                              </td>
-                              <td className={tdCls}>{Object.keys(e.quizResults).length}</td>
-                            </tr>
-                            {expanded && (
-                              <tr>
-                                <td colSpan={12} className="p-0">
-                                  <StudentDetail entry={e} getToken={() => user!.getIdToken(true)} />
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ===== Provas Online ===== */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-primary" />
-                <h2 className="font-semibold">Provas Online</h2>
-              </div>
-              <div className="p-4">
-                <AdminExams getToken={() => user!.getIdToken(true)} />
-              </div>
-            </div>
-
-            {/* ===== Quiz Analytics ===== */}
-            <QuizAnalyticsSection entries={entries} />
-
-            {/* ===== Exercise Analytics ===== */}
-            <ExerciseAnalyticsSection activities={activities} />
-
-            {/* ===== Feedback Analytics ===== */}
-            <FeedbackSection summary={feedbackSummary} />
-
-            {/* ===== Activity Timeline ===== */}
-            <ActivityTimeline activities={activities} />
-
-            {/* ===== Danger Zone: Reset ===== */}
-            <div className="rounded-xl border-2 border-destructive/40 bg-destructive/5 overflow-hidden">
-              <div className="px-4 py-3 border-b border-destructive/20 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-                <h2 className="font-semibold text-destructive text-sm">Zona de Perigo</h2>
-              </div>
-              <div className="p-4 space-y-3">
-                <div>
-                  <p className="text-sm font-medium">Resetar todos os dados dos alunos</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Remove XP, aulas concluídas, resultados de quiz e histórico de atividades de todos os alunos.
-                    Perfis e feedbacks são mantidos. Esta ação não pode ser desfeita.
-                  </p>
-                </div>
-                {resetDone && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    Reset concluído — {resetDone.deletedProgress} progresso(s) e {resetDone.deletedActivities} atividade(s) removidos.
-                    Os alunos verão os dados zerados na próxima vez que acessarem o site.
-                  </div>
-                )}
-                {!resetConfirm ? (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => { setResetConfirm(true); setResetDone(null); }}
-                  >
-                    Resetar Dados dos Alunos
+                  {/* Filter Tipo */}
+                  {tipos.length > 0 && (
+                    <select
+                      value={filterTipo}
+                      onChange={(e) => setFilterTipo(e.target.value)}
+                      className="text-xs rounded-md border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    >
+                      <option value="">Todos os tipos</option>
+                      {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  )}
+                  {/* Actions */}
+                  <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => loadHistory()}>
+                    <RefreshCw className="h-3 w-3" /> Atualizar
                   </Button>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/40 bg-destructive/10">
-                    <p className="text-sm font-medium text-destructive flex-1">Tem certeza? Esta ação é irreversível.</p>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleReset}
-                      disabled={resetting}
-                    >
-                      {resetting ? 'Resetando...' : 'Confirmar Reset'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setResetConfirm(false)}
-                      disabled={resetting}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                )}
+                  <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => exportToCsv(filtered)}>
+                    <Download className="h-3 w-3" /> CSV
+                  </Button>
+                </div>
+
+                <p className="px-4 py-1.5 text-[10px] text-muted-foreground border-b border-border/50">
+                  Clique no nome do aluno para expandir detalhes. Clique nos cabecalhos para ordenar. {filtered.length !== entries.length && <span className="font-medium">Mostrando {filtered.length} de {entries.length} alunos.</span>}
+                </p>
+
+                {/* Table */}
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10 bg-card">
+                      <tr className="border-b border-border bg-muted/20">
+                        <th className="w-6 px-2" />
+                        <ThSort label="Nome" sortKey="nome" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Tipo" sortKey="tipo" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Curso" sortKey="curso" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Serie" sortKey="serie" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Turma" sortKey="turma" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Total" sortKey="completed" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="M1" sortKey="m1" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Fundamentos" />
+                        <ThSort label="M2" sortKey="m2" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="Intermediario" />
+                        <ThSort label="M3" sortKey="m3" currentKey={sortKey} dir={sortDir} onClick={handleSort} title="POO" />
+                        <ThSort label="Quiz Avg" sortKey="quizAvg" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                        <ThSort label="Quizzes" sortKey="quizzes" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.length === 0 ? (
+                        <tr>
+                          <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
+                            {entries.length === 0 ? 'Nenhum dado de estudo ainda.' : 'Nenhum aluno encontrado com esse filtro.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        sorted.map((e) => {
+                          const expanded = expandedUserId === e.userId;
+                          const m1 = getModuleProgress(e, 1);
+                          const m2 = getModuleProgress(e, 2);
+                          const m3 = getModuleProgress(e, 3);
+                          const avg = getAvgQuizScore(e);
+                          return (
+                            <Fragment key={e.userId}>
+                              <tr
+                                className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${expanded ? 'bg-muted/20' : ''}`}
+                                onClick={() => setExpandedUserId(expanded ? null : e.userId)}
+                              >
+                                <td className="px-2 py-2.5">
+                                  {expanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                                </td>
+                                <td className={tdCls} title={e.userId}>
+                                  {e.nome ? <span className="font-medium">{e.nome}</span> : <span className="text-muted-foreground">id: {e.userId.slice(0, 10)}...</span>}
+                                </td>
+                                <td className={tdCls}>{e.tipo || <span className="text-muted-foreground">-</span>}</td>
+                                <td className={tdCls}>{e.curso || <span className="text-muted-foreground">-</span>}</td>
+                                <td className={tdCls}>{e.serieOuSemestre || <span className="text-muted-foreground">-</span>}</td>
+                                <td className={tdCls}>{e.turma || <span className="text-muted-foreground">-</span>}</td>
+                                <td className={tdCls}>
+                                  <MiniProgress pct={Math.round((e.completedCount / TOTAL_LESSONS) * 100)} label={`${e.completedCount}/${TOTAL_LESSONS}`} />
+                                </td>
+                                <td className={tdCls}><MiniProgress pct={m1.pct} label={`${m1.completed}/${m1.total}`} /></td>
+                                <td className={tdCls}><MiniProgress pct={m2.pct} label={`${m2.completed}/${m2.total}`} /></td>
+                                <td className={tdCls}><MiniProgress pct={m3.pct} label={`${m3.completed}/${m3.total}`} /></td>
+                                <td className={tdCls}>
+                                  {avg >= 0 ? <span className={`font-medium ${scoreColor(avg)}`}>{avg}%</span> : <span className="text-muted-foreground">-</span>}
+                                </td>
+                                <td className={tdCls}>{Object.keys(e.quizResults).length}</td>
+                              </tr>
+                              {expanded && (
+                                <tr>
+                                  <td colSpan={12} className="p-0">
+                                    <StudentDetail entry={e} getToken={() => user!.getIdToken(true)} />
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ===== TAB: Desempenho ===== */}
+            {activeTab === 'desempenho' && (
+              <>
+                <QuizAnalyticsSection entries={entries} />
+                <ExerciseAnalyticsSection activities={activities} />
+                <FeedbackSection summary={feedbackSummary} />
+              </>
+            )}
+
+            {/* ===== TAB: Provas ===== */}
+            {activeTab === 'provas' && (
+              <>
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4 text-primary" />
+                    <h2 className="font-semibold">Provas Online</h2>
+                  </div>
+                  <div className="p-4">
+                    <AdminExams getToken={() => user!.getIdToken(true)} />
+                  </div>
+                </div>
+
+                {/* Danger Zone: Reset */}
+                <div className="rounded-xl border-2 border-destructive/40 bg-destructive/5 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-destructive/20 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <h2 className="font-semibold text-destructive text-sm">Zona de Perigo</h2>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">Resetar todos os dados dos alunos</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Remove XP, aulas concluídas, resultados de quiz e histórico de atividades de todos os alunos.
+                        Perfis e feedbacks são mantidos. Esta ação não pode ser desfeita.
+                      </p>
+                    </div>
+                    {resetDone && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-sm text-green-700 dark:text-green-400">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        Reset concluído — {resetDone.deletedProgress} progresso(s) e {resetDone.deletedActivities} atividade(s) removidos.
+                        Os alunos verão os dados zerados na próxima vez que acessarem o site.
+                      </div>
+                    )}
+                    {!resetConfirm ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => { setResetConfirm(true); setResetDone(null); }}
+                      >
+                        Resetar Dados dos Alunos
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-destructive/40 bg-destructive/10">
+                        <p className="text-sm font-medium text-destructive flex-1">Tem certeza? Esta ação é irreversível.</p>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleReset}
+                          disabled={resetting}
+                        >
+                          {resetting ? 'Resetando...' : 'Confirmar Reset'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setResetConfirm(false)}
+                          disabled={resetting}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
       </main>
