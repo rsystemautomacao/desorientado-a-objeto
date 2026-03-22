@@ -51,6 +51,8 @@ interface StudentResult {
   userEmail: string;
   tabSwitches?: number;
   lastTabSwitch?: string;
+  cheatAttempts?: number;
+  cheatEvents?: { type: string; timestamp: string }[];
   submissions: {
     exerciseIndex: number;
     code: string;
@@ -944,6 +946,15 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
                   }`}>
                     <EyeOff className="h-3 w-3" />
                     {student.tabSwitches} saida{(student.tabSwitches ?? 0) !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {/* Cheat attempts indicator */}
+                {(student.cheatAttempts ?? 0) > 0 && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 bg-red-500/20 text-red-400 border border-red-500/30"
+                    title={(student.cheatEvents ?? []).map(e => `${e.type} - ${new Date(e.timestamp).toLocaleTimeString('pt-BR')}`).join('\n')}
+                  >
+                    <Lock className="h-3 w-3" />
+                    {student.cheatAttempts} cola{(student.cheatAttempts ?? 0) !== 1 ? 's' : ''}
                   </span>
                 )}
                 <div className="flex gap-1">

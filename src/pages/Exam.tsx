@@ -154,12 +154,14 @@ function ExamExerciseEditor({
   examId,
   maxSubmissions,
   getToken,
+  onCheatAttempt,
 }: {
   exercise: ExamExercise;
   exerciseIndex: number;
   examId: string;
   maxSubmissions: number;
   getToken: () => Promise<string>;
+  onCheatAttempt: (type: 'paste' | 'copy' | 'contextmenu' | 'injection') => void;
 }) {
   const [code, setCode] = useState(exercise.starterCode);
   const [running, setRunning] = useState(false);
@@ -195,29 +197,40 @@ function ExamExerciseEditor({
     e.preventDefault();
     setPasteWarning(true);
     setTimeout(() => setPasteWarning(false), 3000);
-  }, []);
+    onCheatAttempt('paste');
+  }, [onCheatAttempt]);
+  // Block copy (Ctrl+C) — prevent copying code to share
+  const handleCopy = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    setPasteWarning(true);
+    setTimeout(() => setPasteWarning(false), 3000);
+    onCheatAttempt('copy');
+  }, [onCheatAttempt]);
   // Block drag-and-drop
-  const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); }, []);
-  // Block right-click context menu (prevents "Paste" option)
-  const handleContextMenu = useCallback((e: React.MouseEvent) => { e.preventDefault(); }, []);
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    onCheatAttempt('paste');
+  }, [onCheatAttempt]);
+  // Block right-click context menu (prevents "Paste"/"Copy" option)
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onCheatAttempt('contextmenu');
+  }, [onCheatAttempt]);
 
   // Anti-cheat: detect large insertions via DevTools/extensions
-  // Normal typing adds 1-2 chars. If >10 chars appear in a single onChange
-  // between keystrokes, it's likely injected code (console, extension, etc.)
   const safeSetCode = useCallback((newValue: string, fromKeyboard: boolean) => {
     if (!fromKeyboard) {
-      // Called from onChange — check for suspicious bulk insertion
       const diff = Math.abs(newValue.length - code.length);
       const timeSinceLastKey = Date.now() - lastKeystrokeRef.current;
-      // More than 20 chars appeared and no recent keystroke → likely injected
       if (diff > 20 && timeSinceLastKey > 100) {
         setPasteWarning(true);
         setTimeout(() => setPasteWarning(false), 3000);
-        return; // reject the change
+        onCheatAttempt('injection');
+        return;
       }
     }
     setCode(newValue);
-  }, [code]);
+  }, [code, onCheatAttempt]);
 
   // Track real keystrokes
   const handleKeyDownWrapper = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -502,6 +515,8 @@ function ExamExerciseEditor({
             onChange={(e) => { safeSetCode(e.target.value, false); updateActiveLine(); }}
             onKeyDown={handleKeyDownWrapper}
             onPaste={handlePaste}
+            onCopy={handleCopy}
+            onCut={handleCopy}
             onDrop={handleDrop}
             onContextMenu={handleContextMenu}
             onClick={updateActiveLine}
@@ -516,11 +531,11 @@ function ExamExerciseEditor({
         </div>
       </div>
 
-      {/* Paste/injection warning */}
+      {/* Paste/copy/injection warning */}
       {pasteWarning && (
         <div className="mx-3 mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive flex items-center gap-2 animate-pulse">
           <Lock className="h-4 w-4" />
-          Colar codigo nao e permitido durante a prova. Digite o codigo manualmente.
+          Copiar, colar ou injetar codigo nao e permitido. Essa tentativa foi registrada.
         </div>
       )}
 
@@ -589,39 +604,64 @@ function ExamExerciseEditor({
   );
 }
 
-// ── Tab Switch Detection Banner ─────────────────────────────────────
-function TabSwitchBanner({ count, showWarning }: { count: number; showWarning: boolean }) {
-  if (count === 0 && !showWarning) return null;
+// ── Anti-cheat Banner ────────────────────────────────────────────────
+function AntiCheatBanner({
+  tabSwitches, showTabWarning,
+  cheatAttempts, showCheatWarning, lastCheatType,
+}: {
+  tabSwitches: number; showTabWarning: boolean;
+  cheatAttempts: number; showCheatWarning: boolean; lastCheatType: string;
+}) {
+  if (tabSwitches === 0 && cheatAttempts === 0 && !showTabWarning && !showCheatWarning) return null;
+
+  const totalIssues = tabSwitches + cheatAttempts;
+  const isSevere = totalIssues >= 3;
 
   return (
     <div className={`rounded-xl border overflow-hidden mb-6 transition-all ${
-      count >= 3 ? 'border-destructive bg-destructive/10' : 'border-yellow-500/50 bg-yellow-500/10'
+      isSevere ? 'border-destructive bg-destructive/10' : 'border-yellow-500/50 bg-yellow-500/10'
     }`}>
-      {/* Persistent counter */}
-      {count > 0 && (
-        <div className={`px-4 py-2 flex items-center gap-2 text-sm ${
-          count >= 3 ? 'text-destructive' : 'text-yellow-500'
+      {/* Persistent counters */}
+      {(tabSwitches > 0 || cheatAttempts > 0) && (
+        <div className={`px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${
+          isSevere ? 'text-destructive' : 'text-yellow-500'
         }`}>
-          <EyeOff className="h-4 w-4 shrink-0" />
-          <span>
-            Voce saiu da pagina <strong>{count} vez{count !== 1 ? 'es' : ''}</strong>.
-            {count >= 3
-              ? ' Esse comportamento sera reportado ao professor.'
-              : ' Sair da pagina durante a prova e considerado tentativa de cola.'
-            }
+          {tabSwitches > 0 && (
+            <span className="flex items-center gap-1.5">
+              <EyeOff className="h-4 w-4 shrink-0" />
+              Saidas da aba: <strong>{tabSwitches}</strong>
+            </span>
+          )}
+          {cheatAttempts > 0 && (
+            <span className="flex items-center gap-1.5">
+              <Lock className="h-4 w-4 shrink-0" />
+              Tentativas de cola: <strong>{cheatAttempts}</strong>
+            </span>
+          )}
+          <span className="text-xs opacity-70">
+            {isSevere ? 'Comportamento reportado ao professor.' : 'Todas as tentativas sao registradas.'}
           </span>
         </div>
       )}
 
-      {/* Flash warning (shows for 4 seconds when they come back) */}
-      {showWarning && (
+      {/* Flash warning: tab switch */}
+      {showTabWarning && (
         <div className="px-4 py-3 border-t border-yellow-500/30 bg-yellow-500/20 flex items-center gap-3 animate-pulse">
           <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0" />
           <div>
             <div className="font-semibold text-yellow-300 text-sm">Saida da pagina detectada!</div>
-            <div className="text-xs text-yellow-400/80">
-              O professor sera notificado. Permaneca nesta aba durante toda a prova.
-            </div>
+            <div className="text-xs text-yellow-400/80">Permaneca nesta aba durante toda a prova.</div>
+          </div>
+        </div>
+      )}
+
+      {/* Flash warning: cheat attempt */}
+      {showCheatWarning && !showTabWarning && (
+        <div className="px-4 py-3 border-t border-red-500/30 bg-red-500/20 flex items-center gap-3 animate-pulse">
+          <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
+          <div>
+            <div className="font-semibold text-red-300 text-sm">{lastCheatType}!</div>
+            <div className="text-xs text-red-400/80">Esta acao foi registrada e sera reportada ao professor.</div>
           </div>
         </div>
       )}
@@ -641,6 +681,44 @@ export default function Exam() {
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [showTabWarning, setShowTabWarning] = useState(false);
   const tabSwitchCountRef = useRef(0);
+
+  // ── Cheat attempt tracking (paste, copy, context menu, injection) ──
+  const [cheatAttempts, setCheatAttempts] = useState(0);
+  const [showCheatWarning, setShowCheatWarning] = useState(false);
+  const [lastCheatType, setLastCheatType] = useState('');
+  const cheatAttemptsRef = useRef(0);
+
+  const CHEAT_LABELS: Record<string, string> = {
+    paste: 'Tentativa de colar',
+    copy: 'Tentativa de copiar',
+    contextmenu: 'Menu de contexto (botao direito)',
+    injection: 'Injecao de codigo detectada',
+  };
+
+  const handleCheatAttempt = useCallback((type: 'paste' | 'copy' | 'contextmenu' | 'injection') => {
+    cheatAttemptsRef.current += 1;
+    setCheatAttempts(cheatAttemptsRef.current);
+    setLastCheatType(CHEAT_LABELS[type] || type);
+    setShowCheatWarning(true);
+    setTimeout(() => setShowCheatWarning(false), 4000);
+
+    // Report to server
+    if (user && examData) {
+      user.getIdToken().then((token) => {
+        fetch(`${getApiBase()}/api/exams`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'cheat-attempt',
+            examId: examData.examId,
+            type,
+            count: cheatAttemptsRef.current,
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+  }, [user, examData]);
 
   useEffect(() => {
     if (!examData || !user) return; // only track when exam is active
@@ -824,8 +902,11 @@ export default function Exam() {
   return (
     <Layout>
       <div className="container max-w-4xl py-8">
-        {/* Tab switch warning banner */}
-        <TabSwitchBanner count={tabSwitchCount} showWarning={showTabWarning} />
+        {/* Anti-cheat warning banner */}
+        <AntiCheatBanner
+          tabSwitches={tabSwitchCount} showTabWarning={showTabWarning}
+          cheatAttempts={cheatAttempts} showCheatWarning={showCheatWarning} lastCheatType={lastCheatType}
+        />
 
         {/* Exam header */}
         <div className="mb-6">
@@ -856,6 +937,7 @@ export default function Exam() {
               examId={examData.examId}
               maxSubmissions={examData.maxSubmissions}
               getToken={getToken}
+              onCheatAttempt={handleCheatAttempt}
             />
           ))}
         </div>

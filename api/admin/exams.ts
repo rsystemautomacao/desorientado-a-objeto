@@ -142,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // If ?results=examId, return submissions grouped by student + tab-switch data
       const resultsFor = req.query.results;
       if (typeof resultsFor === 'string' && resultsFor.length >= 10) {
-        const [submissions, tabSwitches] = await Promise.all([
+        const [submissions, tabSwitches, cheatAttempts] = await Promise.all([
           client.db(DB_NAME)
             .collection('exam_submissions')
             .find({ examId: resultsFor })
@@ -150,6 +150,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .toArray(),
           client.db(DB_NAME)
             .collection('exam_tab_switches')
+            .find({ examId: resultsFor })
+            .toArray(),
+          client.db(DB_NAME)
+            .collection('exam_cheat_attempts')
             .find({ examId: resultsFor })
             .toArray(),
         ]);
@@ -163,9 +167,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           };
         }
 
+        // Build cheat-attempt lookup: userId → { total, events }
+        const cheatMap: Record<string, { total: number; events: Array<{ type: string; timestamp: string }> }> = {};
+        for (const ca of cheatAttempts) {
+          cheatMap[ca.userId as string] = {
+            total: (ca.totalAttempts as number) || 0,
+            events: (ca.events as Array<{ type: string; timestamp: string }>) || [],
+          };
+        }
+
         const byStudent: Record<string, {
           userId: string; userName: string; userEmail: string;
           tabSwitches: number; lastTabSwitch: string;
+          cheatAttempts: number; cheatEvents: Array<{ type: string; timestamp: string }>;
           submissions: Array<{ exerciseIndex: number; code: string; passedTests: number; totalTests: number; allPassed: boolean; attemptNumber: number; submittedAt: string }>;
         }> = {};
 
@@ -173,9 +187,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const uid = sub.userId as string;
           if (!byStudent[uid]) {
             const tsData = tabSwitchMap[uid];
+            const caData = cheatMap[uid];
             byStudent[uid] = {
               userId: uid, userName: sub.userName as string, userEmail: sub.userEmail as string,
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
+              cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
               submissions: [],
             };
           }
@@ -190,13 +206,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
 
-        // Also include students who only have tab-switches but no submissions
+        // Also include students who only have tab-switches or cheat attempts but no submissions
         for (const ts of tabSwitches) {
           const uid = ts.userId as string;
           if (!byStudent[uid]) {
+            const caData = cheatMap[uid];
             byStudent[uid] = {
               userId: uid, userName: (ts.userEmail as string) || uid, userEmail: (ts.userEmail as string) || '',
               tabSwitches: (ts.totalSwitches as number) || 0, lastTabSwitch: (ts.lastSwitchAt as string) || '',
+              cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
+              submissions: [],
+            };
+          }
+        }
+        for (const ca of cheatAttempts) {
+          const uid = ca.userId as string;
+          if (!byStudent[uid]) {
+            const tsData = tabSwitchMap[uid];
+            byStudent[uid] = {
+              userId: uid, userName: (ca.userEmail as string) || uid, userEmail: (ca.userEmail as string) || '',
+              tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
+              cheatAttempts: (ca.totalAttempts as number) || 0, cheatEvents: (ca.events as Array<{ type: string; timestamp: string }>) || [],
               submissions: [],
             };
           }
@@ -390,6 +420,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Also clean up submissions
         await client.db(DB_NAME).collection('exam_submissions').deleteMany({ examId: id });
         await client.db(DB_NAME).collection('exam_tab_switches').deleteMany({ examId: id });
+        await client.db(DB_NAME).collection('exam_cheat_attempts').deleteMany({ examId: id });
         return res.status(200).json({ ok: true });
       } catch {
         return res.status(400).json({ error: 'Invalid id' });

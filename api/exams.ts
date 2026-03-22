@@ -257,7 +257,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true, count });
     }
 
-    return res.status(400).json({ error: 'Invalid action. Use "access", "submit", or "tab-switch".' });
+    // ── ACTION: cheat-attempt — record paste/copy/contextmenu/injection ──
+    if (action === 'cheat-attempt') {
+      const examId = typeof body.examId === 'string' ? body.examId : '';
+      const type = typeof body.type === 'string' ? body.type : 'unknown';
+      const count = typeof body.count === 'number' ? body.count : 1;
+      const timestamp = typeof body.timestamp === 'string' ? body.timestamp : new Date().toISOString();
+
+      if (!examId) return res.status(400).json({ error: 'examId is required' });
+
+      await db.collection('exam_cheat_attempts').updateOne(
+        { examId, userId: user.uid },
+        {
+          $set: {
+            examId,
+            userId: user.uid,
+            userEmail: user.email,
+            totalAttempts: count,
+            updatedAt: new Date().toISOString(),
+          },
+          $push: {
+            events: { type, count, timestamp },
+          } as Record<string, unknown>,
+          $setOnInsert: {
+            createdAt: new Date().toISOString(),
+          },
+        },
+        { upsert: true }
+      );
+
+      return res.status(200).json({ ok: true, count });
+    }
+
+    return res.status(400).json({ error: 'Invalid action' });
   } catch (err) {
     console.error('Exams API error:', err);
     return res.status(500).json({ error: 'Internal server error' });
