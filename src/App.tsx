@@ -23,6 +23,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Exercises = lazy(() => import("./pages/Exercises"));
 const ExerciseDetail = lazy(() => import("./pages/ExerciseDetail"));
+const Exam = lazy(() => import("./pages/Exam"));
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/entrevistas" element={<Interview />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/prova" element={<Exam />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

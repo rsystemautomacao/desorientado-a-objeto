@@ -50,6 +50,7 @@ import {
   MessageSquare,
   Code2,
 } from 'lucide-react';
+import AdminExams from '@/components/AdminExams';
 
 const ADMIN_EMAIL = 'rsautomacao2000@gmail.com';
 const DEFAULT_ADMIN_KEY = 'desorientado-admin';
@@ -1339,6 +1340,17 @@ export default function Admin() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            {/* ===== Provas Online ===== */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                <h2 className="font-semibold">Provas Online</h2>
+              </div>
+              <div className="p-4">
+                <AdminExams getToken={() => user!.getIdToken(true)} />
               </div>
             </div>
 
