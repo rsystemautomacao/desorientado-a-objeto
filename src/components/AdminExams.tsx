@@ -20,6 +20,7 @@ interface ExamExercise {
   type: QuestionType;
   title: string;
   description: string;
+  points?: number;            // point value for this question
   // Code exercise fields
   starterCode: string;
   testCases: TestCase[];
@@ -63,6 +64,7 @@ interface Exam {
   gradesReleased: boolean;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  scoringMode: 'equal' | 'code-weighted' | 'manual';
   createdAt: string;
   updatedAt: string;
 }
@@ -389,6 +391,23 @@ function ImportQuestionsModal({
   );
 }
 
+// Helper: calculate point values based on scoring mode
+function calcPointsPreview(exercises: ExamExercise[], mode: 'equal' | 'code-weighted' | 'manual'): number[] {
+  const n = exercises.length;
+  if (n === 0) return [];
+  if (mode === 'manual') {
+    return exercises.map((ex) => ex.points ?? 0);
+  }
+  if (mode === 'equal') {
+    const each = Math.round((10 / n) * 100) / 100;
+    return exercises.map(() => each);
+  }
+  // code-weighted: code questions get 2x weight
+  const weights = exercises.map((ex) => (ex.type || 'code') === 'code' ? 2 : 1);
+  const totalWeight = weights.reduce((s, w) => s + w, 0);
+  return weights.map((w) => Math.round((w / totalWeight) * 10 * 100) / 100);
+}
+
 // ── Exam Form Component ──────────────────────────────────────────────
 function ExamForm({
   initial,
@@ -398,7 +417,7 @@ function ExamForm({
   bankQuestions,
 }: {
   initial?: Exam;
-  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => void;
+  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => void;
   onCancel: () => void;
   saving: boolean;
   bankQuestions: BankQuestion[];
@@ -408,6 +427,7 @@ function ExamForm({
   const [maxSubmissions, setMaxSubmissions] = useState(initial?.maxSubmissions ?? 3);
   const [shuffleQuestions, setShuffleQuestions] = useState(initial?.shuffleQuestions ?? false);
   const [shuffleOptions, setShuffleOptions] = useState(initial?.shuffleOptions ?? false);
+  const [scoringMode, setScoringMode] = useState<'equal' | 'code-weighted' | 'manual'>(initial?.scoringMode ?? 'equal');
   const [exercises, setExercises] = useState<ExamExercise[]>(
     initial?.exercises ?? [{
       type: 'code',
@@ -587,6 +607,62 @@ function ExamForm({
         </p>
       </div>
 
+      {/* Scoring / Points */}
+      <div className="rounded-lg border border-border bg-muted/20 p-4">
+        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" />
+          Pontuacao (nota de 0 a 10)
+        </h4>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="scoringMode" checked={scoringMode === 'equal'} onChange={() => setScoringMode('equal')} className="accent-primary" />
+              <span className="text-sm">Dividir igualmente entre as questoes</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="scoringMode" checked={scoringMode === 'code-weighted'} onChange={() => setScoringMode('code-weighted')} className="accent-primary" />
+              <span className="text-sm">Codigo vale mais (peso 2x)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="scoringMode" checked={scoringMode === 'manual'} onChange={() => setScoringMode('manual')} className="accent-primary" />
+              <span className="text-sm">Definir valor manualmente</span>
+            </label>
+          </div>
+
+          {/* Show point summary */}
+          {exercises.length > 0 && (() => {
+            const pts = calcPointsPreview(exercises, scoringMode);
+            const total = pts.reduce((s, p) => s + p, 0);
+            return (
+              <div className="rounded-lg border border-border bg-background/50 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold">Distribuicao de pontos</span>
+                  <span className={`text-xs font-bold ${Math.abs(total - 10) < 0.01 ? 'text-green-400' : 'text-red-400'}`}>
+                    Total: {total.toFixed(2)} / 10
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {exercises.map((ex, i) => {
+                    const qType = ex.type || 'code';
+                    const p = scoringMode === 'manual' ? (ex.points ?? pts[i]) : pts[i];
+                    return (
+                      <span key={i} className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                        qType === 'code' ? 'bg-blue-500/15 text-blue-400' :
+                        qType === 'multiple-choice' ? 'bg-purple-500/15 text-purple-400' :
+                        qType === 'true-false' ? 'bg-green-500/15 text-green-400' :
+                        'bg-yellow-500/15 text-yellow-400'
+                      }`}>
+                        Q{i+1}: {p.toFixed(2)}pt
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
       {/* Exercises / Questions */}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -624,6 +700,24 @@ function ExamForm({
                     qType === 'true-false' ? 'bg-green-500/20 text-green-400' :
                     'bg-yellow-500/20 text-yellow-400'
                   }`}>{QUESTION_TYPE_LABELS[qType]}</span>
+                  {scoringMode === 'manual' ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="10"
+                        value={ex.points ?? 0}
+                        onChange={(e) => updateExercise(exIdx, 'points', Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-16 px-1.5 py-0.5 rounded border border-border bg-background text-xs text-center focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <span className="text-[10px] text-muted-foreground">pts</span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                      {calcPointsPreview(exercises, scoringMode)[exIdx]?.toFixed(2)}pt
+                    </span>
+                  )}
                 </div>
                 {exercises.length > 1 && (
                   <Button variant="ghost" size="sm" onClick={() => removeExercise(exIdx)} className="text-destructive h-7">
@@ -893,7 +987,11 @@ function ExamForm({
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button onClick={() => onSave({ title, description, exercises, maxSubmissions, shuffleQuestions, shuffleOptions })} disabled={saving || !title.trim()}>
+        <Button onClick={() => {
+          const pts = calcPointsPreview(exercises, scoringMode);
+          const finalExercises = exercises.map((ex, i) => ({ ...ex, points: scoringMode === 'manual' ? (ex.points ?? 0) : pts[i] }));
+          onSave({ title, description, exercises: finalExercises, maxSubmissions, shuffleQuestions, shuffleOptions, scoringMode });
+        }} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           {initial ? 'Salvar alteracoes' : 'Criar prova'}
         </Button>
@@ -1523,14 +1621,19 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   const calcGrade = (student: StudentResult): number => {
     const totalQuestions = exam.exercises.length;
     if (totalQuestions === 0) return 0;
-    let correct = 0;
+    let earned = 0;
+    let totalPoints = 0;
     for (let i = 0; i < totalQuestions; i++) {
+      const pts = exam.exercises[i]?.points ?? (10 / totalQuestions);
+      totalPoints += pts;
       const bestSub = student.submissions
         .filter((s) => s.exerciseIndex === i)
         .sort((a, b) => b.passedTests - a.passedTests)[0];
-      if (bestSub?.allPassed) correct++;
+      if (bestSub?.allPassed) earned += pts;
     }
-    return Math.round((correct / totalQuestions) * 10 * 100) / 100;
+    if (totalPoints === 0) return 0;
+    // Normalize to 0-10 scale
+    return Math.round((earned / totalPoints) * 10 * 100) / 100;
   };
 
   const handleToggleGrades = async () => {
@@ -1550,20 +1653,25 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
 
   const exportToExcel = () => {
     // Generate CSV (Excel-compatible) with BOM for UTF-8
-    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Acertos', 'Total Questoes', 'Saidas da aba', 'Tentativas de cola']];
+    const totalPts = exam.exercises.reduce((s, ex, i) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
+    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Saidas da aba', 'Tentativas de cola']];
     for (const student of results) {
       const grade = calcGrade(student);
       let correct = 0;
+      let earned = 0;
       for (let i = 0; i < exam.exercises.length; i++) {
+        const pts = exam.exercises[i]?.points ?? (10 / exam.exercises.length);
         const bestSub = student.submissions
           .filter((s) => s.exerciseIndex === i)
           .sort((a, b) => b.passedTests - a.passedTests)[0];
-        if (bestSub?.allPassed) correct++;
+        if (bestSub?.allPassed) { correct++; earned += pts; }
       }
       rows.push([
         student.userName || student.userEmail,
         student.userEmail,
         grade.toFixed(2).replace('.', ','),
+        earned.toFixed(2).replace('.', ','),
+        totalPts.toFixed(2).replace('.', ','),
         String(correct),
         String(exam.exercises.length),
         String(student.tabSwitches ?? 0),
@@ -1755,7 +1863,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
 
-  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => {
+  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => {
     setSaving(true);
     try {
       const token = await getToken();
@@ -1769,7 +1877,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
     setSaving(false);
   };
 
-  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => {
+  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => {
     if (!selectedExam) return;
     setSaving(true);
     try {
@@ -1819,6 +1927,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
           maxSubmissions: exam.maxSubmissions,
           shuffleQuestions: exam.shuffleQuestions,
           shuffleOptions: exam.shuffleOptions,
+          scoringMode: exam.scoringMode,
         }),
       });
       if (resp.ok) await fetchExams();

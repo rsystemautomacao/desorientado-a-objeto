@@ -838,7 +838,7 @@ export default function Exam() {
   const [finalized, setFinalized] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
-  const [gradeData, setGradeData] = useState<{ grade: number; correct: number; total: number; examTitle: string } | null>(null);
+  const [gradeData, setGradeData] = useState<{ grade: number; earned?: number; totalPoints?: number; correct: number; total: number; examTitle: string } | null>(null);
   const [gradeError, setGradeError] = useState('');
   const [finalizedExamId, setFinalizedExamId] = useState('');
 
@@ -1082,6 +1082,11 @@ export default function Exam() {
               </div>
               <p className="text-sm text-muted-foreground">
                 {gradeData.correct}/{gradeData.total} questao(oes) corretas
+                {gradeData.earned !== undefined && gradeData.totalPoints !== undefined && (
+                  <span className="block mt-1 text-xs">
+                    {gradeData.earned.toFixed(2)} / {gradeData.totalPoints.toFixed(2)} pontos
+                  </span>
+                )}
               </p>
             </div>
           ) : finalizedExamId ? (

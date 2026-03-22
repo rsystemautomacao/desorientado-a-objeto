@@ -95,6 +95,7 @@ export interface ExamExercise {
   snippetBefore?: string;
   snippetAfter?: string;
   explanation?: string;
+  points?: number;              // point value for this question
 }
 
 export interface ExamDoc {
@@ -107,6 +108,7 @@ export interface ExamDoc {
   gradesReleased: boolean;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
+  scoringMode: string;         // 'equal' | 'code-weighted' | 'manual'
   createdAt: string;
   updatedAt: string;
 }
@@ -265,6 +267,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gradesReleased: d.gradesReleased ?? false,
         shuffleQuestions: d.shuffleQuestions ?? false,
         shuffleOptions: d.shuffleOptions ?? false,
+        scoringMode: d.scoringMode || 'equal',
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       }));
@@ -406,6 +409,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (typeof e.snippetBefore === 'string') exDoc.snippetBefore = e.snippetBefore;
           if (typeof e.snippetAfter === 'string') exDoc.snippetAfter = e.snippetAfter;
           if (typeof e.explanation === 'string') exDoc.explanation = e.explanation;
+          if (typeof e.points === 'number') exDoc.points = Math.max(0, e.points);
           exercises.push(exDoc);
         }
       }
@@ -420,6 +424,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         gradesReleased: false,
         shuffleQuestions: body.shuffleQuestions === true,
         shuffleOptions: body.shuffleOptions === true,
+        scoringMode: typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode) ? body.scoringMode : 'equal',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -440,6 +445,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.gradesReleased === 'boolean') updates.gradesReleased = body.gradesReleased;
       if (typeof body.shuffleQuestions === 'boolean') updates.shuffleQuestions = body.shuffleQuestions;
       if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
+      if (typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode)) updates.scoringMode = body.scoringMode;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
       if (Array.isArray(body.exercises)) {
         updates.exercises = (body.exercises as ExamExercise[]).map((ex) => {
@@ -460,6 +466,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (typeof ex.snippetBefore === 'string') exDoc.snippetBefore = ex.snippetBefore;
           if (typeof ex.snippetAfter === 'string') exDoc.snippetAfter = ex.snippetAfter;
           if (typeof ex.explanation === 'string') exDoc.explanation = ex.explanation;
+          if (typeof ex.points === 'number') exDoc.points = Math.max(0, ex.points);
           return exDoc;
         });
       }

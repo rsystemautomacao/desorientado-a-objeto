@@ -319,24 +319,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!exam) return res.status(404).json({ error: 'Prova nao encontrada' });
       if (!exam.gradesReleased) return res.status(403).json({ error: 'Notas ainda nao foram liberadas pelo professor.' });
 
-      // Calculate grade
-      const exercises = exam.exercises as unknown[];
+      // Calculate grade using points
+      const exercises = exam.exercises as Array<{ points?: number }>;
       const totalQuestions = exercises.length;
       const submissions = await db.collection(SUBMISSIONS_COL)
         .find({ examId, userId: user.uid })
         .toArray();
 
+      let earned = 0;
+      let totalPoints = 0;
       let correct = 0;
       for (let i = 0; i < totalQuestions; i++) {
+        const pts = exercises[i]?.points ?? (10 / Math.max(totalQuestions, 1));
+        totalPoints += pts;
         const best = submissions
           .filter((s) => s.exerciseIndex === i)
           .sort((a, b) => (b.passedTests as number) - (a.passedTests as number))[0];
-        if (best?.allPassed) correct++;
+        if (best?.allPassed) { correct++; earned += pts; }
       }
-      const grade = Math.round((correct / Math.max(totalQuestions, 1)) * 10 * 100) / 100;
+      const grade = totalPoints > 0 ? Math.round((earned / totalPoints) * 10 * 100) / 100 : 0;
 
       return res.status(200).json({
         grade,
+        earned: Math.round(earned * 100) / 100,
+        totalPoints: Math.round(totalPoints * 100) / 100,
         correct,
         total: totalQuestions,
         examTitle: exam.title,
