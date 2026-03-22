@@ -392,20 +392,26 @@ function ImportQuestionsModal({
 }
 
 // Helper: calculate point values based on scoring mode
+// Distribute 10 points across exercises, ensuring the sum is exactly 10.00
 function calcPointsPreview(exercises: ExamExercise[], mode: 'equal' | 'code-weighted' | 'manual'): number[] {
   const n = exercises.length;
   if (n === 0) return [];
   if (mode === 'manual') {
     return exercises.map((ex) => ex.points ?? 0);
   }
-  if (mode === 'equal') {
-    const each = Math.round((10 / n) * 100) / 100;
-    return exercises.map(() => each);
-  }
-  // code-weighted: code questions get 2x weight
-  const weights = exercises.map((ex) => (ex.type || 'code') === 'code' ? 2 : 1);
+
+  // Calculate raw weights
+  const weights = mode === 'equal'
+    ? exercises.map(() => 1)
+    : exercises.map((ex) => (ex.type || 'code') === 'code' ? 2 : 1);
   const totalWeight = weights.reduce((s, w) => s + w, 0);
-  return weights.map((w) => Math.round((w / totalWeight) * 10 * 100) / 100);
+
+  // Round each to 2 decimal places, then fix remainder on last item
+  const pts = weights.map((w) => Math.floor((w / totalWeight) * 10 * 100) / 100);
+  const sum = pts.reduce((s, p) => s + p, 0);
+  const diff = Math.round((10 - sum) * 100) / 100;
+  pts[n - 1] = Math.round((pts[n - 1] + diff) * 100) / 100;
+  return pts;
 }
 
 // ── Exam Form Component ──────────────────────────────────────────────
