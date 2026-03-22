@@ -97,6 +97,7 @@ export interface ExamDoc {
   accessCodes: string[];       // multiple codes, admin can regenerate
   maxSubmissions: number;      // max submissions per exercise per student
   active: boolean;
+  gradesReleased: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -245,6 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         accessCodes: d.accessCodes,
         maxSubmissions: d.maxSubmissions,
         active: d.active,
+        gradesReleased: d.gradesReleased ?? false,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       }));
@@ -372,6 +374,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         accessCodes: [generateCode()],
         maxSubmissions,
         active: true,
+        gradesReleased: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -389,6 +392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.title === 'string') updates.title = body.title.trim();
       if (typeof body.description === 'string') updates.description = body.description.trim();
       if (typeof body.active === 'boolean') updates.active = body.active;
+      if (typeof body.gradesReleased === 'boolean') updates.gradesReleased = body.gradesReleased;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
       if (Array.isArray(body.exercises)) {
         updates.exercises = (body.exercises as ExamExercise[]).map((ex) => ({

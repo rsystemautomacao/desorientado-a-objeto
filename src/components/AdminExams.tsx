@@ -52,6 +52,7 @@ interface Exam {
   accessCodes: string[];
   maxSubmissions: number;
   active: boolean;
+  gradesReleased: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -1139,11 +1140,12 @@ function QuestionEditor({
 }
 
 // ── Exam Results Viewer ──────────────────────────────────────────────
-function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; getToken: () => Promise<string> }) {
+function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: string; exam: Exam; getToken: () => Promise<string>; onGradesToggle: () => void }) {
   const [results, setResults] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [releasingGrades, setReleasingGrades] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -1161,6 +1163,67 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
     fetchResults();
   }, [examId, getToken]);
 
+  // Calculate grade for a student (0-10 scale)
+  const calcGrade = (student: StudentResult): number => {
+    const totalQuestions = exam.exercises.length;
+    if (totalQuestions === 0) return 0;
+    let correct = 0;
+    for (let i = 0; i < totalQuestions; i++) {
+      const bestSub = student.submissions
+        .filter((s) => s.exerciseIndex === i)
+        .sort((a, b) => b.passedTests - a.passedTests)[0];
+      if (bestSub?.allPassed) correct++;
+    }
+    return Math.round((correct / totalQuestions) * 10 * 100) / 100;
+  };
+
+  const handleToggleGrades = async () => {
+    setReleasingGrades(true);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/admin/exams`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: exam.id, gradesReleased: !exam.gradesReleased }),
+      });
+      onGradesToggle();
+    } catch { /* ignore */ }
+    setReleasingGrades(false);
+  };
+
+  const exportToExcel = () => {
+    // Generate CSV (Excel-compatible) with BOM for UTF-8
+    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Acertos', 'Total Questoes', 'Saidas da aba', 'Tentativas de cola']];
+    for (const student of results) {
+      const grade = calcGrade(student);
+      let correct = 0;
+      for (let i = 0; i < exam.exercises.length; i++) {
+        const bestSub = student.submissions
+          .filter((s) => s.exerciseIndex === i)
+          .sort((a, b) => b.passedTests - a.passedTests)[0];
+        if (bestSub?.allPassed) correct++;
+      }
+      rows.push([
+        student.userName || student.userEmail,
+        student.userEmail,
+        grade.toFixed(2).replace('.', ','),
+        String(correct),
+        String(exam.exercises.length),
+        String(student.tabSwitches ?? 0),
+        String(student.cheatAttempts ?? 0),
+      ]);
+    }
+    const csvContent = '\uFEFF' + rows.map((r) => r.map((c) => `"${c}"`).join(';')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notas-${exam.title.replace(/[^a-zA-Z0-9]/g, '-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div className="text-center py-4"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>;
 
   if (results.length === 0) {
@@ -1168,7 +1231,34 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Actions bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/20">
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${exam.gradesReleased ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>
+            {exam.gradesReleased ? 'Notas liberadas' : 'Notas nao liberadas'}
+          </span>
+          <span className="text-xs text-muted-foreground">{results.length} aluno(s)</span>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleGrades}
+            disabled={releasingGrades}
+            className={exam.gradesReleased ? 'border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10' : 'border-green-500/50 text-green-500 hover:bg-green-500/10'}
+          >
+            {releasingGrades ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+            {exam.gradesReleased ? 'Ocultar notas' : 'Liberar notas'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToExcel}>
+            <Download className="h-3.5 w-3.5 mr-1" /> Exportar Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Student results */}
+      <div className="space-y-2">
       {results.map((student) => {
         const isExpanded = expandedStudent === student.userId;
         const bestByExercise: Record<number, { passedTests: number; totalTests: number; allPassed: boolean; attempts: number }> = {};
@@ -1194,6 +1284,13 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
                   <div className="font-semibold text-sm">{student.userName}</div>
                   <div className="text-xs text-muted-foreground">{student.userEmail}</div>
                 </div>
+                <span className={`text-sm font-bold px-2 py-0.5 rounded ${
+                  calcGrade(student) >= 7 ? 'bg-green-500/20 text-green-400' :
+                  calcGrade(student) >= 5 ? 'bg-yellow-500/20 text-yellow-400' :
+                  'bg-red-500/20 text-red-400'
+                }`}>
+                  {calcGrade(student).toFixed(1)}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 {/* Tab switch indicator */}
@@ -1270,6 +1367,7 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -1412,7 +1510,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
           <h2 className="text-xl font-bold">Resultados: {selectedExam.title}</h2>
           <Button variant="outline" size="sm" onClick={() => { setView('list'); setSelectedExam(null); }}>Voltar</Button>
         </div>
-        <ExamResults examId={selectedExam.id} exam={selectedExam} getToken={getToken} />
+        <ExamResults examId={selectedExam.id} exam={selectedExam} getToken={getToken} onGradesToggle={async () => { await fetchExams(); setSelectedExam((prev) => prev ? { ...prev, gradesReleased: !prev.gradesReleased } : null); }} />
       </div>
     );
   }

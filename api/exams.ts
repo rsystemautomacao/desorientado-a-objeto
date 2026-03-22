@@ -133,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({
           error: 'Voce ja encerrou esta prova. Nao e possivel acessar novamente.',
           finalized: true,
+          examId,
           finalizedAt: existingSession.finalizedAt,
         });
       }
@@ -204,6 +205,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       return res.status(200).json({ ok: true, finalized: true });
+    }
+
+    // ── ACTION: grades — check released grade ──
+    if (action === 'grades') {
+      const examId = typeof body.examId === 'string' ? body.examId : '';
+      if (!examId) return res.status(400).json({ error: 'examId is required' });
+
+      let exam;
+      try {
+        exam = await db.collection(EXAMS_COL).findOne({ _id: new ObjectId(examId) });
+      } catch {
+        return res.status(400).json({ error: 'Invalid examId' });
+      }
+      if (!exam) return res.status(404).json({ error: 'Prova nao encontrada' });
+      if (!exam.gradesReleased) return res.status(403).json({ error: 'Notas ainda nao foram liberadas pelo professor.' });
+
+      // Calculate grade
+      const exercises = exam.exercises as unknown[];
+      const totalQuestions = exercises.length;
+      const submissions = await db.collection(SUBMISSIONS_COL)
+        .find({ examId, userId: user.uid })
+        .toArray();
+
+      let correct = 0;
+      for (let i = 0; i < totalQuestions; i++) {
+        const best = submissions
+          .filter((s) => s.exerciseIndex === i)
+          .sort((a, b) => (b.passedTests as number) - (a.passedTests as number))[0];
+        if (best?.allPassed) correct++;
+      }
+      const grade = Math.round((correct / Math.max(totalQuestions, 1)) * 10 * 100) / 100;
+
+      return res.status(200).json({
+        grade,
+        correct,
+        total: totalQuestions,
+        examTitle: exam.title,
+      });
     }
 
     // ── ACTION: submit — submit exercise answer ──

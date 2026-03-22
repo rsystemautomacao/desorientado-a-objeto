@@ -559,39 +559,28 @@ function ExamExerciseEditor({
         </div>
       )}
 
-      {/* Results */}
+      {/* Results — only show pass/fail count, no details */}
       {results && (
         <div className="mx-3 mb-3 rounded-lg border border-border overflow-hidden">
-          <div className={`px-4 py-3 border-b border-border flex items-center gap-3 ${allPassed ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
+          <div className={`px-4 py-3 flex items-center gap-3 ${allPassed ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
             {allPassed ? (
               <>
                 <Trophy className="h-5 w-5 text-green-400" />
-                <span className="font-semibold text-green-400">Todos os testes passaram!</span>
+                <div>
+                  <span className="font-semibold text-green-400">Todos os testes passaram!</span>
+                  <span className="block text-xs text-green-400/70">{passedCount}/{totalTests} testes</span>
+                </div>
               </>
             ) : (
               <>
                 <AlertCircle className="h-5 w-5 text-yellow-400" />
-                <span className="font-semibold text-yellow-400">{passedCount}/{totalTests} testes passaram</span>
+                <div>
+                  <span className="font-semibold text-yellow-400">{passedCount}/{totalTests} testes passaram</span>
+                  <span className="block text-xs text-yellow-400/70">Revise seu codigo e tente novamente.</span>
+                </div>
               </>
             )}
           </div>
-          {results.map((r, i) => (
-            <div key={i} className="px-4 py-2 border-b border-border last:border-0 text-xs">
-              <div className="flex items-center gap-2">
-                {r.passed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> : <XCircle className="h-3.5 w-3.5 text-red-400" />}
-                <span className="font-semibold">Teste {i + 1}</span>
-                {!r.visible && <span className="text-muted-foreground">(oculto)</span>}
-              </div>
-              {r.visible && (
-                <div className="mt-1 space-y-0.5 font-mono text-muted-foreground">
-                  <div>Entrada: {r.input || '(vazio)'}</div>
-                  <div>Esperado: {r.expected}</div>
-                  <div>Obtido: {r.actual || '(vazio)'}</div>
-                </div>
-              )}
-              {r.error && <div className="mt-1 text-destructive">{r.error}</div>}
-            </div>
-          ))}
         </div>
       )}
 
@@ -845,6 +834,9 @@ export default function Exam() {
   const [finalized, setFinalized] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
+  const [gradeData, setGradeData] = useState<{ grade: number; correct: number; total: number; examTitle: string } | null>(null);
+  const [gradeError, setGradeError] = useState('');
+  const [finalizedExamId, setFinalizedExamId] = useState('');
 
   // ── Tab-switch / focus-loss detection ──
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -971,6 +963,7 @@ export default function Exam() {
       } else if (data.finalized) {
         // Student already finalized this exam
         setFinalized(true);
+        setFinalizedExamId(data.examId || '');
         setError('');
       } else {
         setError(data.error || 'Codigo invalido');
@@ -994,6 +987,7 @@ export default function Exam() {
         body: JSON.stringify({ action: 'finalize', examId: examData.examId }),
       });
       if (resp.ok) {
+        setFinalizedExamId(examData.examId);
         setFinalized(true);
         setExamData(null);
         setShowFinalizeConfirm(false);
@@ -1035,6 +1029,28 @@ export default function Exam() {
     );
   }
 
+  // Check grade when finalized
+  const checkGrade = async () => {
+    if (!user || !finalizedExamId) return;
+    setGradeError('');
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch(`${getApiBase()}/api/exams`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'grades', examId: finalizedExamId }),
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setGradeData(data);
+      } else {
+        setGradeError(data.error || 'Nota ainda nao disponivel.');
+      }
+    } catch {
+      setGradeError('Erro de conexao.');
+    }
+  };
+
   // Exam already finalized
   if (finalized) {
     return (
@@ -1045,7 +1061,32 @@ export default function Exam() {
           <p className="text-muted-foreground mb-6">
             Sua prova foi encerrada com sucesso. Suas respostas foram registradas e enviadas ao professor.
           </p>
-          <p className="text-sm text-muted-foreground">
+
+          {/* Grade display */}
+          {gradeData ? (
+            <div className="mt-6 rounded-xl border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Sua nota</p>
+              <div className={`text-5xl font-bold mb-2 ${
+                gradeData.grade >= 7 ? 'text-green-400' : gradeData.grade >= 5 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {gradeData.grade.toFixed(1)}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {gradeData.correct}/{gradeData.total} questao(oes) corretas
+              </p>
+            </div>
+          ) : finalizedExamId ? (
+            <div className="mt-6">
+              {gradeError ? (
+                <p className="text-sm text-muted-foreground mb-3">{gradeError}</p>
+              ) : null}
+              <Button variant="outline" onClick={checkGrade}>
+                Ver nota
+              </Button>
+            </div>
+          ) : null}
+
+          <p className="text-sm text-muted-foreground mt-6">
             Nao e possivel acessar esta prova novamente.
           </p>
         </div>
