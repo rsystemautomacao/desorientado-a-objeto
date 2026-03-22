@@ -633,9 +633,7 @@ function ExamObjectiveQuestion({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submissionsUsed, setSubmissionsUsed] = useState(exercise.submissionsUsed);
-  const [submitStatus, setSubmitStatus] = useState<string | null>(null);
   const canSubmit = submissionsUsed < maxSubmissions;
-  const correct = submitted && selectedIndex === exercise.correctIndex;
 
   const handleSubmit = async () => {
     if (selectedIndex === null || !canSubmit) return;
@@ -657,16 +655,9 @@ function ExamObjectiveQuestion({
         }),
       });
       setSubmissionsUsed((s) => s + 1);
-      setSubmitStatus(isCorrect ? 'Correto!' : 'Incorreto');
     } catch {
-      setSubmitStatus('Erro ao enviar resposta');
+      // silently fail
     }
-  };
-
-  const handleRetry = () => {
-    setSelectedIndex(null);
-    setSubmitted(false);
-    setSubmitStatus(null);
   };
 
   return (
@@ -706,9 +697,7 @@ function ExamObjectiveQuestion({
           <div className="rounded-lg bg-muted/50 border border-border p-3 font-mono text-sm">
             <pre className="whitespace-pre-wrap">{exercise.snippetBefore || ''}</pre>
             <span className={`inline-block px-3 py-1 mx-1 rounded border-2 border-dashed font-semibold ${
-              submitted
-                ? correct ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-destructive bg-destructive/10 text-destructive'
-                : selectedIndex !== null ? 'border-primary bg-primary/10 text-primary' : 'border-muted-foreground text-muted-foreground'
+              selectedIndex !== null ? 'border-primary bg-primary/10 text-primary' : 'border-muted-foreground text-muted-foreground'
             }`}>
               {selectedIndex !== null ? options[selectedIndex] : '______'}
             </span>
@@ -720,11 +709,9 @@ function ExamObjectiveQuestion({
         <div className={qType === 'true-false' ? 'flex gap-3' : 'space-y-2'}>
           {options.map((opt, i) => {
             const isSelected = selectedIndex === i;
-            const isCorrectOpt = i === exercise.correctIndex;
             let cls = 'border-border hover:border-primary/50';
             if (submitted) {
-              if (isCorrectOpt) cls = 'border-green-500 bg-green-500/10';
-              else if (isSelected) cls = 'border-destructive bg-destructive/10';
+              if (isSelected) cls = 'border-primary bg-primary/10';
               else cls = 'border-border opacity-50';
             } else if (isSelected) {
               cls = 'border-primary bg-primary/10';
@@ -745,15 +732,14 @@ function ExamObjectiveQuestion({
                     </span>
                   )}
                   <span className={`text-sm ${qType === 'fill-blank' ? 'font-mono' : ''}`}>{opt}</span>
-                  {submitted && isCorrectOpt && <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto shrink-0" />}
-                  {submitted && isSelected && !isCorrectOpt && <XCircle className="h-4 w-4 text-destructive ml-auto shrink-0" />}
+                  {submitted && isSelected && <CheckCircle2 className="h-4 w-4 text-primary ml-auto shrink-0" />}
                 </div>
               </button>
             );
           })}
         </div>
 
-        {/* Submit / Retry */}
+        {/* Submit status */}
         {!submitted ? (
           <div className="flex justify-end">
             <Button
@@ -765,19 +751,11 @@ function ExamObjectiveQuestion({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between">
-            <div className={`flex items-center gap-2 text-sm font-semibold ${correct ? 'text-green-400' : 'text-destructive'}`}>
-              {correct ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
-              {submitStatus}
-              {exercise.explanation && (
-                <span className="font-normal text-muted-foreground ml-2">— {exercise.explanation}</span>
-              )}
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <CheckCircle2 className="h-5 w-5" />
+              Resposta registrada
             </div>
-            {canSubmit && (
-              <Button variant="outline" size="sm" onClick={handleRetry}>
-                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Tentar novamente
-              </Button>
-            )}
           </div>
         )}
       </div>
