@@ -1268,9 +1268,9 @@ export default function Admin() {
               </p>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="sticky top-0 z-10 bg-card">
                     <tr className="border-b border-border bg-muted/20">
                       <th className="w-6 px-2" />
                       <ThSort label="Nome" sortKey="nome" currentKey={sortKey} dir={sortDir} onClick={handleSort} />
