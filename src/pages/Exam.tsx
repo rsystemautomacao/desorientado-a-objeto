@@ -166,6 +166,7 @@ function ExamExerciseEditor({
   maxSubmissions,
   getToken,
   onCheatAttempt,
+  onSubmitted,
 }: {
   exercise: ExamExercise;
   exerciseIndex: number;
@@ -173,6 +174,7 @@ function ExamExerciseEditor({
   maxSubmissions: number;
   getToken: () => Promise<string>;
   onCheatAttempt: (type: 'paste' | 'copy' | 'contextmenu' | 'injection') => void;
+  onSubmitted?: (idx: number) => void;
 }) {
   const [code, setCode] = useState(exercise.starterCode);
   const [running, setRunning] = useState(false);
@@ -185,6 +187,12 @@ function ExamExerciseEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const lastKeystrokeRef = useRef<number>(Date.now());
+
+  // Notify parent if already submitted on mount
+  useEffect(() => {
+    if (exercise.submissionsUsed > 0) onSubmitted?.(exerciseIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canSubmit = submissionsUsed < maxSubmissions;
 
@@ -419,6 +427,7 @@ function ExamExerciseEditor({
         const data = await resp.json();
         if (resp.ok) {
           setSubmissionsUsed((prev) => prev + 1);
+          onSubmitted?.(exerciseIndex);
           setSubmitStatus(`Submissao ${data.attemptNumber} registrada! ${data.submissionsRemaining > 0 ? `Restam ${data.submissionsRemaining} tentativa(s).` : 'Nenhuma tentativa restante.'}`);
         } else {
           setSubmitStatus(data.error || 'Erro ao registrar submissao');
@@ -612,19 +621,22 @@ function ExamObjectiveQuestion({
   examId,
   maxSubmissions,
   getToken,
+  onSubmitted,
 }: {
   exercise: ExamExercise;
   exerciseIndex: number;
   examId: string;
   maxSubmissions: number;
   getToken: () => Promise<string>;
+  onSubmitted?: (idx: number) => void;
 }) {
   const qType = exercise.type || 'multiple-choice';
   const options = exercise.options || (qType === 'true-false' ? ['Verdadeiro', 'Falso'] : []);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [submissionsUsed, setSubmissionsUsed] = useState(exercise.submissionsUsed);
-  const canSubmit = submissionsUsed < maxSubmissions;
+  // Objective questions: only 1 attempt allowed
+  const canSubmit = submissionsUsed < 1;
 
   const handleSubmit = async () => {
     if (selectedIndex === null || !canSubmit) return;
@@ -647,10 +659,17 @@ function ExamObjectiveQuestion({
         }),
       });
       setSubmissionsUsed((s) => s + 1);
+      onSubmitted?.(exerciseIndex);
     } catch {
       // silently fail
     }
   };
+
+  // If already submitted on load (submissionsUsed > 0), notify parent
+  useEffect(() => {
+    if (submissionsUsed > 0) onSubmitted?.(exerciseIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -671,7 +690,7 @@ function ExamObjectiveQuestion({
             <p className="text-sm text-muted-foreground">{exercise.description}</p>
           </div>
           <span className={`text-xs px-2 py-1 rounded-full ${canSubmit ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-            {submissionsUsed}/{maxSubmissions} submissoes
+            {submissionsUsed > 0 ? 'Respondida' : '1 chance'}
           </span>
         </div>
       </div>
@@ -762,7 +781,7 @@ function ExamObjectiveQuestion({
   );
 }
 
-// ── Anti-cheat Banner ────────────────────────────────────────────────
+// ── Anti-cheat Banner + Fullscreen Overlay ──────────────────────────
 function AntiCheatBanner({
   tabSwitches, showTabWarning,
   cheatAttempts, showCheatWarning, lastCheatType,
@@ -770,60 +789,85 @@ function AntiCheatBanner({
   tabSwitches: number; showTabWarning: boolean;
   cheatAttempts: number; showCheatWarning: boolean; lastCheatType: string;
 }) {
-  if (tabSwitches === 0 && cheatAttempts === 0 && !showTabWarning && !showCheatWarning) return null;
-
   const totalIssues = tabSwitches + cheatAttempts;
   const isSevere = totalIssues >= 3;
 
   return (
-    <div className={`rounded-xl border overflow-hidden mb-6 transition-all ${
-      isSevere ? 'border-destructive bg-destructive/10' : 'border-yellow-500/50 bg-yellow-500/10'
-    }`}>
-      {/* Persistent counters */}
-      {(tabSwitches > 0 || cheatAttempts > 0) && (
-        <div className={`px-4 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${
-          isSevere ? 'text-destructive' : 'text-yellow-500'
-        }`}>
-          {tabSwitches > 0 && (
-            <span className="flex items-center gap-1.5">
-              <EyeOff className="h-4 w-4 shrink-0" />
-              Saidas da aba: <strong>{tabSwitches}</strong>
-            </span>
-          )}
-          {cheatAttempts > 0 && (
-            <span className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4 shrink-0" />
-              Tentativas de cola: <strong>{cheatAttempts}</strong>
-            </span>
-          )}
-          <span className="text-xs opacity-70">
-            {isSevere ? 'Comportamento reportado ao professor.' : 'Todas as tentativas sao registradas.'}
-          </span>
-        </div>
-      )}
-
-      {/* Flash warning: tab switch */}
+    <>
+      {/* ── Fullscreen overlay when tab switch detected ── */}
       {showTabWarning && (
-        <div className="px-4 py-3 border-t border-yellow-500/30 bg-yellow-500/20 flex items-center gap-3 animate-pulse">
-          <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0" />
-          <div>
-            <div className="font-semibold text-yellow-300 text-sm">Saida da pagina detectada!</div>
-            <div className="text-xs text-yellow-400/80">Permaneca nesta aba durante toda a prova.</div>
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="bg-card border-2 border-yellow-500 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl shadow-yellow-500/20" style={{ animation: 'scaleIn 0.3s ease-out' }}>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-yellow-400" />
+            </div>
+            <h2 className="text-xl font-bold text-yellow-400 mb-2">⚠️ SAIDA DA PAGINA DETECTADA!</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Voce saiu da aba da prova. Isso foi registrado e <strong className="text-yellow-400">sera reportado ao professor</strong>.
+            </p>
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-4 ${
+              isSevere ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+            }`}>
+              <EyeOff className="h-4 w-4" />
+              {tabSwitches}x saida(s) registrada(s)
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isSevere
+                ? 'ATENCAO: Multiplas saidas detectadas. A prova pode ser ZERADA pelo professor.'
+                : 'Permaneca nesta aba durante toda a prova. Nao abra outras abas ou janelas.'}
+            </p>
+            <p className="text-[10px] text-muted-foreground/50 mt-3">Este alerta fechara automaticamente.</p>
           </div>
         </div>
       )}
 
-      {/* Flash warning: cheat attempt */}
+      {/* ── Fullscreen overlay for cheat attempts ── */}
       {showCheatWarning && !showTabWarning && (
-        <div className="px-4 py-3 border-t border-red-500/30 bg-red-500/20 flex items-center gap-3 animate-pulse">
-          <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
-          <div>
-            <div className="font-semibold text-red-300 text-sm">{lastCheatType}!</div>
-            <div className="text-xs text-red-400/80">Esta acao foi registrada e sera reportada ao professor.</div>
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="bg-card border-2 border-red-500 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl shadow-red-500/20" style={{ animation: 'scaleIn 0.3s ease-out' }}>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-red-400 mb-2">🚫 {lastCheatType.toUpperCase()}!</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Esta acao foi <strong className="text-red-400">bloqueada e registrada</strong>. O professor sera notificado.
+            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/40">
+              <Lock className="h-4 w-4" />
+              {cheatAttempts}x tentativa(s) de cola
+            </div>
+            <p className="text-[10px] text-muted-foreground/50 mt-4">Este alerta fechara automaticamente.</p>
           </div>
         </div>
       )}
-    </div>
+
+      {/* ── Persistent top banner (always visible when there are issues) ── */}
+      {(tabSwitches > 0 || cheatAttempts > 0) && (
+        <div className={`rounded-xl border overflow-hidden mb-6 ${
+          isSevere ? 'border-destructive bg-destructive/10' : 'border-yellow-500/50 bg-yellow-500/10'
+        }`}>
+          <div className={`px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${
+            isSevere ? 'text-destructive' : 'text-yellow-500'
+          }`}>
+            {tabSwitches > 0 && (
+              <span className="flex items-center gap-1.5 font-medium">
+                <EyeOff className="h-4 w-4 shrink-0" />
+                Saidas da aba: <strong>{tabSwitches}</strong>
+              </span>
+            )}
+            {cheatAttempts > 0 && (
+              <span className="flex items-center gap-1.5 font-medium">
+                <Lock className="h-4 w-4 shrink-0" />
+                Tentativas de cola: <strong>{cheatAttempts}</strong>
+              </span>
+            )}
+            <span className="text-xs opacity-70 ml-auto">
+              {isSevere ? '⚠️ Comportamento reportado ao professor.' : 'Todas as tentativas sao registradas.'}
+            </span>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -851,6 +895,12 @@ export default function Exam() {
   const [cheatAttempts, setCheatAttempts] = useState(0);
   const [showCheatWarning, setShowCheatWarning] = useState(false);
   const [lastCheatType, setLastCheatType] = useState('');
+
+  // Track which exercises have been answered (by index)
+  const [answeredSet, setAnsweredSet] = useState<Set<number>>(new Set());
+  const handleExerciseSubmitted = useCallback((idx: number) => {
+    setAnsweredSet((prev) => { const next = new Set(prev); next.add(idx); return next; });
+  }, []);
   const cheatAttemptsRef = useRef(0);
 
   const CHEAT_LABELS: Record<string, string> = {
@@ -1218,6 +1268,7 @@ export default function Exam() {
                   maxSubmissions={examData.maxSubmissions}
                   getToken={getToken}
                   onCheatAttempt={handleCheatAttempt}
+                  onSubmitted={handleExerciseSubmitted}
                 />
               );
             }
@@ -1229,6 +1280,7 @@ export default function Exam() {
                 examId={examData.examId}
                 maxSubmissions={examData.maxSubmissions}
                 getToken={getToken}
+                onSubmitted={handleExerciseSubmitted}
               />
             );
           })}
@@ -1238,22 +1290,56 @@ export default function Exam() {
         <div className="mt-10 border-t border-border pt-8 pb-4">
           <div className="rounded-xl border border-border bg-card p-6 text-center">
             <h3 className="font-semibold text-lg mb-2">Finalizar Prova</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Ao encerrar a prova, suas respostas serao enviadas e voce <strong>nao podera acessar novamente</strong>.
-              Certifique-se de ter respondido todos os exercicios antes de encerrar.
-            </p>
+            {(() => {
+              const total = examData.exercises.length;
+              const answered = answeredSet.size;
+              const missing = total - answered;
+              return (
+                <>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Ao encerrar a prova, suas respostas serao enviadas e voce <strong>nao podera acessar novamente</strong>.
+                  </p>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mb-4 ${
+                    missing === 0 ? 'bg-green-500/15 text-green-400' : 'bg-yellow-500/15 text-yellow-400'
+                  }`}>
+                    {missing === 0 ? (
+                      <><CheckCircle className="h-4 w-4" /> Todas as {total} questoes foram respondidas</>
+                    ) : (
+                      <><AlertTriangle className="h-4 w-4" /> {missing} de {total} questao(oes) sem resposta</>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
             {!showFinalizeConfirm ? (
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setShowFinalizeConfirm(true)}
-                className="border-destructive/50 text-destructive hover:bg-destructive/10"
-              >
-                <LogOut className="h-5 w-5 mr-2" />
-                Encerrar Prova
-              </Button>
+              <div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setShowFinalizeConfirm(true)}
+                  className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                >
+                  <LogOut className="h-5 w-5 mr-2" />
+                  Encerrar Prova
+                </Button>
+              </div>
             ) : (
               <div className="space-y-4">
+                {(() => {
+                  const missing = examData.exercises.length - answeredSet.size;
+                  return missing > 0 ? (
+                    <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/30 px-4 py-3">
+                      <p className="text-yellow-400 font-semibold text-sm flex items-center justify-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Voce tem {missing} questao(oes) sem resposta!
+                      </p>
+                      <p className="text-xs text-yellow-400/70 mt-1">
+                        Se encerrar agora, essas questoes serao consideradas como erradas (nota 0).
+                        Deseja voltar para responder?
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
                   <p className="text-destructive font-semibold text-sm flex items-center justify-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
@@ -1270,7 +1356,7 @@ export default function Exam() {
                     onClick={() => setShowFinalizeConfirm(false)}
                     disabled={finalizing}
                   >
-                    Cancelar
+                    {examData.exercises.length - answeredSet.size > 0 ? 'Voltar e responder' : 'Cancelar'}
                   </Button>
                   <Button
                     size="sm"
