@@ -14,11 +14,22 @@ interface TestCase {
   visible: boolean;
 }
 
+type QuestionType = 'code' | 'multiple-choice' | 'true-false' | 'fill-blank';
+
 interface ExamExercise {
+  type: QuestionType;
   title: string;
   description: string;
+  // Code exercise fields
   starterCode: string;
   testCases: TestCase[];
+  // Multiple choice / true-false / fill-blank fields
+  options?: string[];
+  correctIndex?: number;
+  codeSnippet?: string;       // optional code to display with the question
+  snippetBefore?: string;     // fill-blank: code before the blank
+  snippetAfter?: string;      // fill-blank: code after the blank
+  explanation?: string;
 }
 
 interface BankQuestion {
@@ -187,6 +198,7 @@ function ImportQuestionsModal({
   const handleImport = () => {
     const items = allItems.filter((i) => selected.has(i.key));
     onImport(items.map((i) => ({
+      type: 'code' as QuestionType,
       title: i.title,
       description: i.description,
       starterCode: i.starterCode,
@@ -352,6 +364,7 @@ function ExamForm({
   const [maxSubmissions, setMaxSubmissions] = useState(initial?.maxSubmissions ?? 3);
   const [exercises, setExercises] = useState<ExamExercise[]>(
     initial?.exercises ?? [{
+      type: 'code',
       title: 'Exercicio 1',
       description: '',
       starterCode: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}',
@@ -360,13 +373,38 @@ function ExamForm({
   );
   const [showImport, setShowImport] = useState(false);
 
-  const addExercise = () => {
-    setExercises((prev) => [...prev, {
-      title: `Exercicio ${prev.length + 1}`,
+  const DEFAULT_CODE = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}';
+
+  const addExercise = (type: QuestionType = 'code') => {
+    const num = exercises.length + 1;
+    const base: ExamExercise = {
+      type,
+      title: type === 'code' ? `Exercicio ${num}` : `Questao ${num}`,
       description: '',
-      starterCode: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}',
+      starterCode: DEFAULT_CODE,
       testCases: [{ input: '', expectedOutput: '', visible: true }],
-    }]);
+    };
+    if (type === 'multiple-choice') {
+      base.options = ['', '', '', ''];
+      base.correctIndex = 0;
+      base.codeSnippet = '';
+      base.starterCode = '';
+      base.testCases = [];
+    } else if (type === 'true-false') {
+      base.options = ['Verdadeiro', 'Falso'];
+      base.correctIndex = 0;
+      base.codeSnippet = '';
+      base.starterCode = '';
+      base.testCases = [];
+    } else if (type === 'fill-blank') {
+      base.options = ['', '', '', ''];
+      base.correctIndex = 0;
+      base.snippetBefore = '// codigo antes\n';
+      base.snippetAfter = '\n// codigo depois';
+      base.starterCode = '';
+      base.testCases = [];
+    }
+    setExercises((prev) => [...prev, base]);
   };
 
   const handleImport = (imported: ExamExercise[]) => {
@@ -374,7 +412,7 @@ function ExamForm({
     setShowImport(false);
   };
 
-  const updateExercise = (idx: number, field: string, value: string) => {
+  const updateExercise = (idx: number, field: string, value: unknown) => {
     setExercises((prev) => prev.map((ex, i) => i === idx ? { ...ex, [field]: value } : ex));
   };
 
@@ -402,6 +440,38 @@ function ExamForm({
     setExercises((prev) => prev.map((ex, i) =>
       i === exIdx ? { ...ex, testCases: ex.testCases.filter((_, j) => j !== tcIdx) } : ex
     ));
+  };
+
+  const updateOption = (exIdx: number, optIdx: number, value: string) => {
+    setExercises((prev) => prev.map((ex, i) => {
+      if (i !== exIdx) return ex;
+      const opts = [...(ex.options || [])];
+      opts[optIdx] = value;
+      return { ...ex, options: opts };
+    }));
+  };
+
+  const addOption = (exIdx: number) => {
+    setExercises((prev) => prev.map((ex, i) => {
+      if (i !== exIdx) return ex;
+      return { ...ex, options: [...(ex.options || []), ''] };
+    }));
+  };
+
+  const removeOption = (exIdx: number, optIdx: number) => {
+    setExercises((prev) => prev.map((ex, i) => {
+      if (i !== exIdx) return ex;
+      const opts = (ex.options || []).filter((_, j) => j !== optIdx);
+      const correct = ex.correctIndex ?? 0;
+      return { ...ex, options: opts, correctIndex: correct >= opts.length ? 0 : correct };
+    }));
+  };
+
+  const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+    'code': 'Codigo',
+    'multiple-choice': 'Alternativas',
+    'true-false': 'Verdadeiro/Falso',
+    'fill-blank': 'Preencher trecho',
   };
 
   return (
@@ -440,25 +510,44 @@ function ExamForm({
         </div>
       </div>
 
-      {/* Exercises */}
+      {/* Exercises / Questions */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">Exercicios ({exercises.length})</h3>
-          <div className="flex gap-2">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="font-semibold text-lg">Questoes ({exercises.length})</h3>
+          <div className="flex gap-2 flex-wrap">
             <Button type="button" variant="outline" size="sm" onClick={() => setShowImport(true)}>
-              <Database className="h-4 w-4 mr-1" /> Importar questoes
+              <Database className="h-4 w-4 mr-1" /> Importar
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={addExercise}>
-              <Plus className="h-4 w-4 mr-1" /> Criar vazio
+            <Button type="button" variant="outline" size="sm" onClick={() => addExercise('code')}>
+              <Code2 className="h-4 w-4 mr-1" /> Codigo
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addExercise('multiple-choice')}>
+              <ClipboardList className="h-4 w-4 mr-1" /> Alternativas
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addExercise('true-false')}>
+              <CheckCircle2 className="h-4 w-4 mr-1" /> V/F
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addExercise('fill-blank')}>
+              <Edit3 className="h-4 w-4 mr-1" /> Preencher
             </Button>
           </div>
         </div>
 
         <div className="space-y-4">
-          {exercises.map((ex, exIdx) => (
+          {exercises.map((ex, exIdx) => {
+            const qType = ex.type || 'code';
+            return (
             <div key={exIdx} className="rounded-lg border border-border bg-muted/20 p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="font-semibold text-sm text-primary">Exercicio {exIdx + 1}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm text-primary">Questao {exIdx + 1}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    qType === 'code' ? 'bg-blue-500/20 text-blue-400' :
+                    qType === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
+                    qType === 'true-false' ? 'bg-green-500/20 text-green-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                  }`}>{QUESTION_TYPE_LABELS[qType]}</span>
+                </div>
                 {exercises.length > 1 && (
                   <Button variant="ghost" size="sm" onClick={() => removeExercise(exIdx)} className="text-destructive h-7">
                     <Trash2 className="h-3.5 w-3.5" />
@@ -467,6 +556,7 @@ function ExamForm({
               </div>
 
               <div className="space-y-3">
+                {/* Title + Description (common to all types) */}
                 <div>
                   <label className="block text-xs font-semibold mb-1">Titulo</label>
                   <input
@@ -477,80 +567,249 @@ function ExamForm({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Enunciado</label>
+                  <label className="block text-xs font-semibold mb-1">{qType === 'code' ? 'Enunciado' : 'Pergunta'}</label>
                   <textarea
                     value={ex.description}
                     onChange={(e) => updateExercise(exIdx, 'description', e.target.value)}
                     className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    placeholder="Descreva o que o aluno deve fazer..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Codigo inicial (template)</label>
-                  <textarea
-                    value={ex.starterCode}
-                    onChange={(e) => updateExercise(exIdx, 'starterCode', e.target.value)}
-                    className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder={qType === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'}
                   />
                 </div>
 
-                {/* Test cases */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold">Casos de teste ({ex.testCases.length})</label>
-                    <Button variant="ghost" size="sm" onClick={() => addTestCase(exIdx)} className="h-6 text-xs">
-                      <Plus className="h-3 w-3 mr-1" /> Teste
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {ex.testCases.map((tc, tcIdx) => (
-                      <div key={tcIdx} className="flex items-start gap-2 p-2 rounded bg-background border border-border">
-                        <div className="flex-1 grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] text-muted-foreground mb-0.5">Entrada (stdin)</label>
-                            <input
-                              type="text"
-                              value={tc.input}
-                              onChange={(e) => updateTestCase(exIdx, tcIdx, 'input', e.target.value)}
-                              className="w-full px-2 py-1 rounded border border-border bg-muted/30 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
-                              placeholder="(vazio)"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] text-muted-foreground mb-0.5">Saida esperada</label>
-                            <input
-                              type="text"
-                              value={tc.expectedOutput}
-                              onChange={(e) => updateTestCase(exIdx, tcIdx, 'expectedOutput', e.target.value)}
-                              className="w-full px-2 py-1 rounded border border-border bg-muted/30 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
-                              placeholder="Hello World"
-                            />
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => updateTestCase(exIdx, tcIdx, 'visible', !tc.visible)}
-                          className={`mt-4 p-1 rounded ${tc.visible ? 'text-primary' : 'text-muted-foreground'}`}
-                          title={tc.visible ? 'Visivel para o aluno' : 'Oculto do aluno'}
-                        >
-                          {tc.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                        </button>
-                        {ex.testCases.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeTestCase(exIdx, tcIdx)}
-                            className="mt-4 p-1 text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                {/* ── CODE type ── */}
+                {qType === 'code' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Codigo inicial (template)</label>
+                      <textarea
+                        value={ex.starterCode}
+                        onChange={(e) => updateExercise(exIdx, 'starterCode', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-semibold">Casos de teste ({ex.testCases.length})</label>
+                        <Button variant="ghost" size="sm" onClick={() => addTestCase(exIdx)} className="h-6 text-xs">
+                          <Plus className="h-3 w-3 mr-1" /> Teste
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <div className="space-y-2">
+                        {ex.testCases.map((tc, tcIdx) => (
+                          <div key={tcIdx} className="flex items-start gap-2 p-2 rounded bg-background border border-border">
+                            <div className="flex-1 grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] text-muted-foreground mb-0.5">Entrada (stdin)</label>
+                                <input
+                                  type="text"
+                                  value={tc.input}
+                                  onChange={(e) => updateTestCase(exIdx, tcIdx, 'input', e.target.value)}
+                                  className="w-full px-2 py-1 rounded border border-border bg-muted/30 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                  placeholder="(vazio)"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-muted-foreground mb-0.5">Saida esperada</label>
+                                <input
+                                  type="text"
+                                  value={tc.expectedOutput}
+                                  onChange={(e) => updateTestCase(exIdx, tcIdx, 'expectedOutput', e.target.value)}
+                                  className="w-full px-2 py-1 rounded border border-border bg-muted/30 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                  placeholder="Hello World"
+                                />
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => updateTestCase(exIdx, tcIdx, 'visible', !tc.visible)}
+                              className={`mt-4 p-1 rounded ${tc.visible ? 'text-primary' : 'text-muted-foreground'}`}
+                              title={tc.visible ? 'Visivel para o aluno' : 'Oculto do aluno'}
+                            >
+                              {tc.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                            </button>
+                            {ex.testCases.length > 1 && (
+                              <button type="button" onClick={() => removeTestCase(exIdx, tcIdx)} className="mt-4 p-1 text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ── MULTIPLE CHOICE type ── */}
+                {qType === 'multiple-choice' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Codigo (opcional, exibido acima das alternativas)</label>
+                      <textarea
+                        value={ex.codeSnippet || ''}
+                        onChange={(e) => updateExercise(exIdx, 'codeSnippet', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="int x = 10; // opcional..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-2">Alternativas</label>
+                      <div className="space-y-2">
+                        {(ex.options || []).map((opt, optIdx) => (
+                          <div key={optIdx} className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateExercise(exIdx, 'correctIndex', optIdx)}
+                              className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                ex.correctIndex === optIdx ? 'border-green-500 bg-green-500/20' : 'border-border hover:border-primary/50'
+                              }`}
+                              title={ex.correctIndex === optIdx ? 'Resposta correta' : 'Marcar como correta'}
+                            >
+                              {ex.correctIndex === optIdx && <Check className="h-3 w-3 text-green-500" />}
+                            </button>
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => updateOption(exIdx, optIdx, e.target.value)}
+                              className="flex-1 px-3 py-1.5 rounded border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              placeholder={`Alternativa ${String.fromCharCode(65 + optIdx)}`}
+                            />
+                            {(ex.options || []).length > 2 && (
+                              <button type="button" onClick={() => removeOption(exIdx, optIdx)} className="p-1 text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => addOption(exIdx)} className="mt-2 h-6 text-xs">
+                        <Plus className="h-3 w-3 mr-1" /> Alternativa
+                      </Button>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Explicacao (exibida apos responder)</label>
+                      <input
+                        type="text"
+                        value={ex.explanation || ''}
+                        onChange={(e) => updateExercise(exIdx, 'explanation', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="Porque a resposta correta e..."
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── TRUE/FALSE type ── */}
+                {qType === 'true-false' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Codigo (opcional)</label>
+                      <textarea
+                        value={ex.codeSnippet || ''}
+                        onChange={(e) => updateExercise(exIdx, 'codeSnippet', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="int x = 10; // opcional..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-2">Resposta correta</label>
+                      <div className="flex gap-3">
+                        {['Verdadeiro', 'Falso'].map((label, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => updateExercise(exIdx, 'correctIndex', i)}
+                            className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-colors ${
+                              ex.correctIndex === i
+                                ? 'border-green-500 bg-green-500/20 text-green-400'
+                                : 'border-border hover:border-primary/50 text-muted-foreground'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Explicacao (exibida apos responder)</label>
+                      <input
+                        type="text"
+                        value={ex.explanation || ''}
+                        onChange={(e) => updateExercise(exIdx, 'explanation', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="Porque a afirmacao e verdadeira/falsa..."
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── FILL-BLANK type ── */}
+                {qType === 'fill-blank' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Codigo antes do espaco em branco</label>
+                      <textarea
+                        value={ex.snippetBefore || ''}
+                        onChange={(e) => updateExercise(exIdx, 'snippetBefore', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="int x = "
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Codigo depois do espaco em branco</label>
+                      <textarea
+                        value={ex.snippetAfter || ''}
+                        onChange={(e) => updateExercise(exIdx, 'snippetAfter', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm font-mono min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="; // resto do codigo"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-2">Opcoes (marque a correta)</label>
+                      <div className="space-y-2">
+                        {(ex.options || []).map((opt, optIdx) => (
+                          <div key={optIdx} className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateExercise(exIdx, 'correctIndex', optIdx)}
+                              className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                ex.correctIndex === optIdx ? 'border-green-500 bg-green-500/20' : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              {ex.correctIndex === optIdx && <Check className="h-3 w-3 text-green-500" />}
+                            </button>
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => updateOption(exIdx, optIdx, e.target.value)}
+                              className="flex-1 px-3 py-1.5 rounded border border-border bg-background text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              placeholder={`Opcao ${optIdx + 1}`}
+                            />
+                            {(ex.options || []).length > 2 && (
+                              <button type="button" onClick={() => removeOption(exIdx, optIdx)} className="p-1 text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => addOption(exIdx)} className="mt-2 h-6 text-xs">
+                        <Plus className="h-3 w-3 mr-1" /> Opcao
+                      </Button>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Explicacao (opcional)</label>
+                      <input
+                        type="text"
+                        value={ex.explanation || ''}
+                        onChange={(e) => updateExercise(exIdx, 'explanation', e.target.value)}
+                        className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
 

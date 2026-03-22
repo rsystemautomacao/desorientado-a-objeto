@@ -119,12 +119,22 @@ function getApiBase(): string {
 }
 
 // ── Types ────────────────────────────────────────────────────────────
+type QuestionType = 'code' | 'multiple-choice' | 'true-false' | 'fill-blank';
+
 interface ExamExercise {
+  type?: QuestionType; // defaults to 'code' for backward compatibility
   title: string;
   description: string;
   starterCode: string;
   testCases: { input: string; expectedOutput: string; visible: boolean }[];
   submissionsUsed: number;
+  // Multiple choice / true-false / fill-blank
+  options?: string[];
+  correctIndex?: number;
+  codeSnippet?: string;
+  snippetBefore?: string;
+  snippetAfter?: string;
+  explanation?: string;
 }
 
 interface ExamData {
@@ -604,6 +614,184 @@ function ExamExerciseEditor({
   );
 }
 
+// ── Objective Question Editor (multiple-choice, true-false, fill-blank) ──
+function ExamObjectiveQuestion({
+  exercise,
+  exerciseIndex,
+  examId,
+  maxSubmissions,
+  getToken,
+}: {
+  exercise: ExamExercise;
+  exerciseIndex: number;
+  examId: string;
+  maxSubmissions: number;
+  getToken: () => Promise<string>;
+}) {
+  const qType = exercise.type || 'multiple-choice';
+  const options = exercise.options || (qType === 'true-false' ? ['Verdadeiro', 'Falso'] : []);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submissionsUsed, setSubmissionsUsed] = useState(exercise.submissionsUsed);
+  const [submitStatus, setSubmitStatus] = useState<string | null>(null);
+  const canSubmit = submissionsUsed < maxSubmissions;
+  const correct = submitted && selectedIndex === exercise.correctIndex;
+
+  const handleSubmit = async () => {
+    if (selectedIndex === null || !canSubmit) return;
+    setSubmitted(true);
+    const isCorrect = selectedIndex === exercise.correctIndex;
+    try {
+      const token = await getToken();
+      await fetch(`${getApiBase()}/api/exams`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'submit',
+          examId,
+          exerciseIndex,
+          code: `[Resposta objetiva] Opcao selecionada: ${selectedIndex} (${options[selectedIndex] || '?'})`,
+          passedTests: isCorrect ? 1 : 0,
+          totalTests: 1,
+          allPassed: isCorrect,
+        }),
+      });
+      setSubmissionsUsed((s) => s + 1);
+      setSubmitStatus(isCorrect ? 'Correto!' : 'Incorreto');
+    } catch {
+      setSubmitStatus('Erro ao enviar resposta');
+    }
+  };
+
+  const handleRetry = () => {
+    setSelectedIndex(null);
+    setSubmitted(false);
+    setSubmitStatus(null);
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-border bg-muted/30">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg">{exercise.title}</h3>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                qType === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
+                qType === 'true-false' ? 'bg-green-500/20 text-green-400' :
+                'bg-yellow-500/20 text-yellow-400'
+              }`}>
+                {qType === 'multiple-choice' ? 'Alternativas' : qType === 'true-false' ? 'V/F' : 'Preencher'}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">{exercise.description}</p>
+          </div>
+          <span className={`text-xs px-2 py-1 rounded-full ${canSubmit ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
+            {submissionsUsed}/{maxSubmissions} submissoes
+          </span>
+        </div>
+      </div>
+
+      <div className="p-5 space-y-4">
+        {/* Code snippet (if provided) */}
+        {qType !== 'fill-blank' && exercise.codeSnippet && (
+          <pre className="p-3 rounded-lg bg-muted/50 border border-border font-mono text-sm whitespace-pre-wrap overflow-x-auto">
+            {exercise.codeSnippet}
+          </pre>
+        )}
+
+        {/* Fill-blank: show code with blank */}
+        {qType === 'fill-blank' && (
+          <div className="rounded-lg bg-muted/50 border border-border p-3 font-mono text-sm">
+            <pre className="whitespace-pre-wrap">{exercise.snippetBefore || ''}</pre>
+            <span className={`inline-block px-3 py-1 mx-1 rounded border-2 border-dashed font-semibold ${
+              submitted
+                ? correct ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-destructive bg-destructive/10 text-destructive'
+                : selectedIndex !== null ? 'border-primary bg-primary/10 text-primary' : 'border-muted-foreground text-muted-foreground'
+            }`}>
+              {selectedIndex !== null ? options[selectedIndex] : '______'}
+            </span>
+            <pre className="whitespace-pre-wrap">{exercise.snippetAfter || ''}</pre>
+          </div>
+        )}
+
+        {/* Options */}
+        <div className={qType === 'true-false' ? 'flex gap-3' : 'space-y-2'}>
+          {options.map((opt, i) => {
+            const isSelected = selectedIndex === i;
+            const isCorrectOpt = i === exercise.correctIndex;
+            let cls = 'border-border hover:border-primary/50';
+            if (submitted) {
+              if (isCorrectOpt) cls = 'border-green-500 bg-green-500/10';
+              else if (isSelected) cls = 'border-destructive bg-destructive/10';
+              else cls = 'border-border opacity-50';
+            } else if (isSelected) {
+              cls = 'border-primary bg-primary/10';
+            }
+
+            return (
+              <button
+                key={i}
+                type="button"
+                disabled={submitted || !canSubmit}
+                onClick={() => setSelectedIndex(i)}
+                className={`${qType === 'true-false' ? 'flex-1' : 'w-full'} text-left px-4 py-3 rounded-lg border-2 transition-colors ${cls}`}
+              >
+                <div className="flex items-center gap-3">
+                  {qType !== 'true-false' && (
+                    <span className="shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                  )}
+                  <span className={`text-sm ${qType === 'fill-blank' ? 'font-mono' : ''}`}>{opt}</span>
+                  {submitted && isCorrectOpt && <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto shrink-0" />}
+                  {submitted && isSelected && !isCorrectOpt && <XCircle className="h-4 w-4 text-destructive ml-auto shrink-0" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Submit / Retry */}
+        {!submitted ? (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={selectedIndex === null || !canSubmit}
+              onClick={handleSubmit}
+            >
+              <Send className="h-4 w-4 mr-1" /> Responder
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className={`flex items-center gap-2 text-sm font-semibold ${correct ? 'text-green-400' : 'text-destructive'}`}>
+              {correct ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+              {submitStatus}
+              {exercise.explanation && (
+                <span className="font-normal text-muted-foreground ml-2">— {exercise.explanation}</span>
+              )}
+            </div>
+            {canSubmit && (
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Tentar novamente
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!canSubmit && (
+        <div className="mx-5 mb-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-2 text-sm text-destructive flex items-center gap-2">
+          <Lock className="h-4 w-4" />
+          Limite de submissoes atingido.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Anti-cheat Banner ────────────────────────────────────────────────
 function AntiCheatBanner({
   tabSwitches, showTabWarning,
@@ -974,17 +1162,32 @@ export default function Exam() {
 
         {/* Exercises */}
         <div className="space-y-6">
-          {examData.exercises.map((ex, idx) => (
-            <ExamExerciseEditor
-              key={idx}
-              exercise={ex}
-              exerciseIndex={idx}
-              examId={examData.examId}
-              maxSubmissions={examData.maxSubmissions}
-              getToken={getToken}
-              onCheatAttempt={handleCheatAttempt}
-            />
-          ))}
+          {examData.exercises.map((ex, idx) => {
+            const qType = ex.type || 'code';
+            if (qType === 'code') {
+              return (
+                <ExamExerciseEditor
+                  key={idx}
+                  exercise={ex}
+                  exerciseIndex={idx}
+                  examId={examData.examId}
+                  maxSubmissions={examData.maxSubmissions}
+                  getToken={getToken}
+                  onCheatAttempt={handleCheatAttempt}
+                />
+              );
+            }
+            return (
+              <ExamObjectiveQuestion
+                key={idx}
+                exercise={ex}
+                exerciseIndex={idx}
+                examId={examData.examId}
+                maxSubmissions={examData.maxSubmissions}
+                getToken={getToken}
+              />
+            );
+          })}
         </div>
 
         {/* Encerrar Prova */}
