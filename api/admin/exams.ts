@@ -137,10 +137,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
           questions: questions.map((q) => ({
             id: String(q._id),
+            type: q.type || 'code',
             title: q.title,
             description: q.description,
             starterCode: q.starterCode,
             testCases: q.testCases,
+            options: q.options || [],
+            correctIndex: q.correctIndex ?? 0,
+            codeSnippet: q.codeSnippet || '',
+            snippetBefore: q.snippetBefore || '',
+            snippetAfter: q.snippetAfter || '',
+            explanation: q.explanation || '',
             tags: q.tags || [],
             difficulty: q.difficulty || '',
             createdAt: q.createdAt,
