@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   Play, Loader2, CheckCircle2, AlertCircle, XCircle,
   Lock, LogIn, ShieldCheck, Send, RotateCcw, Trophy,
+  EyeOff, AlertTriangle,
 } from 'lucide-react';
 
 // ── Java Syntax Highlighter ──────────────────────────────────────────
@@ -588,6 +589,46 @@ function ExamExerciseEditor({
   );
 }
 
+// ── Tab Switch Detection Banner ─────────────────────────────────────
+function TabSwitchBanner({ count, showWarning }: { count: number; showWarning: boolean }) {
+  if (count === 0 && !showWarning) return null;
+
+  return (
+    <div className={`rounded-xl border overflow-hidden mb-6 transition-all ${
+      count >= 3 ? 'border-destructive bg-destructive/10' : 'border-yellow-500/50 bg-yellow-500/10'
+    }`}>
+      {/* Persistent counter */}
+      {count > 0 && (
+        <div className={`px-4 py-2 flex items-center gap-2 text-sm ${
+          count >= 3 ? 'text-destructive' : 'text-yellow-500'
+        }`}>
+          <EyeOff className="h-4 w-4 shrink-0" />
+          <span>
+            Voce saiu da pagina <strong>{count} vez{count !== 1 ? 'es' : ''}</strong>.
+            {count >= 3
+              ? ' Esse comportamento sera reportado ao professor.'
+              : ' Sair da pagina durante a prova e considerado tentativa de cola.'
+            }
+          </span>
+        </div>
+      )}
+
+      {/* Flash warning (shows for 4 seconds when they come back) */}
+      {showWarning && (
+        <div className="px-4 py-3 border-t border-yellow-500/30 bg-yellow-500/20 flex items-center gap-3 animate-pulse">
+          <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0" />
+          <div>
+            <div className="font-semibold text-yellow-300 text-sm">Saida da pagina detectada!</div>
+            <div className="text-xs text-yellow-400/80">
+              O professor sera notificado. Permaneca nesta aba durante toda a prova.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Exam Page ───────────────────────────────────────────────────
 export default function Exam() {
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
@@ -595,6 +636,74 @@ export default function Exam() {
   const [examData, setExamData] = useState<ExamData | null>(null);
   const [loadingExam, setLoadingExam] = useState(false);
   const [error, setError] = useState('');
+
+  // ── Tab-switch / focus-loss detection ──
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showTabWarning, setShowTabWarning] = useState(false);
+  const tabSwitchCountRef = useRef(0);
+
+  useEffect(() => {
+    if (!examData || !user) return; // only track when exam is active
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // User left the tab
+        tabSwitchCountRef.current += 1;
+        setTabSwitchCount(tabSwitchCountRef.current);
+
+        // Fire-and-forget: report to server
+        user.getIdToken().then((token) => {
+          fetch(`${getApiBase()}/api/exams`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'tab-switch',
+              examId: examData.examId,
+              count: tabSwitchCountRef.current,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch(() => {});
+        }).catch(() => {});
+      } else {
+        // User came back — show warning flash
+        setShowTabWarning(true);
+        setTimeout(() => setShowTabWarning(false), 4000);
+      }
+    };
+
+    const handleBlur = () => {
+      // Also detect window blur (clicking outside browser)
+      // Use a small delay to avoid false positives from alerts/modals
+      setTimeout(() => {
+        if (document.hidden) return; // already handled by visibilitychange
+        tabSwitchCountRef.current += 1;
+        setTabSwitchCount(tabSwitchCountRef.current);
+        setShowTabWarning(true);
+        setTimeout(() => setShowTabWarning(false), 4000);
+
+        user.getIdToken().then((token) => {
+          fetch(`${getApiBase()}/api/exams`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'tab-switch',
+              examId: examData.examId,
+              count: tabSwitchCountRef.current,
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch(() => {});
+        }).catch(() => {});
+      }, 200);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [examData, user]);
 
   const handleAccessCode = async () => {
     if (!user || !accessCode.trim()) return;
@@ -715,6 +824,9 @@ export default function Exam() {
   return (
     <Layout>
       <div className="container max-w-4xl py-8">
+        {/* Tab switch warning banner */}
+        <TabSwitchBanner count={tabSwitchCount} showWarning={showTabWarning} />
+
         {/* Exam header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -725,8 +837,12 @@ export default function Exam() {
           {examData.description && (
             <p className="text-muted-foreground">{examData.description}</p>
           )}
-          <div className="mt-2 text-xs text-muted-foreground">
-            Max {examData.maxSubmissions} submissao(oes) por exercicio &bull; {examData.exercises.length} exercicio(s)
+          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+            <span>Max {examData.maxSubmissions} submissao(oes) por exercicio &bull; {examData.exercises.length} exercicio(s)</span>
+            <span className="flex items-center gap-1 text-yellow-500/70">
+              <EyeOff className="h-3 w-3" />
+              Saidas da aba sao monitoradas
+            </span>
           </div>
         </div>
 

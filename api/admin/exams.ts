@@ -139,24 +139,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // If ?results=examId, return submissions grouped by student
+      // If ?results=examId, return submissions grouped by student + tab-switch data
       const resultsFor = req.query.results;
       if (typeof resultsFor === 'string' && resultsFor.length >= 10) {
-        const submissions = await client.db(DB_NAME)
-          .collection('exam_submissions')
-          .find({ examId: resultsFor })
-          .sort({ submittedAt: -1 })
-          .toArray();
+        const [submissions, tabSwitches] = await Promise.all([
+          client.db(DB_NAME)
+            .collection('exam_submissions')
+            .find({ examId: resultsFor })
+            .sort({ submittedAt: -1 })
+            .toArray(),
+          client.db(DB_NAME)
+            .collection('exam_tab_switches')
+            .find({ examId: resultsFor })
+            .toArray(),
+        ]);
+
+        // Build tab-switch lookup: userId → { totalSwitches, lastSwitchAt }
+        const tabSwitchMap: Record<string, { total: number; lastAt: string }> = {};
+        for (const ts of tabSwitches) {
+          tabSwitchMap[ts.userId as string] = {
+            total: (ts.totalSwitches as number) || 0,
+            lastAt: (ts.lastSwitchAt as string) || '',
+          };
+        }
 
         const byStudent: Record<string, {
           userId: string; userName: string; userEmail: string;
+          tabSwitches: number; lastTabSwitch: string;
           submissions: Array<{ exerciseIndex: number; code: string; passedTests: number; totalTests: number; allPassed: boolean; attemptNumber: number; submittedAt: string }>;
         }> = {};
 
         for (const sub of submissions) {
           const uid = sub.userId as string;
           if (!byStudent[uid]) {
-            byStudent[uid] = { userId: uid, userName: sub.userName as string, userEmail: sub.userEmail as string, submissions: [] };
+            const tsData = tabSwitchMap[uid];
+            byStudent[uid] = {
+              userId: uid, userName: sub.userName as string, userEmail: sub.userEmail as string,
+              tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
+              submissions: [],
+            };
           }
           byStudent[uid].submissions.push({
             exerciseIndex: sub.exerciseIndex as number,
@@ -167,6 +188,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             attemptNumber: sub.attemptNumber as number,
             submittedAt: sub.submittedAt as string,
           });
+        }
+
+        // Also include students who only have tab-switches but no submissions
+        for (const ts of tabSwitches) {
+          const uid = ts.userId as string;
+          if (!byStudent[uid]) {
+            byStudent[uid] = {
+              userId: uid, userName: (ts.userEmail as string) || uid, userEmail: (ts.userEmail as string) || '',
+              tabSwitches: (ts.totalSwitches as number) || 0, lastTabSwitch: (ts.lastSwitchAt as string) || '',
+              submissions: [],
+            };
+          }
         }
 
         return res.status(200).json({ students: Object.values(byStudent), totalSubmissions: submissions.length });
@@ -356,6 +389,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await col.deleteOne({ _id: new ObjectId(id) });
         // Also clean up submissions
         await client.db(DB_NAME).collection('exam_submissions').deleteMany({ examId: id });
+        await client.db(DB_NAME).collection('exam_tab_switches').deleteMany({ examId: id });
         return res.status(200).json({ ok: true });
       } catch {
         return res.status(400).json({ error: 'Invalid id' });

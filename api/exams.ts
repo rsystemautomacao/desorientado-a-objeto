@@ -224,7 +224,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    return res.status(400).json({ error: 'Invalid action. Use "access" or "submit".' });
+    // ── ACTION: tab-switch — record tab switch event ──
+    if (action === 'tab-switch') {
+      const examId = typeof body.examId === 'string' ? body.examId : '';
+      const count = typeof body.count === 'number' ? body.count : 1;
+      const timestamp = typeof body.timestamp === 'string' ? body.timestamp : new Date().toISOString();
+
+      if (!examId) return res.status(400).json({ error: 'examId is required' });
+
+      // Upsert: update the tab-switch record for this user+exam
+      await db.collection('exam_tab_switches').updateOne(
+        { examId, userId: user.uid },
+        {
+          $set: {
+            examId,
+            userId: user.uid,
+            userEmail: user.email,
+            totalSwitches: count,
+            lastSwitchAt: timestamp,
+            updatedAt: new Date().toISOString(),
+          },
+          $push: {
+            events: { count, timestamp },
+          } as Record<string, unknown>,
+          $setOnInsert: {
+            createdAt: new Date().toISOString(),
+          },
+        },
+        { upsert: true }
+      );
+
+      return res.status(200).json({ ok: true, count });
+    }
+
+    return res.status(400).json({ error: 'Invalid action. Use "access", "submit", or "tab-switch".' });
   } catch (err) {
     console.error('Exams API error:', err);
     return res.status(500).json({ error: 'Internal server error' });

@@ -49,6 +49,8 @@ interface StudentResult {
   userId: string;
   userName: string;
   userEmail: string;
+  tabSwitches?: number;
+  lastTabSwitch?: string;
   submissions: {
     exerciseIndex: number;
     code: string;
@@ -933,6 +935,17 @@ function ExamResults({ examId, exam, getToken }: { examId: string; exam: Exam; g
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {/* Tab switch indicator */}
+                {(student.tabSwitches ?? 0) > 0 && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${
+                    (student.tabSwitches ?? 0) >= 3
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                  }`}>
+                    <EyeOff className="h-3 w-3" />
+                    {student.tabSwitches} saida{(student.tabSwitches ?? 0) !== 1 ? 's' : ''}
+                  </span>
+                )}
                 <div className="flex gap-1">
                   {exam.exercises.map((_, i) => {
                     const best = bestByExercise[i];
