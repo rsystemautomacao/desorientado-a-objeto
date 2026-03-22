@@ -236,11 +236,14 @@ export default function ExerciseDetail() {
 
   const submitRef = useRef<() => void>();
 
-  // Block paste and drag-drop — students must type their code
+  // Block paste, drag-drop, and context menu — students must type their code
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
   }, []);
   const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+  }, []);
+  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
   }, []);
 
@@ -639,6 +642,7 @@ export default function ExerciseDetail() {
                     onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     onDrop={handleDrop}
+                    onContextMenu={handleContextMenu}
                     onClick={updateActiveLine}
                     onKeyUp={updateActiveLine}
                     onFocus={updateActiveLine}

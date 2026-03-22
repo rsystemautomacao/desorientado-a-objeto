@@ -167,8 +167,10 @@ function ExamExerciseEditor({
   const [submissionsUsed, setSubmissionsUsed] = useState(exercise.submissionsUsed);
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
   const [activeLine, setActiveLine] = useState(-1);
+  const [pasteWarning, setPasteWarning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const lastKeystrokeRef = useRef<number>(Date.now());
 
   const canSubmit = submissionsUsed < maxSubmissions;
 
@@ -187,8 +189,40 @@ function ExamExerciseEditor({
     setActiveLine(line);
   }, []);
 
-  const handlePaste = useCallback((e: React.ClipboardEvent) => { e.preventDefault(); }, []);
+  // Block paste (Ctrl+V, right-click paste)
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    setPasteWarning(true);
+    setTimeout(() => setPasteWarning(false), 3000);
+  }, []);
+  // Block drag-and-drop
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); }, []);
+  // Block right-click context menu (prevents "Paste" option)
+  const handleContextMenu = useCallback((e: React.MouseEvent) => { e.preventDefault(); }, []);
+
+  // Anti-cheat: detect large insertions via DevTools/extensions
+  // Normal typing adds 1-2 chars. If >10 chars appear in a single onChange
+  // between keystrokes, it's likely injected code (console, extension, etc.)
+  const safeSetCode = useCallback((newValue: string, fromKeyboard: boolean) => {
+    if (!fromKeyboard) {
+      // Called from onChange — check for suspicious bulk insertion
+      const diff = Math.abs(newValue.length - code.length);
+      const timeSinceLastKey = Date.now() - lastKeystrokeRef.current;
+      // More than 20 chars appeared and no recent keystroke → likely injected
+      if (diff > 20 && timeSinceLastKey > 100) {
+        setPasteWarning(true);
+        setTimeout(() => setPasteWarning(false), 3000);
+        return; // reject the change
+      }
+    }
+    setCode(newValue);
+  }, [code]);
+
+  // Track real keystrokes
+  const handleKeyDownWrapper = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    lastKeystrokeRef.current = Date.now();
+    handleKeyDown(e);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const ta = e.currentTarget;
@@ -206,7 +240,7 @@ function ExamExerciseEditor({
       } else {
         e.preventDefault();
         const next = value.substring(0, start) + e.key + closing + value.substring(end);
-        setCode(next);
+        safeSetCode(next, true);
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 1; updateActiveLine(); });
         return;
       }
@@ -224,7 +258,7 @@ function ExamExerciseEditor({
       if (before in AUTO_PAIRS && AUTO_PAIRS[before] === after) {
         e.preventDefault();
         const next = value.substring(0, start - 1) + value.substring(start + 1);
-        setCode(next);
+        safeSetCode(next, true);
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start - 1; updateActiveLine(); });
         return;
       }
@@ -238,12 +272,12 @@ function ExamExerciseEditor({
         const spacesToRemove = Math.min(4, linePrefix.length - linePrefix.trimStart().length, start - lineStart);
         if (spacesToRemove > 0) {
           const next = value.substring(0, lineStart) + value.substring(lineStart + spacesToRemove);
-          setCode(next);
+          safeSetCode(next, true);
           requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start - spacesToRemove; updateActiveLine(); });
         }
       } else {
         const next = value.substring(0, start) + '    ' + value.substring(end);
-        setCode(next);
+        safeSetCode(next, true);
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 4; updateActiveLine(); });
       }
       return;
@@ -261,13 +295,13 @@ function ExamExerciseEditor({
       if (trimmed.endsWith('{') && value[start] === '}') {
         const full = '\n' + indent + extra + '\n' + indent;
         const next = value.substring(0, start) + full + value.substring(start);
-        setCode(next);
+        safeSetCode(next, true);
         requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + insertion.length; updateActiveLine(); });
         return;
       }
 
       const next = value.substring(0, start) + insertion + value.substring(end);
-      setCode(next);
+      safeSetCode(next, true);
       requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + insertion.length; updateActiveLine(); });
       return;
     }
@@ -280,18 +314,18 @@ function ExamExerciseEditor({
         if (value[start] === '}') {
           const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + value.substring(start);
           const newPos = start - 4;
-          setCode(dedented);
+          safeSetCode(dedented, true);
           requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = newPos; updateActiveLine(); });
         } else {
           const dedented = value.substring(0, lineStart) + beforeCursor.substring(4) + '}' + value.substring(end);
           const newPos = start - 4 + 1;
-          setCode(dedented);
+          safeSetCode(dedented, true);
           requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = newPos; updateActiveLine(); });
         }
         return;
       }
     }
-  }, [setCode, updateActiveLine]);
+  }, [safeSetCode, updateActiveLine]);
 
   const handleSubmit = async () => {
     if (running || !canSubmit) return;
@@ -464,10 +498,11 @@ function ExamExerciseEditor({
           <textarea
             ref={textareaRef}
             value={code}
-            onChange={(e) => { setCode(e.target.value); updateActiveLine(); }}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => { safeSetCode(e.target.value, false); updateActiveLine(); }}
+            onKeyDown={handleKeyDownWrapper}
             onPaste={handlePaste}
             onDrop={handleDrop}
+            onContextMenu={handleContextMenu}
             onClick={updateActiveLine}
             onKeyUp={updateActiveLine}
             onFocus={updateActiveLine}
@@ -479,6 +514,14 @@ function ExamExerciseEditor({
           />
         </div>
       </div>
+
+      {/* Paste/injection warning */}
+      {pasteWarning && (
+        <div className="mx-3 mb-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive flex items-center gap-2 animate-pulse">
+          <Lock className="h-4 w-4" />
+          Colar codigo nao e permitido durante a prova. Digite o codigo manualmente.
+        </div>
+      )}
 
       {/* Compile error */}
       {compileError && (
