@@ -158,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
       }
 
-      // Get student's existing submissions
+      // Get student's existing submissions (keyed by ORIGINAL exercise index)
       const submissions = await db.collection(SUBMISSIONS_COL)
         .find({ examId, userId: user.uid })
         .toArray();
@@ -169,20 +169,110 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         submissionCounts[idx] = (submissionCounts[idx] || 0) + 1;
       }
 
-      const exercises = (exam.exercises as Array<{
-        title: string; description: string; starterCode: string;
+      const rawExercises = exam.exercises as Array<{
+        type?: string; title: string; description: string; starterCode: string;
         testCases: { input: string; expectedOutput: string; visible: boolean }[];
-      }>).map((ex, idx) => ({
-        title: ex.title,
-        description: ex.description,
-        starterCode: ex.starterCode,
-        testCases: ex.testCases.map((tc) => ({
-          input: tc.input,
-          expectedOutput: tc.visible ? tc.expectedOutput : '(oculto)',
-          visible: tc.visible,
-        })),
-        submissionsUsed: submissionCounts[idx] || 0,
-      }));
+        options?: string[]; correctIndex?: number; codeSnippet?: string;
+        snippetBefore?: string; snippetAfter?: string; explanation?: string;
+      }>;
+
+      const shouldShuffleQ = exam.shuffleQuestions === true;
+      const shouldShuffleOpts = exam.shuffleOptions === true;
+
+      // Determine or reuse shuffle order from session
+      let questionOrder: number[] = Array.from({ length: rawExercises.length }, (_, i) => i);
+      let optionOrders: Record<number, number[]> = {};
+
+      // Seeded shuffle using Fisher-Yates with a simple seed
+      function seededShuffle<T>(arr: T[], seed: string): T[] {
+        const result = [...arr];
+        let h = 0;
+        for (let i = 0; i < seed.length; i++) {
+          h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+        }
+        for (let i = result.length - 1; i > 0; i--) {
+          h = ((h << 5) - h + i) | 0;
+          const j = Math.abs(h) % (i + 1);
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+      }
+
+      // Check if session already has a shuffle order (so reloads keep the same order)
+      const sessionDoc = existingSession || await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
+
+      if (sessionDoc?.questionOrder && Array.isArray(sessionDoc.questionOrder)) {
+        questionOrder = sessionDoc.questionOrder as number[];
+        optionOrders = (sessionDoc.optionOrders || {}) as Record<number, number[]>;
+      } else if (shouldShuffleQ || shouldShuffleOpts) {
+        // Generate shuffle orders
+        const seed = `${examId}-${user.uid}`;
+
+        if (shouldShuffleQ) {
+          questionOrder = seededShuffle(questionOrder, seed + '-questions');
+        }
+
+        if (shouldShuffleOpts) {
+          for (let origIdx = 0; origIdx < rawExercises.length; origIdx++) {
+            const ex = rawExercises[origIdx];
+            const qType = ex.type || 'code';
+            if ((qType === 'multiple-choice' || qType === 'fill-blank') && ex.options && ex.options.length > 1) {
+              const optOrder = seededShuffle(
+                Array.from({ length: ex.options.length }, (_, i) => i),
+                seed + `-options-${origIdx}`
+              );
+              optionOrders[origIdx] = optOrder;
+            }
+          }
+        }
+
+        // Store in session for consistency on reload
+        await db.collection('exam_sessions').updateOne(
+          { examId, userId: user.uid },
+          { $set: { questionOrder, optionOrders } },
+        );
+      }
+
+      // Build exercises in shuffled order
+      const exercises = questionOrder.map((origIdx) => {
+        const ex = rawExercises[origIdx];
+        const qType = ex.type || 'code';
+
+        const mapped: Record<string, unknown> = {
+          type: qType,
+          title: ex.title,
+          description: ex.description,
+          starterCode: ex.starterCode || '',
+          testCases: (ex.testCases || []).map((tc) => ({
+            input: tc.input,
+            expectedOutput: tc.visible ? tc.expectedOutput : '(oculto)',
+            visible: tc.visible,
+          })),
+          submissionsUsed: submissionCounts[origIdx] || 0,
+          originalIndex: origIdx,
+        };
+
+        // Add objective question fields
+        if (qType !== 'code') {
+          mapped.codeSnippet = ex.codeSnippet || '';
+          mapped.snippetBefore = ex.snippetBefore || '';
+          mapped.snippetAfter = ex.snippetAfter || '';
+
+          // Shuffle options if needed
+          const optOrder = optionOrders[origIdx];
+          if (optOrder && ex.options) {
+            mapped.options = optOrder.map((oi) => ex.options![oi]);
+            // Map correctIndex to new position
+            const origCorrect = ex.correctIndex ?? 0;
+            mapped.correctIndex = optOrder.indexOf(origCorrect);
+          } else {
+            mapped.options = ex.options || [];
+            mapped.correctIndex = ex.correctIndex ?? 0;
+          }
+        }
+
+        return mapped;
+      });
 
       return res.status(200).json({
         examId,
@@ -256,7 +346,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ── ACTION: submit — submit exercise answer ──
     if (action === 'submit') {
       const examId = typeof body.examId === 'string' ? body.examId : '';
-      const exerciseIndex = typeof body.exerciseIndex === 'number' ? body.exerciseIndex : -1;
+      // originalIndex = the real index in the exam's exercise array (used when shuffled)
+      const originalIndex = typeof body.originalIndex === 'number' ? body.originalIndex : -1;
+      const exerciseIndex = originalIndex >= 0 ? originalIndex : (typeof body.exerciseIndex === 'number' ? body.exerciseIndex : -1);
       const code = typeof body.code === 'string' ? body.code : '';
       const passedTests = typeof body.passedTests === 'number' ? body.passedTests : 0;
       const totalTests = typeof body.totalTests === 'number' ? body.totalTests : 0;

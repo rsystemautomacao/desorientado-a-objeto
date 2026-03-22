@@ -4,7 +4,7 @@ import { exercises as platformExercises } from '@/data/exercises';
 import {
   Plus, Trash2, Eye, EyeOff, Copy, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronRight,
   FileText, CheckCircle2, XCircle, Code2, ClipboardList, Users, Lock, KeyRound,
-  Database, Download, Search, Check, BookOpen, Edit3,
+  Database, Download, Search, Check, BookOpen, Edit3, Shuffle,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -61,6 +61,8 @@ interface Exam {
   maxSubmissions: number;
   active: boolean;
   gradesReleased: boolean;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -396,7 +398,7 @@ function ExamForm({
   bankQuestions,
 }: {
   initial?: Exam;
-  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number }) => void;
+  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => void;
   onCancel: () => void;
   saving: boolean;
   bankQuestions: BankQuestion[];
@@ -404,6 +406,8 @@ function ExamForm({
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [maxSubmissions, setMaxSubmissions] = useState(initial?.maxSubmissions ?? 3);
+  const [shuffleQuestions, setShuffleQuestions] = useState(initial?.shuffleQuestions ?? false);
+  const [shuffleOptions, setShuffleOptions] = useState(initial?.shuffleOptions ?? false);
   const [exercises, setExercises] = useState<ExamExercise[]>(
     initial?.exercises ?? [{
       type: 'code',
@@ -550,6 +554,37 @@ function ExamForm({
             max={100}
           />
         </div>
+      </div>
+
+      {/* Shuffle options */}
+      <div className="rounded-lg border border-border bg-muted/20 p-4">
+        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <Shuffle className="h-4 w-4 text-primary" />
+          Embaralhamento
+        </h4>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={shuffleQuestions}
+              onChange={(e) => setShuffleQuestions(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-primary"
+            />
+            <span className="text-sm">Embaralhar ordem das questoes</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={shuffleOptions}
+              onChange={(e) => setShuffleOptions(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-primary"
+            />
+            <span className="text-sm">Embaralhar alternativas (multipla escolha / preencher)</span>
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Cada aluno recebera uma ordem diferente. A resposta correta e mantida automaticamente.
+        </p>
       </div>
 
       {/* Exercises / Questions */}
@@ -858,7 +893,7 @@ function ExamForm({
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-        <Button onClick={() => onSave({ title, description, exercises, maxSubmissions })} disabled={saving || !title.trim()}>
+        <Button onClick={() => onSave({ title, description, exercises, maxSubmissions, shuffleQuestions, shuffleOptions })} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           {initial ? 'Salvar alteracoes' : 'Criar prova'}
         </Button>
@@ -1720,7 +1755,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
 
-  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number }) => {
+  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => {
     setSaving(true);
     try {
       const token = await getToken();
@@ -1734,7 +1769,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
     setSaving(false);
   };
 
-  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number }) => {
+  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean }) => {
     if (!selectedExam) return;
     setSaving(true);
     try {

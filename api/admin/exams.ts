@@ -84,10 +84,17 @@ function parseBody<T = Record<string, unknown>>(body: unknown): T | null {
 }
 
 export interface ExamExercise {
+  type?: string; // 'code' | 'multiple-choice' | 'true-false' | 'fill-blank'
   title: string;
   description: string;
   starterCode: string;
   testCases: { input: string; expectedOutput: string; visible: boolean }[];
+  options?: string[];
+  correctIndex?: number;
+  codeSnippet?: string;
+  snippetBefore?: string;
+  snippetAfter?: string;
+  explanation?: string;
 }
 
 export interface ExamDoc {
@@ -98,6 +105,8 @@ export interface ExamDoc {
   maxSubmissions: number;      // max submissions per exercise per student
   active: boolean;
   gradesReleased: boolean;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -247,6 +256,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         maxSubmissions: d.maxSubmissions,
         active: d.active,
         gradesReleased: d.gradesReleased ?? false,
+        shuffleQuestions: d.shuffleQuestions ?? false,
+        shuffleOptions: d.shuffleOptions ?? false,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       }));
@@ -370,7 +381,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         for (const ex of b.exercises) {
           if (!ex || typeof ex !== 'object') continue;
           const e = ex as Record<string, unknown>;
-          exercises.push({
+          const exDoc: ExamExercise = {
+            type: typeof e.type === 'string' ? e.type : 'code',
             title: typeof e.title === 'string' ? e.title.trim() : 'Sem título',
             description: typeof e.description === 'string' ? e.description.trim() : '',
             starterCode: typeof e.starterCode === 'string' ? e.starterCode : '',
@@ -379,7 +391,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
               visible: typeof tc.visible === 'boolean' ? tc.visible : true,
             })) : [],
-          });
+          };
+          // Add objective question fields
+          if (Array.isArray(e.options)) exDoc.options = (e.options as string[]).map(o => typeof o === 'string' ? o : '');
+          if (typeof e.correctIndex === 'number') exDoc.correctIndex = e.correctIndex;
+          if (typeof e.codeSnippet === 'string') exDoc.codeSnippet = e.codeSnippet;
+          if (typeof e.snippetBefore === 'string') exDoc.snippetBefore = e.snippetBefore;
+          if (typeof e.snippetAfter === 'string') exDoc.snippetAfter = e.snippetAfter;
+          if (typeof e.explanation === 'string') exDoc.explanation = e.explanation;
+          exercises.push(exDoc);
         }
       }
 
@@ -391,6 +411,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         maxSubmissions,
         active: true,
         gradesReleased: false,
+        shuffleQuestions: body.shuffleQuestions === true,
+        shuffleOptions: body.shuffleOptions === true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -409,18 +431,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.description === 'string') updates.description = body.description.trim();
       if (typeof body.active === 'boolean') updates.active = body.active;
       if (typeof body.gradesReleased === 'boolean') updates.gradesReleased = body.gradesReleased;
+      if (typeof body.shuffleQuestions === 'boolean') updates.shuffleQuestions = body.shuffleQuestions;
+      if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
       if (Array.isArray(body.exercises)) {
-        updates.exercises = (body.exercises as ExamExercise[]).map((ex) => ({
-          title: typeof ex.title === 'string' ? ex.title.trim() : 'Sem título',
-          description: typeof ex.description === 'string' ? ex.description.trim() : '',
-          starterCode: typeof ex.starterCode === 'string' ? ex.starterCode : '',
-          testCases: Array.isArray(ex.testCases) ? ex.testCases.map((tc) => ({
-            input: typeof tc.input === 'string' ? tc.input : '',
-            expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
-            visible: typeof tc.visible === 'boolean' ? tc.visible : true,
-          })) : [],
-        }));
+        updates.exercises = (body.exercises as ExamExercise[]).map((ex) => {
+          const exDoc: ExamExercise = {
+            type: typeof ex.type === 'string' ? ex.type : 'code',
+            title: typeof ex.title === 'string' ? ex.title.trim() : 'Sem título',
+            description: typeof ex.description === 'string' ? ex.description.trim() : '',
+            starterCode: typeof ex.starterCode === 'string' ? ex.starterCode : '',
+            testCases: Array.isArray(ex.testCases) ? ex.testCases.map((tc) => ({
+              input: typeof tc.input === 'string' ? tc.input : '',
+              expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : '',
+              visible: typeof tc.visible === 'boolean' ? tc.visible : true,
+            })) : [],
+          };
+          if (Array.isArray(ex.options)) exDoc.options = ex.options.map(o => typeof o === 'string' ? o : '');
+          if (typeof ex.correctIndex === 'number') exDoc.correctIndex = ex.correctIndex;
+          if (typeof ex.codeSnippet === 'string') exDoc.codeSnippet = ex.codeSnippet;
+          if (typeof ex.snippetBefore === 'string') exDoc.snippetBefore = ex.snippetBefore;
+          if (typeof ex.snippetAfter === 'string') exDoc.snippetAfter = ex.snippetAfter;
+          if (typeof ex.explanation === 'string') exDoc.explanation = ex.explanation;
+          return exDoc;
+        });
       }
 
       try {

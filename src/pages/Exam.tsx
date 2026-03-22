@@ -135,6 +135,7 @@ interface ExamExercise {
   snippetBefore?: string;
   snippetAfter?: string;
   explanation?: string;
+  originalIndex?: number; // original index before shuffling
 }
 
 interface ExamData {
@@ -408,6 +409,7 @@ function ExamExerciseEditor({
             action: 'submit',
             examId,
             exerciseIndex,
+            originalIndex: exercise.originalIndex ?? exerciseIndex,
             code,
             passedTests: passedCount,
             totalTests: testResults.length,
@@ -637,6 +639,7 @@ function ExamObjectiveQuestion({
           action: 'submit',
           examId,
           exerciseIndex,
+          originalIndex: exercise.originalIndex ?? exerciseIndex,
           code: `[Resposta objetiva] Opcao selecionada: ${selectedIndex} (${options[selectedIndex] || '?'})`,
           passedTests: isCorrect ? 1 : 0,
           totalTests: 1,
