@@ -67,31 +67,79 @@ function getApiBase(): string {
   return '';
 }
 
-// ── Import from Bank Modal ───────────────────────────────────────────
-function ImportFromBankModal({
-  questions,
+// ── Unified item for the import modal (bank question OR platform exercise) ──
+interface ImportableItem {
+  key: string; // unique id
+  title: string;
+  description: string;
+  starterCode: string;
+  testCases: TestCase[];
+  difficulty: string;
+  tags: string[];
+  source: 'banco' | 'plataforma';
+}
+
+// ── Import Modal: shows both bank questions AND platform exercises ───
+function ImportQuestionsModal({
+  bankQuestions,
   onImport,
   onClose,
 }: {
-  questions: BankQuestion[];
-  onImport: (selected: BankQuestion[]) => void;
+  bankQuestions: BankQuestion[];
+  onImport: (selected: ExamExercise[]) => void;
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'banco' | 'plataforma'>('all');
 
-  const filtered = questions.filter((q) => {
+  // Build unified list
+  const allItems: ImportableItem[] = [
+    ...bankQuestions.map((q) => ({
+      key: `bank-${q.id}`,
+      title: q.title,
+      description: q.description,
+      starterCode: q.starterCode,
+      testCases: q.testCases,
+      difficulty: q.difficulty,
+      tags: q.tags,
+      source: 'banco' as const,
+    })),
+    ...platformExercises.map((ex) => ({
+      key: `platform-${ex.id}`,
+      title: ex.title,
+      description: ex.description,
+      starterCode: ex.starterCode,
+      testCases: ex.testCases,
+      difficulty: ex.difficulty,
+      tags: [ex.topicLabel],
+      source: 'plataforma' as const,
+    })),
+  ];
+
+  const filtered = allItems.filter((item) => {
+    if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
-    return q.title.toLowerCase().includes(s) || q.description.toLowerCase().includes(s) || q.tags.some((t) => t.toLowerCase().includes(s));
+    return item.title.toLowerCase().includes(s) || item.description.toLowerCase().includes(s) || item.tags.some((t) => t.toLowerCase().includes(s));
   });
 
-  const toggle = (id: string) => {
+  const toggle = (key: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(key)) next.delete(key); else next.add(key);
       return next;
     });
+  };
+
+  const handleImport = () => {
+    const items = allItems.filter((i) => selected.has(i.key));
+    onImport(items.map((i) => ({
+      title: i.title,
+      description: i.description,
+      starterCode: i.starterCode,
+      testCases: i.testCases,
+    })));
   };
 
   return (
@@ -100,12 +148,12 @@ function ImportFromBankModal({
         <div className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
           <h3 className="font-semibold flex items-center gap-2">
             <Database className="h-4 w-4 text-primary" />
-            Importar do Banco de Questoes
+            Importar Questoes
           </h3>
           <span className="text-xs text-muted-foreground">{selected.size} selecionada(s)</span>
         </div>
-        <div className="px-4 py-2 border-b border-border shrink-0">
-          <div className="relative">
+        <div className="px-4 py-2 border-b border-border shrink-0 flex gap-2 items-center">
+          <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="text"
@@ -115,37 +163,53 @@ function ImportFromBankModal({
               className="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
           </div>
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value as 'all' | 'banco' | 'plataforma')}
+            className="text-xs rounded border border-border bg-background px-2 py-1.5 focus:outline-none"
+          >
+            <option value="all">Todas as fontes</option>
+            <option value="banco">Banco de questoes</option>
+            <option value="plataforma">Exercicios da plataforma</option>
+          </select>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma questao encontrada.</p>
           ) : (
             <div className="space-y-1">
-              {filtered.map((q) => (
+              {filtered.map((item) => (
                 <button
-                  key={q.id}
-                  onClick={() => toggle(q.id)}
+                  key={item.key}
+                  onClick={() => toggle(item.key)}
                   className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                    selected.has(q.id) ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted/30'
+                    selected.has(item.key) ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted/30'
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.has(q.id) ? 'bg-primary border-primary' : 'border-border'}`}>
-                      {selected.has(q.id) && <Check className="h-3 w-3 text-primary-foreground" />}
+                    <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected.has(item.key) ? 'bg-primary border-primary' : 'border-border'}`}>
+                      {selected.has(item.key) && <Check className="h-3 w-3 text-primary-foreground" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{q.title}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{q.description || 'Sem descricao'}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        {q.difficulty && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{item.title}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                          item.source === 'banco' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
+                        }`}>
+                          {item.source === 'banco' ? 'BANCO' : 'PLATAFORMA'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.description || 'Sem descricao'}</div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {item.difficulty && (
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                            q.difficulty === 'facil' ? 'bg-green-500/20 text-green-600' :
-                            q.difficulty === 'medio' ? 'bg-yellow-500/20 text-yellow-600' :
+                            item.difficulty === 'facil' ? 'bg-green-500/20 text-green-600' :
+                            item.difficulty === 'medio' ? 'bg-yellow-500/20 text-yellow-600' :
                             'bg-red-500/20 text-red-600'
-                          }`}>{q.difficulty}</span>
+                          }`}>{item.difficulty}</span>
                         )}
-                        <span className="text-[10px] text-muted-foreground">{q.testCases.length} teste(s)</span>
-                        {q.tags.map((t) => (
+                        <span className="text-[10px] text-muted-foreground">{item.testCases.length} teste(s)</span>
+                        {item.tags.slice(0, 3).map((t) => (
                           <span key={t} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{t}</span>
                         ))}
                       </div>
@@ -161,7 +225,7 @@ function ImportFromBankModal({
           <Button
             size="sm"
             disabled={selected.size === 0}
-            onClick={() => onImport(questions.filter((q) => selected.has(q.id)))}
+            onClick={handleImport}
           >
             <Download className="h-3.5 w-3.5 mr-1" />
             Importar {selected.size} questao(oes)
@@ -208,14 +272,8 @@ function ExamForm({
     }]);
   };
 
-  const handleImport = (selected: BankQuestion[]) => {
-    const newExercises: ExamExercise[] = selected.map((q) => ({
-      title: q.title,
-      description: q.description,
-      starterCode: q.starterCode,
-      testCases: q.testCases,
-    }));
-    setExercises((prev) => [...prev, ...newExercises]);
+  const handleImport = (imported: ExamExercise[]) => {
+    setExercises((prev) => [...prev, ...imported]);
     setShowImport(false);
   };
 
@@ -290,11 +348,9 @@ function ExamForm({
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg">Exercicios ({exercises.length})</h3>
           <div className="flex gap-2">
-            {bankQuestions.length > 0 && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowImport(true)}>
-                <Database className="h-4 w-4 mr-1" /> Importar do banco
-              </Button>
-            )}
+            <Button type="button" variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Database className="h-4 w-4 mr-1" /> Importar questoes
+            </Button>
             <Button type="button" variant="outline" size="sm" onClick={addExercise}>
               <Plus className="h-4 w-4 mr-1" /> Criar vazio
             </Button>
@@ -411,8 +467,8 @@ function ExamForm({
       </div>
 
       {showImport && (
-        <ImportFromBankModal
-          questions={bankQuestions}
+        <ImportQuestionsModal
+          bankQuestions={bankQuestions}
           onImport={handleImport}
           onClose={() => setShowImport(false)}
         />
