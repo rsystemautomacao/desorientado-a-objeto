@@ -53,8 +53,6 @@ interface BankQuestion {
   updatedAt: string;
 }
 
-type SubjectKey = 'poo' | 'bi' | 'logica';
-
 interface Exam {
   id: string;
   title: string;
@@ -67,7 +65,6 @@ interface Exam {
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   scoringMode: 'equal' | 'code-weighted' | 'manual';
-  subject: SubjectKey;
   createdAt: string;
   updatedAt: string;
 }
@@ -427,14 +424,12 @@ function ExamForm({
   onCancel,
   saving,
   bankQuestions,
-  defaultSubject,
 }: {
   initial?: Exam;
-  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => void;
+  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => void;
   onCancel: () => void;
   saving: boolean;
   bankQuestions: BankQuestion[];
-  defaultSubject?: SubjectKey;
 }) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
@@ -442,7 +437,6 @@ function ExamForm({
   const [shuffleQuestions, setShuffleQuestions] = useState(initial?.shuffleQuestions ?? false);
   const [shuffleOptions, setShuffleOptions] = useState(initial?.shuffleOptions ?? false);
   const [scoringMode, setScoringMode] = useState<'equal' | 'code-weighted' | 'manual'>(initial?.scoringMode ?? 'equal');
-  const [subject, setSubject] = useState<SubjectKey>(initial?.subject ?? defaultSubject ?? 'poo');
   const [exercises, setExercises] = useState<ExamExercise[]>(
     initial?.exercises ?? [{
       type: 'code',
@@ -588,18 +582,6 @@ function ExamForm({
             min={1}
             max={100}
           />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">Materia</label>
-          <select
-            value={subject}
-            onChange={(e) => setSubject(e.target.value as SubjectKey)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="poo">Programacao Orientada a Objetos</option>
-            <option value="bi">Business Intelligence</option>
-            <option value="logica">Logica de Programacao</option>
-          </select>
         </div>
       </div>
 
@@ -1017,7 +999,7 @@ function ExamForm({
         <Button onClick={() => {
           const pts = calcPointsPreview(exercises, scoringMode);
           const finalExercises = exercises.map((ex, i) => ({ ...ex, points: scoringMode === 'manual' ? (ex.points ?? 0) : pts[i] }));
-          onSave({ title, description, exercises: finalExercises, maxSubmissions, shuffleQuestions, shuffleOptions, scoringMode, subject });
+          onSave({ title, description, exercises: finalExercises, maxSubmissions, shuffleQuestions, shuffleOptions, scoringMode });
         }} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           {initial ? 'Salvar alteracoes' : 'Criar prova'}
@@ -1932,12 +1914,6 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
 }
 
 // ── Main AdminExams Component ────────────────────────────────────────
-const SUBJECTS: { key: SubjectKey; label: string; short: string }[] = [
-  { key: 'poo', label: 'Programacao Orientada a Objetos', short: 'POO' },
-  { key: 'bi', label: 'Business Intelligence', short: 'BI' },
-  { key: 'logica', label: 'Logica de Programacao', short: 'Logica' },
-];
-
 export default function AdminExams({ getToken }: { getToken: () => Promise<string> }) {
   const [exams, setExams] = useState<Exam[]>([]);
   const [bankQuestions, setBankQuestions] = useState<BankQuestion[]>([]);
@@ -1946,7 +1922,6 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
   const [view, setView] = useState<'list' | 'create' | 'edit' | 'results' | 'bank'>('list');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [copiedCode, setCopiedCode] = useState('');
-  const [activeSubject, setActiveSubject] = useState<SubjectKey>('poo');
 
   const base = getApiBase();
 
@@ -1965,7 +1940,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
 
-  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
+  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => {
     setSaving(true);
     try {
       const token = await getToken();
@@ -1979,7 +1954,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
     setSaving(false);
   };
 
-  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
+  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual' }) => {
     if (!selectedExam) return;
     setSaving(true);
     try {
@@ -2030,7 +2005,6 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
           shuffleQuestions: exam.shuffleQuestions,
           shuffleOptions: exam.shuffleOptions,
           scoringMode: exam.scoringMode,
-          subject: exam.subject ?? 'poo',
         }),
       });
       if (resp.ok) await fetchExams();
@@ -2075,27 +2049,19 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
   }
 
   if (view === 'create') {
-    const subjectInfo = SUBJECTS.find((s) => s.key === activeSubject)!;
     return (
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-bold">Nova Prova</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">{subjectInfo.short}</span>
-        </div>
-        <ExamForm onSave={handleCreate} onCancel={() => setView('list')} saving={saving} bankQuestions={bankQuestions} defaultSubject={activeSubject} />
+        <h2 className="text-xl font-bold mb-4">Nova Prova</h2>
+        <ExamForm onSave={handleCreate} onCancel={() => setView('list')} saving={saving} bankQuestions={bankQuestions} />
       </div>
     );
   }
 
   if (view === 'edit' && selectedExam) {
-    const subjectInfo = SUBJECTS.find((s) => s.key === (selectedExam.subject ?? 'poo'))!;
     return (
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-bold">Editar: {selectedExam.title}</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">{subjectInfo.short}</span>
-        </div>
-        <ExamForm initial={selectedExam} onSave={handleUpdate} onCancel={() => { setView('list'); setSelectedExam(null); }} saving={saving} bankQuestions={bankQuestions} defaultSubject={selectedExam.subject ?? 'poo'} />
+        <h2 className="text-xl font-bold mb-4">Editar: {selectedExam.title}</h2>
+        <ExamForm initial={selectedExam} onSave={handleUpdate} onCancel={() => { setView('list'); setSelectedExam(null); }} saving={saving} bankQuestions={bankQuestions} />
       </div>
     );
   }
@@ -2113,15 +2079,12 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
   }
 
   // List view
-  const filteredExams = exams.filter((e) => (e.subject ?? 'poo') === activeSubject);
-  const activeSubjectInfo = SUBJECTS.find((s) => s.key === activeSubject)!;
-
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <ClipboardList className="h-5 w-5" />
-          Provas Online
+          Provas Online ({exams.length})
         </h2>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setView('bank')}>
@@ -2134,34 +2097,9 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
         </div>
       </div>
 
-      {/* Subject tabs */}
-      <div className="flex gap-1 mb-4 border-b border-border">
-        {SUBJECTS.map((s) => {
-          const count = exams.filter((e) => (e.subject ?? 'poo') === s.key).length;
-          return (
-            <button
-              key={s.key}
-              onClick={() => setActiveSubject(s.key)}
-              className={`px-4 py-2 text-sm font-semibold rounded-t border-b-2 transition-colors ${
-                activeSubject === s.key
-                  ? 'border-primary text-primary bg-primary/5'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
-              }`}
-            >
-              {s.short}
-              {count > 0 && (
-                <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${activeSubject === s.key ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Exam link info */}
       <div className="mb-4 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
-        <p className="text-sm text-muted-foreground mb-1">Link para os alunos acessarem as provas ({activeSubjectInfo.short}):</p>
+        <p className="text-sm text-muted-foreground mb-1">Link para os alunos acessarem as provas:</p>
         <div className="flex items-center gap-2">
           <code className="text-sm font-mono text-primary bg-primary/10 px-2 py-1 rounded">{examLink}</code>
           <button onClick={() => copyToClipboard(examLink)} className="text-primary hover:text-primary/80">
@@ -2171,15 +2109,15 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
         </div>
       </div>
 
-      {filteredExams.length === 0 ? (
+      {exams.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhuma prova de {activeSubjectInfo.short} criada ainda.</p>
+          <p>Nenhuma prova criada ainda.</p>
           <p className="text-sm mt-1">Clique em "Nova Prova" para comecar ou monte seu banco de questoes primeiro.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredExams.map((exam) => (
+          {exams.map((exam) => (
             <div key={exam.id} className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3">
                 <div>

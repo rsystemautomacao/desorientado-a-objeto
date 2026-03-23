@@ -109,7 +109,6 @@ export interface ExamDoc {
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   scoringMode: string;         // 'equal' | 'code-weighted' | 'manual'
-  subject: string;             // 'poo' | 'bi' | 'logica'
   createdAt: string;
   updatedAt: string;
 }
@@ -293,7 +292,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Default: list all exams
       const docs = await col.find({}).sort({ createdAt: -1 }).toArray();
-      const validSubjects = ['poo', 'bi', 'logica'];
       const exams = docs.map((d) => ({
         id: String(d._id),
         title: d.title,
@@ -306,7 +304,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         shuffleQuestions: d.shuffleQuestions ?? false,
         shuffleOptions: d.shuffleOptions ?? false,
         scoringMode: d.scoringMode || 'equal',
-        subject: typeof d.subject === 'string' && validSubjects.includes(d.subject) ? d.subject : 'poo',
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       }));
@@ -471,7 +468,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      const validSubjectsCreate = ['poo', 'bi', 'logica'];
       const doc: ExamDoc = {
         title,
         description,
@@ -483,7 +479,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         shuffleQuestions: body.shuffleQuestions === true,
         shuffleOptions: body.shuffleOptions === true,
         scoringMode: typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode) ? body.scoringMode : 'equal',
-        subject: typeof b.subject === 'string' && validSubjectsCreate.includes(b.subject) ? b.subject : 'poo',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -506,7 +501,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
       if (typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode)) updates.scoringMode = body.scoringMode;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
-      if (typeof body.subject === 'string' && ['poo', 'bi', 'logica'].includes(body.subject)) updates.subject = body.subject;
       if (Array.isArray(body.exercises)) {
         updates.exercises = (body.exercises as ExamExercise[]).map((ex) => {
           const exDoc: ExamExercise = {
