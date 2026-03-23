@@ -4,7 +4,7 @@ import { exercises as platformExercises } from '@/data/exercises';
 import {
   Plus, Trash2, Eye, EyeOff, Copy, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronRight,
   FileText, CheckCircle2, XCircle, Code2, ClipboardList, Users, Lock, KeyRound,
-  Database, Download, Search, Check, BookOpen, Edit3, Shuffle,
+  Database, Download, Search, Check, BookOpen, Edit3, Shuffle, Clock, RotateCcw, AlertTriangle,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -77,6 +77,9 @@ interface StudentResult {
   lastTabSwitch?: string;
   cheatAttempts?: number;
   cheatEvents?: { type: string; timestamp: string }[];
+  accessedAt?: string;
+  finalizedAt?: string | null;
+  finalized?: boolean;
   submissions: {
     exerciseIndex: number;
     code: string;
@@ -1606,22 +1609,38 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [releasingGrades, setReleasingGrades] = useState(false);
+  const [resettingUser, setResettingUser] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        const token = await getToken();
-        const base = getApiBase();
-        const resp = await fetch(`${base}/api/admin/exams?results=${examId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await resp.json();
-        if (resp.ok) setResults(data.students || []);
-      } catch { /* ignore */ }
-      setLoading(false);
-    };
-    fetchResults();
+  const fetchResults = useCallback(async () => {
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      const resp = await fetch(`${base}/api/admin/exams?results=${examId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await resp.json();
+      if (resp.ok) setResults(data.students || []);
+    } catch { /* ignore */ }
+    setLoading(false);
   }, [examId, getToken]);
+
+  useEffect(() => { fetchResults(); }, [fetchResults]);
+
+  const handleResetSession = async (student: StudentResult) => {
+    if (!confirm(`Resetar a prova de "${student.userName}"?\n\nIsso apagara todas as submissoes, registros de saida de aba e tentativas de cola deste aluno. Ele podera refazer a prova do zero.`)) return;
+    setResettingUser(student.userId);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      await fetch(`${base}/api/admin/exams`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_session', examId, userId: student.userId }),
+      });
+      await fetchResults();
+    } catch { /* ignore */ }
+    setResettingUser(null);
+  };
 
   // Calculate grade for a student (0-10 scale)
   const calcGrade = (student: StudentResult): number => {
@@ -1660,7 +1679,7 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   const exportToExcel = () => {
     // Generate CSV (Excel-compatible) with BOM for UTF-8
     const totalPts = exam.exercises.reduce((s, ex, i) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
-    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Saidas da aba', 'Tentativas de cola']];
+    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola']];
     for (const student of results) {
       const grade = calcGrade(student);
       let correct = 0;
@@ -1672,6 +1691,11 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
           .sort((a, b) => b.passedTests - a.passedTests)[0];
         if (bestSub?.allPassed) { correct++; earned += pts; }
       }
+      const startTime = student.accessedAt ? new Date(student.accessedAt).toLocaleString('pt-BR') : '';
+      const endTime = student.finalizedAt ? new Date(student.finalizedAt).toLocaleString('pt-BR') : '';
+      const duration = student.accessedAt && student.finalizedAt
+        ? String(Math.round((new Date(student.finalizedAt).getTime() - new Date(student.accessedAt).getTime()) / 60000))
+        : '';
       rows.push([
         student.userName || student.userEmail,
         student.userEmail,
@@ -1680,6 +1704,9 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
         totalPts.toFixed(2).replace('.', ','),
         String(correct),
         String(exam.exercises.length),
+        startTime,
+        endTime,
+        duration,
         String(student.tabSwitches ?? 0),
         String(student.cheatAttempts ?? 0),
       ]);
@@ -1753,6 +1780,29 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
                 <div className="text-left">
                   <div className="font-semibold text-sm">{student.userName}</div>
                   <div className="text-xs text-muted-foreground">{student.userEmail}</div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {student.accessedAt && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5" />
+                        Inicio: {new Date(student.accessedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    {student.finalizedAt && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        Fim: {new Date(student.finalizedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    {student.accessedAt && student.finalizedAt && (() => {
+                      const mins = Math.round((new Date(student.finalizedAt).getTime() - new Date(student.accessedAt).getTime()) / 60000);
+                      return <span className="text-[10px] text-primary font-medium">({mins} min)</span>;
+                    })()}
+                    {student.finalized && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Finalizada</span>
+                    )}
+                    {!student.finalized && student.accessedAt && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">Em andamento</span>
+                    )}
+                  </div>
                 </div>
                 <span className={`text-sm font-bold px-2 py-0.5 rounded ${
                   calcGrade(student) >= 7 ? 'bg-green-500/20 text-green-400' :
@@ -1832,6 +1882,27 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
                     })}
                   </div>
                 )}
+                {/* Reset session / Actions */}
+                <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-muted/20">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Permitir que este aluno refaca a prova
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleResetSession(student)}
+                    disabled={resettingUser === student.userId}
+                    className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+                  >
+                    {resettingUser === student.userId ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                    )}
+                    Resetar prova
+                  </Button>
+                </div>
               </div>
             )}
           </div>

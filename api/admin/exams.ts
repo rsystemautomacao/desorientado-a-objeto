@@ -161,7 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // If ?results=examId, return submissions grouped by student + tab-switch data
       const resultsFor = req.query.results;
       if (typeof resultsFor === 'string' && resultsFor.length >= 10) {
-        const [submissions, tabSwitches, cheatAttempts] = await Promise.all([
+        const [submissions, tabSwitches, cheatAttempts, sessions] = await Promise.all([
           client.db(DB_NAME)
             .collection('exam_submissions')
             .find({ examId: resultsFor })
@@ -175,7 +175,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .collection('exam_cheat_attempts')
             .find({ examId: resultsFor })
             .toArray(),
+          client.db(DB_NAME)
+            .collection('exam_sessions')
+            .find({ examId: resultsFor })
+            .toArray(),
         ]);
+
+        // Build session lookup: userId → { accessedAt, finalizedAt, finalized }
+        const sessionMap: Record<string, { accessedAt: string; finalizedAt: string | null; finalized: boolean }> = {};
+        for (const s of sessions) {
+          sessionMap[s.userId as string] = {
+            accessedAt: (s.accessedAt as string) || '',
+            finalizedAt: (s.finalizedAt as string) || null,
+            finalized: s.finalized === true,
+          };
+        }
 
         // Build tab-switch lookup: userId → { totalSwitches, lastSwitchAt }
         const tabSwitchMap: Record<string, { total: number; lastAt: string }> = {};
@@ -199,6 +213,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           userId: string; userName: string; userEmail: string;
           tabSwitches: number; lastTabSwitch: string;
           cheatAttempts: number; cheatEvents: Array<{ type: string; timestamp: string }>;
+          accessedAt: string; finalizedAt: string | null; finalized: boolean;
           submissions: Array<{ exerciseIndex: number; code: string; passedTests: number; totalTests: number; allPassed: boolean; attemptNumber: number; submittedAt: string }>;
         }> = {};
 
@@ -207,10 +222,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (!byStudent[uid]) {
             const tsData = tabSwitchMap[uid];
             const caData = cheatMap[uid];
+            const sess = sessionMap[uid];
             byStudent[uid] = {
               userId: uid, userName: sub.userName as string, userEmail: sub.userEmail as string,
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
               cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
+              accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
               submissions: [],
             };
           }
@@ -225,15 +242,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
 
-        // Also include students who only have tab-switches or cheat attempts but no submissions
+        // Also include students who only have tab-switches, cheat attempts, or sessions but no submissions
         for (const ts of tabSwitches) {
           const uid = ts.userId as string;
           if (!byStudent[uid]) {
             const caData = cheatMap[uid];
+            const sess = sessionMap[uid];
             byStudent[uid] = {
               userId: uid, userName: (ts.userEmail as string) || uid, userEmail: (ts.userEmail as string) || '',
               tabSwitches: (ts.totalSwitches as number) || 0, lastTabSwitch: (ts.lastSwitchAt as string) || '',
               cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
+              accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
               submissions: [],
             };
           }
@@ -242,10 +261,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const uid = ca.userId as string;
           if (!byStudent[uid]) {
             const tsData = tabSwitchMap[uid];
+            const sess = sessionMap[uid];
             byStudent[uid] = {
               userId: uid, userName: (ca.userEmail as string) || uid, userEmail: (ca.userEmail as string) || '',
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
               cheatAttempts: (ca.totalAttempts as number) || 0, cheatEvents: (ca.events as Array<{ type: string; timestamp: string }>) || [],
+              accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
+              submissions: [],
+            };
+          }
+        }
+        // Include students who accessed but didn't submit anything
+        for (const s of sessions) {
+          const uid = s.userId as string;
+          if (!byStudent[uid]) {
+            const tsData = tabSwitchMap[uid];
+            const caData = cheatMap[uid];
+            byStudent[uid] = {
+              userId: uid, userName: (s.userName as string) || (s.userEmail as string) || uid, userEmail: (s.userEmail as string) || '',
+              tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
+              cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
+              accessedAt: (s.accessedAt as string) || '', finalizedAt: (s.finalizedAt as string) || null, finalized: s.finalized === true,
               submissions: [],
             };
           }
@@ -364,6 +400,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Check if this is a code-generation request
+      // ── Reset student session (allow re-take) ──
+      if (actionVal === 'reset_session') {
+        const b = body as Record<string, unknown>;
+        const examId = typeof b.examId === 'string' ? b.examId : '';
+        const userId = typeof b.userId === 'string' ? b.userId : '';
+        if (!examId || !userId) return res.status(400).json({ error: 'examId and userId required' });
+
+        // Remove session (so student can access again)
+        await client.db(DB_NAME).collection('exam_sessions').deleteMany({ examId, userId });
+        // Remove all submissions for this student on this exam
+        await client.db(DB_NAME).collection('exam_submissions').deleteMany({ examId, userId });
+        // Remove tab-switch and cheat records
+        await client.db(DB_NAME).collection('exam_tab_switches').deleteMany({ examId, userId });
+        await client.db(DB_NAME).collection('exam_cheat_attempts').deleteMany({ examId, userId });
+
+        return res.status(200).json({ ok: true, message: 'Sessao resetada. O aluno pode refazer a prova.' });
+      }
+
       if (actionVal === 'generate_code') {
         const examId = (body as Record<string, unknown>).examId;
         if (typeof examId !== 'string') return res.status(400).json({ error: 'examId required' });
