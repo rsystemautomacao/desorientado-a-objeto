@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import { exercises as platformExercises } from '@/data/exercises';
 import {
@@ -1695,10 +1696,11 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   };
 
   const exportToExcel = () => {
-    // Generate CSV (Excel-compatible) with BOM for UTF-8
-    const totalPts = exam.exercises.reduce((s, ex, i) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
-    const rows: string[][] = [['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola']];
-    for (const student of results) {
+    const totalPts = exam.exercises.reduce((s, ex) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
+
+    // Build data rows
+    const header = ['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola'];
+    const dataRows = results.map((student) => {
       const grade = calcGrade(student);
       let correct = 0;
       let earned = 0;
@@ -1712,31 +1714,49 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
       const startTime = student.accessedAt ? new Date(student.accessedAt).toLocaleString('pt-BR') : '';
       const endTime = student.finalizedAt ? new Date(student.finalizedAt).toLocaleString('pt-BR') : '';
       const duration = student.accessedAt && student.finalizedAt
-        ? String(Math.round((new Date(student.finalizedAt).getTime() - new Date(student.accessedAt).getTime()) / 60000))
+        ? Math.round((new Date(student.finalizedAt).getTime() - new Date(student.accessedAt).getTime()) / 60000)
         : '';
-      rows.push([
+      return [
         student.userName || student.userEmail,
         student.userEmail,
-        grade.toFixed(2).replace('.', ','),
-        earned.toFixed(2).replace('.', ','),
-        totalPts.toFixed(2).replace('.', ','),
-        String(correct),
-        String(exam.exercises.length),
+        parseFloat(grade.toFixed(2)),
+        parseFloat(earned.toFixed(2)),
+        parseFloat(totalPts.toFixed(2)),
+        correct,
+        exam.exercises.length,
         startTime,
         endTime,
         duration,
-        String(student.tabSwitches ?? 0),
-        String(student.cheatAttempts ?? 0),
-      ]);
-    }
-    const csvContent = '\uFEFF' + rows.map((r) => r.map((c) => `"${c}"`).join(';')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `notas-${exam.title.replace(/[^a-zA-Z0-9]/g, '-')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+        student.tabSwitches ?? 0,
+        student.cheatAttempts ?? 0,
+      ];
+    });
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    const wsData = [header, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 30 }, // Nome
+      { wch: 32 }, // Email
+      { wch: 13 }, // Nota
+      { wch: 16 }, // Pontos obtidos
+      { wch: 14 }, // Pontos total
+      { wch: 10 }, // Acertos
+      { wch: 16 }, // Total Questoes
+      { wch: 20 }, // Inicio
+      { wch: 20 }, // Fim
+      { wch: 15 }, // Duracao
+      { wch: 14 }, // Saidas da aba
+      { wch: 18 }, // Tentativas de cola
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Notas');
+
+    const fileName = `notas-${exam.title.replace(/[^a-zA-Z0-9]/g, '-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   if (loading) return <div className="text-center py-4"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>;
