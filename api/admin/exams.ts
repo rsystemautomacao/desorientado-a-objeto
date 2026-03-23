@@ -395,6 +395,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(201).json({ ok: true, inserted: result.insertedCount });
       }
 
+      // ── Bank: seed Lógica de Programação questions (one-time) ──
+      if (actionVal === 'bank_seed_logica') {
+        const existing = await bankCol.countDocuments({ subject: 'logica' });
+        const force = (body as Record<string, unknown>).force === true;
+        if (existing > 0 && !force) {
+          return res.status(200).json({ ok: false, message: `Ja existem ${existing} questoes de Logica. Envie force:true para reinserir.` });
+        }
+        const now = new Date().toISOString();
+        // Gabarito Versao A: indices 0=A, 1=B, 2=C, 3=D
+        const gabarito = [0,2,0,3,2,1,2,2,2,1,1,0,1,1,1,1,1,2,1,0];
+        const logicaQuestions = [
+          { title: 'Q1 — Números reais e casas decimais', description: 'Valores reais são todos os números com casa após a virgula, até mesmo o 1,0?', type: 'true-false', options: ['Verdadeiro','Falso'], tags: ['Tipos de Dados','Numérico'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q2 — Linguagem de programação', description: 'Qual tipo de linguagem permite que um programador (humano) escreva instruções que, após processamento, são compreendidas e executadas por um computador?', type: 'multiple-choice', options: ['Linguagem natural','Linguagem de máquina','Linguagem de programação','Linguagem de libras'], tags: ['Linguagem de Programação'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q3 — Conceito de sistema', description: 'É correto afirmar que um sistema é um conjunto maior de componentes (programas, hardware e dados) trabalhando juntos para um objetivo maior.', type: 'true-false', options: ['Verdadeiro','Falso'], tags: ['Sistemas','Conceitos'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q4 — Símbolo de fluxograma: receber dados', description: 'Qual a funcionalidade do símbolo do paralelogramo (entrada de dados) em um fluxograma?\n\n[Símbolo mostrado na prova: paralelogramo]', type: 'multiple-choice', options: ['Tomar uma decisão de verdadeiro ou falso','Mostrar informações para o usuário','Fazer cálculos','Receber dados do usuário'], tags: ['Fluxograma','Símbolos'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q5 — Identificando números inteiros', description: 'Considerando os tipos de dados básicos em programação, marque a opção em que todos os valores representam números inteiros.', type: 'multiple-choice', options: ['11.0, 37, -1.5, 1','1.0, -11, 15, 37','11, 37, -98, -15','1.0, 8.0, 10, 15'], tags: ['Tipos de Dados','Inteiro'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q6 — Tipos de dados primitivos', description: 'Segundo o material apresentado em sala, quais os tipos de dados primitivos?', type: 'multiple-choice', options: ['Textos, Literais e boleanos','Numéricos, Literais e Booleanos','Valores, Textos e Verdadeiros','Numéricos, Reais e boleanos'], tags: ['Tipos de Dados','Primitivos'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q7 — Categoria de dados em Lógica', description: 'Em lógica de programação, qual das seguintes categorias de dados estamos usando atualmente?', type: 'multiple-choice', options: ['Tipos Abstratos','Tipos de Variáveis','Tipos Primitivos','Tipos de Complexos'], tags: ['Tipos de Dados'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q8 — Etapas do desenvolvimento de um programa', description: 'Marque a alternativa correta. Quais são as etapas do desenvolvimento de um programa?', type: 'multiple-choice', options: ['Analise, Fluxograma, Programação','Descrição Narrativa, Fluxograma, Programação','Analise, Algoritmo, Codificação','Entrada, Processamento, Saida'], tags: ['Algoritmo','Desenvolvimento'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q9 — Símbolo de fluxograma: decisão', description: 'Qual a funcionalidade do símbolo do losango em um fluxograma?\n\n[Símbolo mostrado na prova: losango]', type: 'multiple-choice', options: ['Indicar o início ou o fim do algoritmo.','Realizar operações matemáticas ou lógicas.','Representar um ponto de decisão, geralmente com duas saídas (verdadeiro/falso, sim/não).','Exibir informações ou resultados para o usuário.'], tags: ['Fluxograma','Símbolos'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q10 — Definição de programa', description: 'Qual das seguintes opções melhor define o que é um programa em lógica de programação?', type: 'multiple-choice', options: ['É um conjunto de sistemas operacionais interligados.','É a codificação de um algoritmo em uma linguagem de programação.','É um conjunto de algoritmos','É uma sequência de instruções lógicas para resolver um problema.'], tags: ['Programa','Algoritmo'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q11 — Fluxograma com loop: saída esperada (contagem)', description: 'Considerando o fluxograma apresentado (loop que conta de 1 a 10 e exibe "Lançar" ao fim), qual será a sequência de valores exibidos na saída?\n\n[Fluxograma mostrado na prova: loop com variável contador]', type: 'multiple-choice', options: ['1 2 3 4 5 6 7 8 9 10 Lançar','Será um loop infinito.','Lançar','10 9 8 7 6 5 4 3 2 1 Lançar'], tags: ['Fluxograma','Loop','Algoritmo'], difficulty: 'dificil', codeSnippet: '' },
+          { title: 'Q12 — Definição de algoritmo', description: 'O que melhor define um algoritmo em Lógica de Programação?', type: 'multiple-choice', options: ['É uma sequencia de passos logicos e finitos que visa atingir um objetivo definido','É a parte visual de um software, onde o usuário interage.','É um passo a passo, mesmo que não seja lógico.','É um programa de computador escrito em uma linguagem específica.'], tags: ['Algoritmo'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q13 — Operadores: ==, >, =, %, //', description: 'Marque a alternativa que represente a sequencia logica indicada abaixo:\n==, >, =, %, //', type: 'multiple-choice', options: ['Atribuição, Menor, Igualdade, Resto da divisão, Divisão Inteira','Igualdade, Maior, Atribuição, Resto da divisão, Divisão Inteira','Igualdade, Menor, Atribuição, Resto da divisão, Divisão Simples','Atribuição, Maior, Igualdade, Resto da divisão, Divisão Inteira'], tags: ['Operadores'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q14 — Software vs Hardware', description: 'É correto afirmar que software é tudo aquilo que eu consigo pegar, e hardware é o que eu consigo interagir, mas sem tocar fisicamente?', type: 'true-false', options: ['Verdadeiro','Falso'], tags: ['Hardware','Software'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q15 — Tipos de algoritmos', description: 'Quantos, e quais são os tipos de algoritmos que estudaremos no decorrer desse ano?', type: 'multiple-choice', options: ['2 - Fluxograma e Programação','3 - Descrição Narrativa, Fluxograma e Programação','4 - Descrição Narrativa, Portugol, Fluxograma e Programação','3 - Portugol, Fluxograma e Programação'], tags: ['Algoritmo','Tipos'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q16 — Nomes dos símbolos do fluxograma', description: 'Qual os nomes em sequencia, dos símbolos representados abaixo?\n\n[Símbolos mostrados na prova: Oval, Paralelogramo, Losango, Retângulo, Seta]', type: 'multiple-choice', options: ['Inicio/Fim, Entrada de dados, Decisão, Saída de dados, Sentido de Fluxo','Inicio/Fim, Entrada de dados, Decisão, Processamento, Sentido de Fluxo','Inicio/Fim, Saída de dados, Decisão, Processamento, Sentido de Fluxo','Inicio/Fim, Entrada de dados, Decisão, Processamento, Seta'], tags: ['Fluxograma','Símbolos'], difficulty: 'medio', codeSnippet: '' },
+          { title: 'Q17 — Fluxograma com loop: saída esperada (fixo)', description: 'Considerando o fluxograma apresentado (loop que exibe "1" repetidamente até contador = 10, sem incremento), qual será a sequência de valores exibidos na saída?\n\n[Fluxograma mostrado na prova]', type: 'multiple-choice', options: ['Será um loop infinito.','1 1 1 1 1 1 1 1 1 1 Fim','1 2 3 4 5 6 7 8 9 10 Fim','Fim'], tags: ['Fluxograma','Loop'], difficulty: 'dificil', codeSnippet: '' },
+          { title: 'Q18 — Conceito de variável', description: 'Qual das seguintes opções descreve corretamente o conceito de variável em programação?', type: 'multiple-choice', options: ['Um tipo de dado específico, como número inteiro ou texto.','Uma sequência de instruções lógicas para resolver um problema.','Um espaço de memória nomeado/identificado, utilizado para armazenar um valor que pode ser alterado durante a execução do programa.','Um comando que realiza uma operação matemática.'], tags: ['Variáveis','Memória'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q19 — Finalidade do computador', description: 'A finalidade de um computador é receber, manipular e armazenar dados.', type: 'true-false', options: ['Falso','Verdadeiro'], tags: ['Computador','Conceitos'], difficulty: 'facil', codeSnippet: '' },
+          { title: 'Q20 — Literais char e String', description: 'É correto afirmar que, na maioria das linguagens de programação, os literais de caracteres (char) e os literais de string (String) são os principais tipos de dados utilizados para representar texto?', type: 'true-false', options: ['Verdadeiro','Falso'], tags: ['Tipos de Dados','String','Char'], difficulty: 'facil', codeSnippet: '' },
+        ];
+        const docs = logicaQuestions.map((q, i) => ({
+          type: q.type,
+          title: q.title,
+          description: q.description,
+          starterCode: '',
+          testCases: [],
+          options: q.options,
+          correctIndex: gabarito[i],
+          codeSnippet: q.codeSnippet || '',
+          snippetBefore: '',
+          snippetAfter: '',
+          explanation: '',
+          tags: q.tags,
+          difficulty: q.difficulty,
+          subject: 'logica',
+          createdAt: now,
+          updatedAt: now,
+        }));
+        const result = await bankCol.insertMany(docs);
+        return res.status(201).json({ ok: true, inserted: result.insertedCount });
+      }
+
       // ── Bank: seed BI questions (one-time) ──
       if (actionVal === 'bank_seed_bi') {
         const existing = await bankCol.countDocuments({ subject: 'bi' });
