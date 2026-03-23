@@ -638,13 +638,16 @@ function ExamObjectiveQuestion({
   // Objective questions: only 1 attempt allowed
   const canSubmit = submissionsUsed < 1;
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
   const handleSubmit = async () => {
-    if (selectedIndex === null || !canSubmit) return;
-    setSubmitted(true);
-    const isCorrect = selectedIndex === exercise.correctIndex;
+    if (selectedIndex === null || !canSubmit || submitting) return;
+    setSubmitting(true);
+    setSubmitError('');
     try {
       const token = await getToken();
-      await fetch(`${getApiBase()}/api/exams`, {
+      const resp = await fetch(`${getApiBase()}/api/exams`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -652,17 +655,21 @@ function ExamObjectiveQuestion({
           examId,
           exerciseIndex,
           originalIndex: exercise.originalIndex ?? exerciseIndex,
-          code: `[Resposta objetiva] Opcao selecionada: ${selectedIndex} (${options[selectedIndex] || '?'})`,
-          passedTests: isCorrect ? 1 : 0,
-          totalTests: 1,
-          allPassed: isCorrect,
+          selectedIndex, // Server evaluates correctness
         }),
       });
-      setSubmissionsUsed((s) => s + 1);
-      onSubmitted?.(exerciseIndex);
+      if (resp.ok) {
+        setSubmitted(true);
+        setSubmissionsUsed((s) => s + 1);
+        onSubmitted?.(exerciseIndex);
+      } else {
+        const data = await resp.json().catch(() => ({ error: 'Erro ao enviar resposta' }));
+        setSubmitError(data.error || 'Erro ao enviar resposta');
+      }
     } catch {
-      // silently fail
+      setSubmitError('Erro de conexao. Tente novamente.');
     }
+    setSubmitting(false);
   };
 
   // If already submitted on load (submissionsUsed > 0), notify parent
@@ -746,14 +753,20 @@ function ExamObjectiveQuestion({
 
         {/* Submit status */}
         {!submitted ? (
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              disabled={selectedIndex === null || !canSubmit}
-              onClick={handleSubmit}
-            >
-              <Send className="h-4 w-4 mr-1" /> Responder
-            </Button>
+          <div className="flex items-center justify-between">
+            {submitError && (
+              <span className="text-xs text-destructive">{submitError}</span>
+            )}
+            <div className="ml-auto">
+              <Button
+                size="sm"
+                disabled={selectedIndex === null || !canSubmit || submitting}
+                onClick={handleSubmit}
+              >
+                {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
+                {submitting ? 'Enviando...' : 'Responder'}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex items-center">

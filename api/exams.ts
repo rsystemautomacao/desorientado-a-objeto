@@ -252,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           originalIndex: origIdx,
         };
 
-        // Add objective question fields
+        // Add objective question fields (NEVER send correctIndex to student!)
         if (qType !== 'code') {
           mapped.codeSnippet = ex.codeSnippet || '';
           mapped.snippetBefore = ex.snippetBefore || '';
@@ -262,13 +262,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const optOrder = optionOrders[origIdx];
           if (optOrder && ex.options) {
             mapped.options = optOrder.map((oi) => ex.options![oi]);
-            // Map correctIndex to new position
-            const origCorrect = ex.correctIndex ?? 0;
-            mapped.correctIndex = optOrder.indexOf(origCorrect);
           } else {
             mapped.options = ex.options || [];
-            mapped.correctIndex = ex.correctIndex ?? 0;
           }
+          // correctIndex is NOT sent — answer evaluation happens server-side only
         }
 
         return mapped;
@@ -356,15 +353,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const originalIndex = typeof body.originalIndex === 'number' ? body.originalIndex : -1;
       const exerciseIndex = originalIndex >= 0 ? originalIndex : (typeof body.exerciseIndex === 'number' ? body.exerciseIndex : -1);
       const code = typeof body.code === 'string' ? body.code : '';
-      const passedTests = typeof body.passedTests === 'number' ? body.passedTests : 0;
-      const totalTests = typeof body.totalTests === 'number' ? body.totalTests : 0;
-      const allPassed = typeof body.allPassed === 'boolean' ? body.allPassed : false;
+      let passedTests = typeof body.passedTests === 'number' ? body.passedTests : 0;
+      let totalTests = typeof body.totalTests === 'number' ? body.totalTests : 0;
+      let allPassed = typeof body.allPassed === 'boolean' ? body.allPassed : false;
+      const selectedIndex = typeof body.selectedIndex === 'number' ? body.selectedIndex : -1;
 
-      if (!examId || exerciseIndex < 0 || !code) {
-        return res.status(400).json({ error: 'examId, exerciseIndex, and code are required' });
+      if (!examId || exerciseIndex < 0) {
+        return res.status(400).json({ error: 'examId and exerciseIndex are required' });
       }
 
-      // Check if student already finalized
+      // Check if student already finalized (atomic check)
       const session = await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
       if (session?.finalized) {
         return res.status(403).json({ error: 'Prova ja foi encerrada. Nao e possivel submeter.' });
@@ -378,32 +376,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       if (!exam) return res.status(404).json({ error: 'Prova nao encontrada ou inativa' });
 
-      const exercises = exam.exercises as unknown[];
-      if (exerciseIndex >= exercises.length) {
+      const exercises = exam.exercises as Array<{
+        type?: string; options?: string[]; correctIndex?: number;
+        testCases?: unknown[];
+      }>;
+      if (exerciseIndex < 0 || exerciseIndex >= exercises.length) {
         return res.status(400).json({ error: 'Exercicio invalido' });
       }
 
-      const maxSubmissions = typeof exam.maxSubmissions === 'number' ? exam.maxSubmissions : 3;
+      const exerciseData = exercises[exerciseIndex];
+      const qType = exerciseData.type || 'code';
+
+      // For objective questions: enforce 1 submission limit server-side
+      // For code questions: use exam's maxSubmissions
+      const maxSubs = qType !== 'code' ? 1 : (typeof exam.maxSubmissions === 'number' ? exam.maxSubmissions : 3);
       const existingCount = await db.collection(SUBMISSIONS_COL).countDocuments({
         examId, exerciseIndex, userId: user.uid,
       });
 
-      if (existingCount >= maxSubmissions) {
+      if (existingCount >= maxSubs) {
         return res.status(429).json({
-          error: `Limite de ${maxSubmissions} submissoes atingido para este exercicio`,
+          error: qType !== 'code'
+            ? 'Questao objetiva permite apenas 1 resposta.'
+            : `Limite de ${maxSubs} submissoes atingido para este exercicio`,
           submissionsUsed: existingCount,
-          maxSubmissions,
+          maxSubmissions: maxSubs,
         });
+      }
+
+      // For objective questions: evaluate correctness SERVER-SIDE
+      let submittedCode = code;
+      if (qType !== 'code' && selectedIndex >= 0) {
+        // Determine correct index considering shuffle
+        let serverCorrectIndex = exerciseData.correctIndex ?? 0;
+
+        // If options were shuffled, map the student's selectedIndex back
+        const optOrder = session?.optionOrders?.[String(exerciseIndex)] as number[] | undefined;
+        if (optOrder && optOrder.length > 0) {
+          // Student selected index N in the shuffled order
+          // optOrder[N] gives the original option index
+          // We need to check if optOrder[selectedIndex] === originalCorrectIndex
+          const originalSelectedOption = selectedIndex < optOrder.length ? optOrder[selectedIndex] : -1;
+          allPassed = originalSelectedOption === serverCorrectIndex;
+        } else {
+          allPassed = selectedIndex === serverCorrectIndex;
+        }
+        passedTests = allPassed ? 1 : 0;
+        totalTests = 1;
+
+        const opts = exerciseData.options || [];
+        submittedCode = `[Resposta objetiva] Opcao selecionada: ${selectedIndex} (${opts[selectedIndex] || '?'})`;
+      } else if (qType === 'code' && !code) {
+        return res.status(400).json({ error: 'code is required for code exercises' });
       }
 
       let userName = user.email;
       try {
-        // First try exam session name (typed by student before exam)
-        const examSession = await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
-        if (examSession?.userName) {
-          userName = examSession.userName as string;
+        if (session?.userName) {
+          userName = session.userName as string;
         } else {
-          // Fallback to profile
           const profile = await db.collection('profiles').findOne({ userId: user.uid });
           if (profile?.nome) userName = profile.nome as string;
         }
@@ -415,7 +446,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         userId: user.uid,
         userEmail: user.email,
         userName,
-        code,
+        code: submittedCode,
         passedTests: Math.max(0, Math.floor(passedTests)),
         totalTests: Math.max(0, Math.floor(totalTests)),
         allPassed,
