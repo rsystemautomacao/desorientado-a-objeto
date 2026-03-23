@@ -153,6 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             explanation: q.explanation || '',
             tags: q.tags || [],
             difficulty: q.difficulty || '',
+            subject: q.subject || 'poo',
             createdAt: q.createdAt,
             updatedAt: q.updatedAt,
           })),
@@ -345,6 +346,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           explanation: typeof b.explanation === 'string' ? b.explanation : '',
           tags: Array.isArray(b.tags) ? (b.tags as string[]).filter((t) => typeof t === 'string') : [],
           difficulty: typeof b.difficulty === 'string' ? b.difficulty : '',
+          subject: typeof b.subject === 'string' && ['poo', 'bi', 'logica'].includes(b.subject) ? b.subject : 'poo',
           updatedAt: new Date().toISOString(),
         };
 
@@ -384,6 +386,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           explanation: typeof item.explanation === 'string' ? item.explanation : '',
           tags: Array.isArray(item.tags) ? (item.tags as string[]).filter((t) => typeof t === 'string') : [],
           difficulty: typeof item.difficulty === 'string' ? item.difficulty : '',
+          subject: typeof item.subject === 'string' && ['poo', 'bi', 'logica'].includes(item.subject) ? item.subject : 'poo',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }));

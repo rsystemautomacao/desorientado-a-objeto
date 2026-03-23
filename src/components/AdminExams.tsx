@@ -50,6 +50,7 @@ interface BankQuestion {
   explanation?: string;
   tags: string[];
   difficulty: string;
+  subject?: SubjectKey;
   createdAt: string;
   updatedAt: string;
 }
@@ -140,19 +141,29 @@ function ImportQuestionsModal({
   bankQuestions,
   onImport,
   onClose,
+  examSubject,
 }: {
   bankQuestions: BankQuestion[];
   onImport: (selected: ExamExercise[]) => void;
   onClose: () => void;
+  examSubject?: SubjectKey;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'banco' | 'plataforma'>('all');
   const [collapsedTopics, setCollapsedTopics] = useState<Set<string>>(new Set());
 
+  // Questoes do banco filtradas pela materia da prova
+  const filteredBank = bankQuestions.filter((q) =>
+    !examSubject || (q.subject ?? 'poo') === examSubject
+  );
+
+  // Exercicios da plataforma só aparecem para POO (são todos Java/OO)
+  const showPlatform = !examSubject || examSubject === 'poo';
+
   // Build unified list
   const allItems: ImportableItem[] = [
-    ...bankQuestions.map((q) => ({
+    ...filteredBank.map((q) => ({
       key: `bank-${q.id}`,
       type: q.type || 'code' as QuestionType,
       title: q.title,
@@ -169,7 +180,7 @@ function ImportQuestionsModal({
       topic: q.tags[0] || 'Sem categoria',
       source: 'banco' as const,
     })),
-    ...platformExercises.map((ex) => ({
+    ...(showPlatform ? platformExercises.map((ex) => ({
       key: `platform-${ex.id}`,
       type: 'code' as QuestionType,
       title: ex.title,
@@ -179,7 +190,7 @@ function ImportQuestionsModal({
       difficulty: ex.difficulty,
       topic: ex.topicLabel,
       source: 'plataforma' as const,
-    })),
+    })) : []),
   ];
 
   // Filter
@@ -1030,6 +1041,7 @@ function ExamForm({
           bankQuestions={bankQuestions}
           onImport={handleImport}
           onClose={() => setShowImport(false)}
+          examSubject={subject}
         />
       )}
     </div>
@@ -1037,6 +1049,8 @@ function ExamForm({
 }
 
 // ── Question Bank Manager ────────────────────────────────────────────
+const SUBJECT_LABELS: Record<SubjectKey, string> = { poo: 'POO', bi: 'Business Intelligence', logica: 'Logica de Programacao' };
+
 function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
   const [questions, setQuestions] = useState<BankQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1046,6 +1060,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
   const [editForm, setEditForm] = useState<BankQuestion | null>(null);
   const [saving, setSaving] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [activeSubject, setActiveSubject] = useState<SubjectKey>('poo');
 
   const base = getApiBase();
 
@@ -1124,6 +1139,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
           explanation: q.explanation || '',
           tags: q.tags || [],
           difficulty: q.difficulty || '',
+          subject: q.subject || 'poo',
         }),
       });
       if (resp.ok) {
@@ -1150,6 +1166,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
   };
 
   const filtered = questions.filter((q) => {
+    if ((q.subject ?? 'poo') !== activeSubject) return false;
     if (!search) return true;
     const s = search.toLowerCase();
     return q.title.toLowerCase().includes(s) || q.description.toLowerCase().includes(s) || q.tags.some((t) => t.toLowerCase().includes(s));
@@ -1162,7 +1179,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
     const q = editForm || {
       id: '', type: 'code' as QuestionType, title: '', description: '', starterCode: 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Seu codigo aqui\n    }\n}',
       testCases: [{ input: '', expectedOutput: '', visible: true }] as TestCase[],
-      tags: [] as string[], difficulty: '', createdAt: '', updatedAt: '',
+      tags: [] as string[], difficulty: '', subject: activeSubject, createdAt: '', updatedAt: '',
     };
     return <QuestionEditor question={q} onSave={handleSave} onCancel={() => { setEditingId(null); setEditForm(null); setShowNew(false); }} saving={saving} />;
   }
@@ -1185,6 +1202,27 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
         </div>
       </div>
 
+      {/* Abas de materia */}
+      <div className="flex gap-1 mb-4 border-b border-border">
+        {(Object.entries(SUBJECT_LABELS) as [SubjectKey, string][]).map(([key, label]) => {
+          const count = questions.filter((q) => (q.subject ?? 'poo') === key).length;
+          return (
+            <button
+              key={key}
+              onClick={() => { setActiveSubject(key); setSearch(''); }}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                activeSubject === key
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+              <span className="ml-1.5 text-[10px] bg-muted px-1.5 py-0.5 rounded-full">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1200,8 +1238,8 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <Database className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>{questions.length === 0 ? 'Banco de questoes vazio.' : 'Nenhuma questao encontrada.'}</p>
-          <p className="text-sm mt-1">Use "Importar dos exercicios" para trazer as questoes existentes ou crie uma nova.</p>
+          <p>{filtered.length === 0 && questions.filter(q => (q.subject ?? 'poo') === activeSubject).length === 0 ? `Nenhuma questao de ${SUBJECT_LABELS[activeSubject]} ainda.` : 'Nenhuma questao encontrada.'}</p>
+          <p className="text-sm mt-1">{activeSubject === 'poo' ? 'Use "Importar dos exercicios" para trazer as questoes existentes ou crie uma nova.' : 'Crie uma nova questao para esta materia.'}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1274,6 +1312,7 @@ function QuestionEditor({
   const [testCases, setTestCases] = useState<TestCase[]>(question.testCases);
   const [tags, setTags] = useState(question.tags?.join(', ') || '');
   const [difficulty, setDifficulty] = useState(question.difficulty || '');
+  const [subject, setSubject] = useState<SubjectKey>((question as BankQuestion).subject || 'poo');
   // Objective question fields
   const [options, setOptions] = useState<string[]>(question.options || (type === 'true-false' ? ['Verdadeiro', 'Falso'] : ['', '', '', '']));
   const [correctIndex, setCorrectIndex] = useState(question.correctIndex ?? 0);
@@ -1313,6 +1352,7 @@ function QuestionEditor({
       description,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       difficulty,
+      subject,
       starterCode: type === 'code' ? starterCode : '',
       testCases: type === 'code' ? testCases : [],
     };
@@ -1337,6 +1377,24 @@ function QuestionEditor({
         <h2 className="text-xl font-bold">{question.id ? 'Editar Questao' : 'Nova Questao'}</h2>
       </div>
       <div className="space-y-3">
+        {/* Subject selector */}
+        <div>
+          <label className="block text-sm font-semibold mb-1">Materia</label>
+          <div className="flex gap-2">
+            {([['poo', 'POO'], ['bi', 'Business Intelligence'], ['logica', 'Logica de Programacao']] as [SubjectKey, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setSubject(key)}
+                className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                  subject === key
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : 'border-border hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >{label}</button>
+            ))}
+          </div>
+        </div>
+
         {/* Type selector */}
         {!question.id && (
           <div>
