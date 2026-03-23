@@ -696,7 +696,10 @@ function ExamObjectiveQuestion({
                 {qType === 'multiple-choice' ? 'Alternativas' : qType === 'true-false' ? 'V/F' : 'Preencher'}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.description}</p>
+            <div
+              className="text-sm text-muted-foreground rich-content"
+              dangerouslySetInnerHTML={{ __html: exercise.description }}
+            />
             {exercise.imageUrl && (
               <img src={exercise.imageUrl} alt="imagem do enunciado" className="mt-3 max-h-64 rounded-lg border border-border object-contain" />
             )}

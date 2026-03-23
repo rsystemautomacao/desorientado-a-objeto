@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import RichTextEditor from '@/components/RichTextEditor';
 import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import { exercises as platformExercises } from '@/data/exercises';
@@ -1444,9 +1445,11 @@ function QuestionEditor({
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1">{type === 'code' ? 'Enunciado' : 'Pergunta'}</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder={type === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'} />
+          <RichTextEditor
+            value={description}
+            onChange={setDescription}
+            placeholder={type === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'}
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1">Imagem do enunciado (URL, opcional)</label>
