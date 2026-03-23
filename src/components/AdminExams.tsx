@@ -51,6 +51,7 @@ interface BankQuestion {
   tags: string[];
   difficulty: string;
   subject?: SubjectKey;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -1320,6 +1321,7 @@ function QuestionEditor({
   const [snippetBefore, setSnippetBefore] = useState(question.snippetBefore || '');
   const [snippetAfter, setSnippetAfter] = useState(question.snippetAfter || '');
   const [explanation, setExplanation] = useState(question.explanation || '');
+  const [imageUrl, setImageUrl] = useState((question as BankQuestion).imageUrl || '');
 
   const handleTypeChange = (newType: QuestionType) => {
     setType(newType);
@@ -1355,6 +1357,7 @@ function QuestionEditor({
       subject,
       starterCode: type === 'code' ? starterCode : '',
       testCases: type === 'code' ? testCases : [],
+      imageUrl: imageUrl.trim() || undefined,
     };
     if (type === 'multiple-choice' || type === 'true-false' || type === 'fill-blank') {
       base.options = options;
@@ -1444,6 +1447,15 @@ function QuestionEditor({
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder={type === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'} />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold mb-1">Imagem do enunciado (URL, opcional)</label>
+          <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://... cole o link da imagem"
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          {imageUrl.trim() && (
+            <img src={imageUrl} alt="preview" className="mt-2 max-h-48 rounded-lg border border-border object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          )}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>

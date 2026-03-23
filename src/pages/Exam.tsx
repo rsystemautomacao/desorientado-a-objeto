@@ -135,6 +135,7 @@ interface ExamExercise {
   snippetBefore?: string;
   snippetAfter?: string;
   explanation?: string;
+  imageUrl?: string;
   originalIndex?: number; // original index before shuffling
 }
 
@@ -695,7 +696,10 @@ function ExamObjectiveQuestion({
                 {qType === 'multiple-choice' ? 'Alternativas' : qType === 'true-false' ? 'V/F' : 'Preencher'}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">{exercise.description}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.description}</p>
+            {exercise.imageUrl && (
+              <img src={exercise.imageUrl} alt="imagem do enunciado" className="mt-3 max-h-64 rounded-lg border border-border object-contain" />
+            )}
           </div>
           <span className={`text-xs px-2 py-1 rounded-full ${canSubmit ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
             {submissionsUsed > 0 ? 'Respondida' : '1 chance'}
