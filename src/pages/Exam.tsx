@@ -640,6 +640,7 @@ function ExamObjectiveQuestion({
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async () => {
     if (selectedIndex === null || !canSubmit || submitting) return;
@@ -753,20 +754,40 @@ function ExamObjectiveQuestion({
 
         {/* Submit status */}
         {!submitted ? (
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             {submitError && (
               <span className="text-xs text-destructive">{submitError}</span>
             )}
-            <div className="ml-auto">
-              <Button
-                size="sm"
-                disabled={selectedIndex === null || !canSubmit || submitting}
-                onClick={handleSubmit}
-              >
-                {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
-                {submitting ? 'Enviando...' : 'Responder'}
-              </Button>
-            </div>
+            {!showConfirm ? (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  disabled={selectedIndex === null || !canSubmit || submitting}
+                  onClick={() => setShowConfirm(true)}
+                >
+                  <Send className="h-4 w-4 mr-1" /> Responder
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+                <p className="text-sm text-yellow-400 font-semibold flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  Tem certeza?
+                </p>
+                <p className="text-xs text-yellow-400/70 mb-3">
+                  Apos enviar, voce <strong>nao podera alterar</strong> sua resposta para esta questao.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)} disabled={submitting} className="h-7 text-xs">
+                    Voltar e revisar
+                  </Button>
+                  <Button size="sm" onClick={handleSubmit} disabled={submitting} className="h-7 text-xs">
+                    {submitting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                    {submitting ? 'Enviando...' : 'Confirmar resposta'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center">
