@@ -1699,7 +1699,7 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
     const totalPts = exam.exercises.reduce((s, ex) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
 
     // Build data rows
-    const header = ['Nome', 'Email', 'Nota (0-10)', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola'];
+    const header = ['NOTAS', 'Nome Completo', 'Email', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola'];
     const dataRows = results.map((student) => {
       const grade = calcGrade(student);
       let correct = 0;
@@ -1717,9 +1717,9 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
         ? Math.round((new Date(student.finalizedAt).getTime() - new Date(student.accessedAt).getTime()) / 60000)
         : '';
       return [
+        parseFloat(grade.toFixed(2)),
         student.userName || student.userEmail,
         student.userEmail,
-        parseFloat(grade.toFixed(2)),
         parseFloat(earned.toFixed(2)),
         parseFloat(totalPts.toFixed(2)),
         correct,
@@ -1739,9 +1739,9 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
 
     // Column widths
     ws['!cols'] = [
-      { wch: 30 }, // Nome
+      { wch: 10 }, // NOTAS
+      { wch: 32 }, // Nome Completo
       { wch: 32 }, // Email
-      { wch: 13 }, // Nota
       { wch: 16 }, // Pontos obtidos
       { wch: 14 }, // Pontos total
       { wch: 10 }, // Acertos
