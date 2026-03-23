@@ -703,17 +703,11 @@ function ExamObjectiveQuestion({
           </pre>
         )}
 
-        {/* Fill-blank: show code with blank */}
+        {/* Fill-blank: show code with blank inline */}
         {qType === 'fill-blank' && (
-          <div className="rounded-lg bg-muted/50 border border-border p-3 font-mono text-sm">
-            <pre className="whitespace-pre-wrap">{exercise.snippetBefore || ''}</pre>
-            <span className={`inline-block px-3 py-1 mx-1 rounded border-2 border-dashed font-semibold ${
+          <pre className="rounded-lg bg-muted/50 border border-border p-3 font-mono text-sm whitespace-pre-wrap overflow-x-auto">{exercise.snippetBefore || ''}<span className={`inline px-2 py-0.5 mx-0.5 rounded border-2 border-dashed font-semibold ${
               selectedIndex !== null ? 'border-primary bg-primary/10 text-primary' : 'border-muted-foreground text-muted-foreground'
-            }`}>
-              {selectedIndex !== null ? options[selectedIndex] : '______'}
-            </span>
-            <pre className="whitespace-pre-wrap">{exercise.snippetAfter || ''}</pre>
-          </div>
+            }`}>{selectedIndex !== null ? options[selectedIndex] : '______'}</span>{exercise.snippetAfter || ''}</pre>
         )}
 
         {/* Options */}
