@@ -459,7 +459,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({
         ok: true,
         attemptNumber: submission.attemptNumber,
-        submissionsRemaining: maxSubmissions - submission.attemptNumber,
+        submissionsRemaining: maxSubs - submission.attemptNumber,
       });
     }
 
