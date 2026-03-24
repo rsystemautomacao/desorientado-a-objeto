@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { modules, getAllLessons } from '@/data/modules';
 import { exercises } from '@/data/exercises';
+import { pythonExercises } from '@/data/exercises-python';
+import { cExercises } from '@/data/exercises-c';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
@@ -14,10 +16,13 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from 'recharts';
 
+type LangTab = 'java' | 'python' | 'c';
+
 export default function Dashboard() {
   const { progress, isCompleted, getStudyTimes, getExerciseData } = useProgress();
   const { user } = useAuth();
   const [studentName, setStudentName] = useState('');
+  const [activeTab, setActiveTab] = useState<LangTab>('java');
   const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
   const [announcements, setAnnouncements] = useState<{ id: string; message: string; type: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ rank: number; name: string; xp: number; lessonsCount: number; quizCount: number }[]>([]);
@@ -98,10 +103,120 @@ export default function Dashboard() {
 
   const resumeLesson = lastStudiedLesson ?? nextIncompleteLesson;
 
+  const LANG_TABS: { id: LangTab; label: string; color: string; active: string }[] = [
+    { id: 'java',   label: '☕ Java',   color: 'text-orange-400', active: 'bg-orange-400/10 border-orange-400/40 text-orange-400' },
+    { id: 'python', label: '🐍 Python', color: 'text-blue-400',   active: 'bg-blue-400/10 border-blue-400/40 text-blue-400' },
+    { id: 'c',      label: '⚙️ Lang C', color: 'text-cyan-400',   active: 'bg-cyan-400/10 border-cyan-400/40 text-cyan-400' },
+  ];
+
+  // Python/C exercise completions (based on exercise IDs in progress)
+  const exData = getExerciseData();
+  const pyCompleted = pythonExercises.filter((e) => exData[e.id]?.passed).length;
+  const cCompleted  = cExercises.filter((e) => exData[e.id]?.passed).length;
+
   return (
     <Layout>
       <div className="container py-10 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-8">Dashboard do Aluno</h1>
+        <h1 className="text-3xl font-bold mb-2">Dashboard do Aluno</h1>
+        <p className="text-muted-foreground mb-6">Acompanhe seu progresso em cada linguagem.</p>
+
+        {/* Language tabs */}
+        <div className="flex gap-2 mb-8 border-b border-border pb-3 flex-wrap">
+          {LANG_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                activeTab === tab.id ? tab.active : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Python tab ── */}
+        {activeTab === 'python' && (
+          <div className="space-y-6">
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <Code2 className="h-8 w-8 text-blue-400 mb-3" />
+                <p className="text-3xl font-bold">{pyCompleted}<span className="text-lg text-muted-foreground">/{pythonExercises.length}</span></p>
+                <p className="text-sm text-muted-foreground">Exercícios resolvidos</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                <Trophy className="h-8 w-8 text-blue-400 mb-3" />
+                <p className="text-3xl font-bold">{pythonExercises.length > 0 ? Math.round((pyCompleted / pythonExercises.length) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">Progresso em exercícios</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                <BookOpen className="h-8 w-8 text-blue-400 mb-3" />
+                <p className="text-3xl font-bold">10</p>
+                <p className="text-sm text-muted-foreground">Aulas na trilha</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h3 className="font-semibold mb-4">Exercícios</h3>
+              <div className="space-y-2">
+                {pythonExercises.map((ex) => {
+                  const done = !!exData[ex.id]?.passed;
+                  return (
+                    <Link key={ex.id} to={`/python/exercicio/${ex.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? 'bg-blue-400/20 text-blue-400' : 'bg-muted'}`}>
+                        {done ? <Trophy className="h-3 w-3" /> : <span className="text-xs text-muted-foreground">–</span>}
+                      </div>
+                      <span className="text-sm flex-1">{ex.title}</span>
+                      <span className="text-xs text-muted-foreground">{ex.xpReward} XP</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── C tab ── */}
+        {activeTab === 'c' && (
+          <div className="space-y-6">
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <Code2 className="h-8 w-8 text-cyan-400 mb-3" />
+                <p className="text-3xl font-bold">{cCompleted}<span className="text-lg text-muted-foreground">/{cExercises.length}</span></p>
+                <p className="text-sm text-muted-foreground">Exercícios resolvidos</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                <Trophy className="h-8 w-8 text-cyan-400 mb-3" />
+                <p className="text-3xl font-bold">{cExercises.length > 0 ? Math.round((cCompleted / cExercises.length) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">Progresso em exercícios</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                <BookOpen className="h-8 w-8 text-cyan-400 mb-3" />
+                <p className="text-3xl font-bold">10</p>
+                <p className="text-sm text-muted-foreground">Aulas na trilha</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h3 className="font-semibold mb-4">Exercícios</h3>
+              <div className="space-y-2">
+                {cExercises.map((ex) => {
+                  const done = !!exData[ex.id]?.passed;
+                  return (
+                    <Link key={ex.id} to={`/c/exercicio/${ex.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? 'bg-cyan-400/20 text-cyan-400' : 'bg-muted'}`}>
+                        {done ? <Trophy className="h-3 w-3" /> : <span className="text-xs text-muted-foreground">–</span>}
+                      </div>
+                      <span className="text-sm flex-1">{ex.title}</span>
+                      <span className="text-xs text-muted-foreground">{ex.xpReward} XP</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Java tab ── */}
+        {activeTab === 'java' && <>
 
         {/* Announcements from teacher */}
         {announcements.length > 0 && (
@@ -483,6 +598,7 @@ export default function Dashboard() {
             lessonCount={certModule.lessons.length}
           />
         )}
+        </>}
       </div>
     </Layout>
   );

@@ -31,7 +31,6 @@ const JAVA_NAV = [
   { to: '/trilha', label: 'Trilha', icon: Map },
   { to: '/exercicios', label: 'Exercícios', icon: Code2 },
   { to: '/entrevistas', label: 'Entrevistas', icon: BriefcaseBusiness },
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 const PYTHON_NAV = [
@@ -148,6 +147,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            {user && (
+              <Link
+                to="/dashboard"
+                title="Dashboard"
+                className={`p-2 rounded-lg transition-colors ${location.pathname === '/dashboard' ? 'bg-primary/10 text-primary' : 'hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+              </Link>
+            )}
             <GlobalSearch />
             <button
               onClick={toggleTheme}

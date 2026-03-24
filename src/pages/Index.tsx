@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowRight, BookOpen, BriefcaseBusiness, Code2, Trophy, Map, Zap, Target } from 'lucide-react';
+import { ArrowRight, BookOpen, BriefcaseBusiness, Code2, Trophy, Map, Zap, Target, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const LANGUAGES = [
@@ -93,9 +93,12 @@ export default function Index() {
             <span className="text-blue-400 font-semibold">Python</span> e{' '}
             <span className="text-cyan-400 font-semibold">C</span>. Com exercícios práticos, quizzes e execução de código online.
           </p>
-          <a href="#linguagens" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all glow-primary">
-            Escolher linguagem <ArrowRight className="h-5 w-5" />
-          </a>
+          <button
+            onClick={() => document.getElementById('linguagens')?.scrollIntoView({ behavior: 'smooth' })}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all glow-primary"
+          >
+            Escolher linguagem <ChevronDown className="h-5 w-5" />
+          </button>
         </section>
 
         {/* ── Language Cards ── */}
