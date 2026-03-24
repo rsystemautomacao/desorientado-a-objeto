@@ -4,21 +4,30 @@ import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
 import LangTryItBox from '@/components/LangTryItBox';
+import QuizComponent from '@/components/QuizComponent';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProgress } from '@/hooks/useProgress';
+import { useAuth } from '@/contexts/AuthContext';
+import { getQuizXp } from '@/lib/progressStore';
 import { pythonModules, getPythonAdjacentLessons, getAllPythonLessons } from '@/data/modules-python';
 import { cModules, getCAdjacentLessons, getAllCLessons } from '@/data/modules-c';
 import { pythonLessonContents } from '@/data/lessonContents-python';
 import { cLessonContents } from '@/data/lessonContents-c';
+import { getPythonQuizByLesson } from '@/data/quizData-python';
+import { getCQuizByLesson } from '@/data/quizData-c';
 import { ArrowLeft, ArrowRight, CheckCircle2, Target, Clock, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const QUIZ_PASS_THRESHOLD = 0.75;
 
 export default function LanguageLesson() {
   const { id } = useParams<{ id: string }>();
   const { lang, label, judge0Id, color, routePrefix } = useLanguage();
-  const { isCompleted, completeLesson } = useProgress();
+  const { isCompleted, completeLesson, saveQuizResult, progress } = useProgress();
+  const { user } = useAuth();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [quizOutcome, setQuizOutcome] = useState<{ score: number; total: number; earnedXp: number; isFirstAttempt: boolean; lessonAutoCompleted: boolean } | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,8 +39,8 @@ export default function LanguageLesson() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Reset "just completed" banner when lesson changes
-  useEffect(() => { setJustCompleted(false); }, [id]);
+  // Reset banners when lesson changes
+  useEffect(() => { setJustCompleted(false); setQuizOutcome(null); }, [id]);
 
   if (!id) return null;
 
@@ -45,6 +54,7 @@ export default function LanguageLesson() {
   const codeTitle = isPython ? 'Python' : 'C';
 
   const done = id ? isCompleted(id) : false;
+  const lessonQuiz = id ? (isPython ? getPythonQuizByLesson(id) : getCQuizByLesson(id)) : [];
 
   function handleComplete() {
     if (!id || done) return;
@@ -175,6 +185,34 @@ export default function LanguageLesson() {
               ))}
             </ul>
           </div>
+        )}
+
+        {/* Quiz */}
+        {lessonQuiz.length > 0 && (
+          <section className="mb-10 p-6 rounded-xl border border-border bg-card">
+            <QuizComponent
+              key={`quiz-${id}-${user?.uid ?? 'anon'}`}
+              lessonId={id!}
+              questions={lessonQuiz}
+              passThreshold={QUIZ_PASS_THRESHOLD}
+              earnedXp={quizOutcome?.earnedXp}
+              isFirstAttempt={quizOutcome?.isFirstAttempt}
+              lessonAutoCompleted={quizOutcome?.lessonAutoCompleted}
+              onRetry={() => setQuizOutcome(null)}
+              onComplete={(score, total) => {
+                const isFirstAttempt = !progress.quizResults[id!];
+                const earnedXp = isFirstAttempt ? getQuizXp(score, total, true) : 0;
+                const passed = total > 0 && score / total >= QUIZ_PASS_THRESHOLD;
+                saveQuizResult(id!, score, total);
+                let lessonAutoCompleted = false;
+                if (passed && !isCompleted(id!)) {
+                  completeLesson(id!);
+                  lessonAutoCompleted = true;
+                }
+                setQuizOutcome({ score, total, earnedXp, isFirstAttempt, lessonAutoCompleted });
+              }}
+            />
+          </section>
         )}
 
         {/* Complete lesson button */}
