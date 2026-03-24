@@ -2,6 +2,20 @@ import { Module } from './types';
 
 export const cModules: Module[] = [
   {
+    id: 0,
+    title: 'Fluxogramas e Pensamento Algorítmico',
+    description: 'Aprenda a pensar como programador: algoritmos, símbolos de fluxograma e como traduzir diagramas em código C.',
+    level: 'basico',
+    icon: '📐',
+    lessons: [
+      { id: 'c-m0-algo',     title: 'O que é um Algoritmo?',                        duration: '15 min' },
+      { id: 'c-m0-symbols',  title: 'Símbolos dos Fluxogramas',                      duration: '20 min' },
+      { id: 'c-m0-seq',      title: 'Fluxogramas Sequenciais e Código C',            duration: '20 min' },
+      { id: 'c-m0-decision', title: 'Fluxogramas com Decisão (if/else)',             duration: '25 min' },
+      { id: 'c-m0-loops',    title: 'Fluxogramas com Repetição (while e for)',       duration: '25 min' },
+    ],
+  },
+  {
     id: 1,
     title: 'Fundamentos de C',
     description: 'Introdução à linguagem C, variáveis, tipos, operadores e entrada/saída.',

@@ -391,4 +391,802 @@ export const cLessonContents: Record<string, LessonContent> = {
       'Sempre inicialize ponteiros — ponteiros "soltos" causam crashes',
     ],
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // MÓDULO 0 — Fluxogramas e Pensamento Algorítmico
+  // ─────────────────────────────────────────────────────────────────────────
+
+  'c-m0-algo': {
+    id: 'c-m0-algo', moduleId: 0,
+    objectives: [
+      'Entender o conceito de algoritmo',
+      'Reconhecer algoritmos no cotidiano',
+      'Distinguir as características de um bom algoritmo',
+      'Compreender por que pensar antes de codificar economiza tempo',
+    ],
+    sections: [
+      {
+        title: 'O que é um Algoritmo?',
+        body: `Um algoritmo é uma sequência finita e ordenada de passos que resolve um problema ou realiza uma tarefa.
+
+A palavra vem do nome do matemático persa Al-Khwarizmi (século IX), autor de um tratado sobre cálculo que influenciou toda a matemática ocidental.
+
+O conceito parece sofisticado, mas você usa algoritmos o tempo todo no dia a dia, sem perceber.`,
+        tip: 'Algoritmo ≠ código. Um algoritmo é a ideia da solução. O código é apenas uma das formas de expressá-la — em qualquer linguagem.',
+      },
+      {
+        title: 'Algoritmos no Cotidiano',
+        body: `Exemplos de algoritmos que você já conhece:
+
+► Receita de bolo
+   1. Pré-aqueça o forno a 180°C
+   2. Misture os ingredientes secos
+   3. Acrescente os ovos e o leite
+   4. Bata por 5 minutos
+   5. Despeje na forma e leve ao forno por 40 min
+
+► Trocar um pneu furado
+► Resolver uma equação de segundo grau
+► Buscar um contato na agenda telefônica
+
+Todos têm em comum: passos bem definidos, ordem importa, têm começo e fim.`,
+        code: `ALGORITMO: Verificar se número é par ou ímpar
+
+INÍCIO
+   1. Receber um número inteiro N
+   2. Calcular o resto de N dividido por 2
+   3. SE o resto for igual a 0:
+         Exibir "Par"
+      SENÃO:
+         Exibir "Ímpar"
+   4. Encerrar
+FIM`,
+        codeExplanation: 'Este é um algoritmo escrito em pseudocódigo — linguagem intermediária entre português e código. Antes de escrever C, muitos programadores escrevem o pseudocódigo para organizar o raciocínio.',
+      },
+      {
+        title: 'Características de um Bom Algoritmo',
+        body: `Para ser válido, um algoritmo precisa ter:
+
+✔  FINITUDE — deve terminar após um número finito de passos.
+   (Um loop infinito não é um algoritmo correto!)
+
+✔  DEFINIÇÃO — cada passo deve ser preciso e sem ambiguidade.
+   ("Adicione um pouco de sal" é ambíguo. "Adicione 5g de sal" não é.)
+
+✔  ENTRADAS — zero ou mais dados de entrada bem definidos.
+
+✔  SAÍDAS — pelo menos uma saída (o resultado do processamento).
+
+✔  EFETIVIDADE — cada passo deve ser executável na prática.`,
+        warning: 'Um algoritmo que nunca termina (loop infinito não controlado) não é considerado correto — mesmo que pareça produzir resultados durante a execução.',
+      },
+      {
+        title: 'Por que Pensar Antes de Codificar?',
+        body: `Programadores iniciantes costumam abrir o editor e começar a digitar código imediatamente. Resultado: código desorganizado, cheio de bugs e difícil de consertar.
+
+Programadores experientes seguem o ciclo:
+
+   PROBLEMA → ANÁLISE → ALGORITMO → CÓDIGO → TESTE
+
+Investir 10 minutos desenhando o algoritmo (no papel, em pseudocódigo ou em fluxograma) pode economizar 2 horas de depuração depois.
+
+Nas próximas aulas você aprenderá a usar FLUXOGRAMAS — a ferramenta visual para representar algoritmos — e depois traduzirá cada símbolo para código C real.`,
+        tip: 'Regra prática: se você não consegue explicar o algoritmo para alguém sem usar computador, você ainda não entende o problema completamente.',
+      },
+    ],
+    summary: [
+      'Algoritmo é uma sequência finita, ordenada e precisa de passos para resolver um problema',
+      'Algoritmos existem no cotidiano: receitas, instruções, procedimentos',
+      'Um bom algoritmo é finito, definido, tem entradas e saídas, e é efetivo',
+      'Pensar no algoritmo antes de codificar evita bugs e retrabalho',
+      'Pseudocódigo e fluxogramas são formas de representar algoritmos antes do código',
+    ],
+  },
+
+  'c-m0-symbols': {
+    id: 'c-m0-symbols', moduleId: 0,
+    objectives: [
+      'Conhecer os 6 símbolos principais de fluxogramas',
+      'Identificar cada símbolo pelo seu formato visual',
+      'Entender quando usar cada símbolo',
+      'Ler um fluxograma simples com os símbolos corretos',
+    ],
+    sections: [
+      {
+        title: 'Por que Usar Símbolos Padronizados?',
+        body: `Fluxogramas seguem um padrão internacional (norma ISO 5807) para que qualquer pessoa do mundo, independente da linguagem de programação que usa, consiga ler e entender o diagrama.
+
+Cada forma geométrica tem um significado específico. Usar os símbolos errados é como usar sinais de trânsito no lugar errado — causa confusão.
+
+Veja os 6 símbolos que você usará durante todo o curso de C:`,
+      },
+      {
+        title: 'Símbolo 1 — Início / Fim (Oval ou Cápsula)',
+        body: `FORMA: Oval ou cápsula (elipse arredondada)
+USO: Marca onde o algoritmo começa e onde termina.
+REGRA: Todo fluxograma deve ter exatamente um INÍCIO e pelo menos um FIM.`,
+        code: `        ╭─────────────╮
+        │    INÍCIO   │   ← Sempre oval/cápsula
+        ╰─────────────╯
+               │
+              ...
+               │
+        ╭─────────────╮
+        │     FIM     │   ← Também oval/cápsula
+        ╰─────────────╯`,
+        codeExplanation: 'O símbolo de início/fim é sempre uma oval ou cápsula. Use "INÍCIO" no começo e "FIM" no final do fluxograma.',
+        tip: 'Nunca use retângulos para início/fim — retângulos têm outro significado (processamento).',
+      },
+      {
+        title: 'Símbolo 2 — Processamento (Retângulo)',
+        body: `FORMA: Retângulo simples
+USO: Representa qualquer operação de cálculo ou atribuição de valor.
+EXEMPLOS:
+  • Calcular soma = a + b
+  • Fazer x = x + 1
+  • Atribuir resultado = nota * peso`,
+        code: `   ┌──────────────────────────┐
+   │   soma  ←  a + b        │   ← Cálculo
+   └──────────────────────────┘
+
+   ┌──────────────────────────┐
+   │   contador ← contador+1  │   ← Incremento
+   └──────────────────────────┘
+
+   ┌──────────────────────────┐
+   │   media ← soma / n       │   ← Divisão
+   └──────────────────────────┘`,
+        codeExplanation: 'Em C, esses retângulos viram atribuições: soma = a + b; ou contador++;',
+      },
+      {
+        title: 'Símbolo 3 — Entrada e Saída de Dados (Paralelogramo)',
+        body: `FORMA: Paralelogramo (retângulo inclinado)
+USO:
+  • ENTRADA — ler dados do usuário (teclado, arquivo, sensor)
+  • SAÍDA — exibir dados ao usuário (tela, impressora, arquivo)
+
+Alguns fluxogramas diferenciam entrada de saída pelo texto dentro do símbolo. Outros usam o mesmo símbolo para ambos, indicando pelo conteúdo escrito.`,
+        code: `  /──────────────────────────/
+ /   Ler: nota do aluno     /   ← ENTRADA (usuário digita)
+/──────────────────────────/
+
+  /──────────────────────────/
+ /   Exibir: "Aprovado!"    /   ← SAÍDA (programa exibe)
+/──────────────────────────/`,
+        codeExplanation: 'Em C: entrada → scanf("%f", &nota);  |  saída → printf("Aprovado!");',
+        tip: 'Lembre-se: o paralelogramo é sempre "comunicação com o mundo externo" — seja lendo ou escrevendo.',
+      },
+      {
+        title: 'Símbolo 4 — Decisão (Losango / Diamante)',
+        body: `FORMA: Losango (diamante)
+USO: Representa uma pergunta cuja resposta é SIM ou NÃO (verdadeiro ou falso).
+REGRA: Do losango saem DUAS setas — uma para "Sim" e outra para "Não".
+
+Este é o símbolo mais importante do fluxograma — ele representa toda lógica condicional (if/else).`,
+        code: `              ╱╲
+             ╱  ╲
+            ╱nota╲
+           ╱  >= 7?╲
+           ╲        ╱
+     Sim    ╲      ╱   Não
+      ↙      ╲    ╱      ↘
+     ↙         ╲╱          ↘
+┌──────────┐              ┌──────────┐
+│"Aprovado"│              │"Reprovado│
+└──────────┘              └──────────┘`,
+        codeExplanation: 'Em C: if (nota >= 7) { printf("Aprovado"); } else { printf("Reprovado"); }',
+        warning: 'O losango deve ter EXATAMENTE duas saídas: Sim e Não. Se precisar testar mais condições, encadeie vários losangos.',
+      },
+      {
+        title: 'Símbolo 5 — Seta de Fluxo (Conector Direcional)',
+        body: `FORMA: Seta direcional
+USO: Indica a direção do fluxo de execução — de onde vem e para onde vai.
+REGRAS:
+  • Setas geralmente fluem de cima para baixo
+  • Em loops, uma seta pode voltar para cima (para repetir)
+  • Toda seta conecta UM símbolo de saída a UM símbolo de entrada`,
+        code: `   ╭──────────╮
+   │  INÍCIO  │
+   ╰──────────╯
+         │        ← Seta para baixo (fluxo normal)
+         ▼
+   ┌──────────────┐
+   │  Ler valor   │
+   └──────────────┘
+         │
+         ▼
+   ┌──────────────┐
+   │ total = total│◄──── Seta voltando (loop)
+   │   + valor    │     │
+   └──────────────┘     │
+         │              │
+         ▼              │
+        ...  ───────────┘`,
+        tip: 'Setas que voltam para um ponto anterior indicam REPETIÇÃO (loops: for, while, do-while).',
+      },
+      {
+        title: 'Símbolo 6 — Interligação de Páginas (Círculo)',
+        body: `FORMA: Círculo pequeno com uma letra ou número dentro
+USO: Conecta partes do fluxograma em páginas diferentes ou em regiões distantes do mesmo diagrama.
+
+Quando o fluxograma é muito grande para caber em uma página, use círculos com a mesma letra nos dois pontos de conexão.`,
+        code: `   ... continuação do fluxograma ...
+         │
+         ▼
+        ╭───╮
+        │ A │   ← "Conector A" — continua na próxima página
+        ╰───╯
+
+   ══════════ PÁGINA 2 ══════════
+
+        ╭───╮
+        │ A │   ← Retoma de onde parou
+        ╰───╯
+         │
+         ▼
+   ┌──────────────┐
+   │ próximo passo│
+   └──────────────┘`,
+        tip: 'Em fluxogramas pequenos (como os que faremos neste curso), raramente precisamos do conector de página. Mas é importante conhecê-lo para leitura de diagramas profissionais.',
+      },
+      {
+        title: 'Resumo Visual dos Símbolos',
+        body: `Aqui estão todos os símbolos juntos para você consultar sempre que precisar:`,
+        code: `╔══════════════════════════════════════════════════════╗
+║          TABELA DE SÍMBOLOS DE FLUXOGRAMA            ║
+╠══════════════╦══════════════════╦═════════════════════╣
+║ SÍMBOLO      ║ FORMA            ║ REPRESENTA          ║
+╠══════════════╬══════════════════╬═════════════════════╣
+║ Início/Fim   ║ ( Oval )         ║ Começo e fim        ║
+║ Processamento║ [ Retângulo ]    ║ Cálculo/atribuição  ║
+║ Entrada/Saída║ / Paralelogramo /║ Ler/Exibir dados    ║
+║ Decisão      ║ < Losango >      ║ Condição Sim/Não    ║
+║ Seta         ║ → Direcional     ║ Direção do fluxo    ║
+║ Conector     ║ ○ Círculo        ║ Liga páginas/regiões║
+╚══════════════╩══════════════════╩═════════════════════╝`,
+        codeExplanation: 'Guarde esta tabela! Você a usará nas próximas aulas para construir e ler fluxogramas.',
+      },
+    ],
+    summary: [
+      'Oval/Cápsula → Início e Fim do algoritmo',
+      'Retângulo → Processamento (cálculos e atribuições)',
+      'Paralelogramo → Entrada de dados (ler) e Saída de dados (exibir)',
+      'Losango → Decisão (condição com dois caminhos: Sim e Não)',
+      'Seta → Direção do fluxo de execução',
+      'Círculo → Conector entre partes distantes ou páginas diferentes',
+    ],
+  },
+
+  'c-m0-seq': {
+    id: 'c-m0-seq', moduleId: 0,
+    objectives: [
+      'Construir fluxogramas de sequência simples',
+      'Identificar a estrutura linear: entrada → processamento → saída',
+      'Traduzir um fluxograma sequencial para código C',
+      'Praticar com exemplos reais de cálculo',
+    ],
+    sections: [
+      {
+        title: 'A Estrutura Sequencial',
+        body: `A estrutura mais simples de algoritmo é a SEQUÊNCIA — os passos executam um após o outro, de cima para baixo, sem desvios.
+
+É como seguir uma receita passo a passo: primeiro bate os ovos, depois adiciona a farinha, depois leva ao forno. Não há escolhas nem repetições.
+
+No fluxograma, a estrutura sequencial usa apenas:
+  • Um oval de INÍCIO
+  • Paralelogramos (entrada/saída)
+  • Retângulos (processamento)
+  • Um oval de FIM
+  • Setas conectando tudo de cima para baixo`,
+      },
+      {
+        title: 'Exemplo 1 — Calcular a Área de um Retângulo',
+        body: `Problema: Dado a base e a altura, calcule e exiba a área de um retângulo.
+
+Algoritmo:
+  1. Início
+  2. Ler base
+  3. Ler altura
+  4. Calcular área = base × altura
+  5. Exibir área
+  6. Fim
+
+Veja o fluxograma:`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+       /───────────────/
+      /   Ler: base   /
+     /───────────────/
+               │
+               ▼
+       /────────────────/
+      /   Ler: altura  /
+     /────────────────/
+               │
+               ▼
+       ┌────────────────────┐
+       │ area = base*altura │
+       └────────────────────┘
+               │
+               ▼
+       /─────────────────────/
+      /   Exibir: area      /
+     /─────────────────────/
+               │
+               ▼
+        ╭───────────╮
+        │    FIM    │
+        ╰───────────╯`,
+        codeExplanation: 'Perceba: dois paralelogramos de entrada, um retângulo de processamento, um paralelogramo de saída. Tudo conectado por setas de cima para baixo.',
+      },
+      {
+        title: 'Do Fluxograma para o Código C',
+        body: `Agora veja como cada símbolo do fluxograma acima vira código C:
+
+  Oval INÍCIO/FIM → Não gera código (é implícito no main)
+  Paralelogramo Ler → scanf()
+  Retângulo calcular → operação aritmética
+  Paralelogramo Exibir → printf()`,
+        code: `#include <stdio.h>
+
+int main() {
+    float base, altura, area;
+
+    // /Ler: base/ → scanf
+    printf("Digite a base: ");
+    scanf("%f", &base);
+
+    // /Ler: altura/ → scanf
+    printf("Digite a altura: ");
+    scanf("%f", &altura);
+
+    // [area = base * altura] → atribuição
+    area = base * altura;
+
+    // /Exibir: area/ → printf
+    printf("Area = %.2f\n", area);
+
+    return 0;
+}`,
+        codeExplanation: 'Cada bloco do fluxograma vira exatamente uma ou duas linhas de código C. O mapeamento é direto — é por isso que o fluxograma facilita tanto a programação!',
+        tryItCode: `#include <stdio.h>
+
+int main() {
+    float base = 5.0;
+    float altura = 3.0;
+    float area;
+
+    area = base * altura;
+
+    printf("Base: %.1f\\n", base);
+    printf("Altura: %.1f\\n", altura);
+    printf("Area do retangulo: %.2f\\n", area);
+
+    return 0;
+}`,
+        tryItPrompt: 'Execute e veja o resultado. Depois tente calcular o volume de um cubo (lado³) seguindo a mesma estrutura sequencial.',
+      },
+      {
+        title: 'Exemplo 2 — Calcular Média de Três Notas',
+        body: `Problema: Ler três notas e calcular a média aritmética.
+
+Este exemplo tem mais entradas, mas ainda é puramente sequencial.`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+       /────────────────/
+      /   Ler: nota1   /
+     /────────────────/
+               │
+               ▼
+       /────────────────/
+      /   Ler: nota2   /
+     /────────────────/
+               │
+               ▼
+       /────────────────/
+      /   Ler: nota3   /
+     /────────────────/
+               │
+               ▼
+   ┌───────────────────────────┐
+   │ media=(nota1+nota2+nota3) │
+   │           / 3             │
+   └───────────────────────────┘
+               │
+               ▼
+       /──────────────────/
+      /   Exibir: media  /
+     /──────────────────/
+               │
+               ▼
+        ╭───────────╮
+        │    FIM    │
+        ╰───────────╯`,
+        codeExplanation: 'Três entradas separadas, um único processamento (cálculo da média), uma saída. Estrutura: ENTRADA → PROCESSAMENTO → SAÍDA.',
+        tip: 'Na estrutura sequencial, a ORDEM importa muito. Calcular a média antes de ler as notas geraria um erro (valores não inicializados).',
+      },
+    ],
+    summary: [
+      'Estrutura sequencial: passos executam um após o outro, sem desvios',
+      'Fluxo: INÍCIO → Entradas → Processamento → Saídas → FIM',
+      'Paralelogramo de entrada → scanf() em C',
+      'Retângulo de processamento → operação aritmética em C',
+      'Paralelogramo de saída → printf() em C',
+      'A ordem dos blocos no fluxograma define a ordem do código',
+    ],
+  },
+
+  'c-m0-decision': {
+    id: 'c-m0-decision', moduleId: 0,
+    objectives: [
+      'Representar condições em fluxogramas com o símbolo losango',
+      'Desenhar os dois caminhos Sim/Não corretamente',
+      'Encadear múltiplas decisões (else if)',
+      'Traduzir fluxogramas com decisão para if/else em C',
+    ],
+    sections: [
+      {
+        title: 'Quando o Fluxo Se Divide',
+        body: `Nem sempre o algoritmo segue um caminho único. Frequentemente precisamos tomar decisões:
+
+  "Se a nota for maior ou igual a 7, o aluno está aprovado. Caso contrário, está reprovado."
+
+Esse tipo de lógica é representada pelo LOSANGO no fluxograma — o símbolo de decisão.
+
+O losango sempre contém uma pergunta de Sim ou Não (verdadeiro ou falso) e sempre tem duas saídas: o caminho do "Sim" e o caminho do "Não".`,
+        tip: 'A pergunta dentro do losango deve ter sempre resposta SIM ou NÃO. Evite perguntas vagas como "nota boa?" — prefira "nota >= 7?".',
+      },
+      {
+        title: 'Exemplo 1 — Aprovado ou Reprovado',
+        body: `Problema: Ler a nota de um aluno e informar se foi aprovado (nota ≥ 7) ou reprovado.`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+       /────────────────/
+      /   Ler: nota    /
+     /────────────────/
+               │
+               ▼
+           ╱───────╲
+          ╱ nota    ╲
+         ╱   >= 7?   ╲
+         ╲            ╱
+    Sim   ╲          ╱   Não
+     ↙     ╲        ╱      ↘
+    ↙        ╲──────╱         ↘
+/──────────/              /────────────/
+/ "Aprovado"/            /  "Reprovado"/
+/──────────/              /────────────/
+    ↘                         ↙
+     ↘                       ↙
+      ╭─────────────────────╮
+      │         FIM         │
+      ╰─────────────────────╯`,
+        codeExplanation: 'Os dois caminhos (Aprovado / Reprovado) se reúnem antes do FIM. Em C, isso é o if/else.',
+      },
+      {
+        title: 'Traduzindo para Código C',
+        body: `Cada elemento do fluxograma acima vira código C:`,
+        code: `#include <stdio.h>
+
+int main() {
+    float nota;
+
+    // Paralelogramo: Ler nota
+    printf("Digite a nota: ");
+    scanf("%f", &nota);
+
+    // Losango: nota >= 7?
+    if (nota >= 7) {
+        // Caminho Sim
+        printf("Aprovado!\\n");
+    } else {
+        // Caminho Nao
+        printf("Reprovado!\\n");
+    }
+
+    // FIM
+    return 0;
+}`,
+        codeExplanation: 'O losango vira if(condição). O caminho Sim vira o bloco {} do if. O caminho Não vira o bloco {} do else.',
+        tryItCode: `#include <stdio.h>
+
+int main() {
+    float nota = 8.5;
+
+    if (nota >= 7) {
+        printf("Resultado: Aprovado!\\n");
+    } else {
+        printf("Resultado: Reprovado!\\n");
+    }
+
+    printf("Nota: %.1f\\n", nota);
+
+    return 0;
+}`,
+        tryItPrompt: 'Execute com nota = 8.5. Depois mude para 4.0 e veja a diferença. Qual linha do código o fluxograma representa?',
+      },
+      {
+        title: 'Decisões Encadeadas — Três Caminhos',
+        body: `E se precisarmos de três resultados possíveis? Por exemplo:
+  • Nota ≥ 9 → "Excelente"
+  • Nota ≥ 7 → "Aprovado"
+  • Nota < 7  → "Reprovado"
+
+Encadeamos dois losangos — a saída "Não" do primeiro entra no segundo losango:`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+       /────────────────/
+      /   Ler: nota    /
+     /────────────────/
+               │
+               ▼
+           ╱────────╲
+          ╱  nota    ╲
+         ╱   >= 9?    ╲
+         ╲             ╱
+    Sim   ╲           ╱  Não
+     ↙     ╲─────────╱     ↘
+    ↙                         ↘
+/─────────/              ╱────────╲
+/"Excelente"/           ╱  nota    ╲
+/─────────/            ╱   >= 7?    ╲
+    │                  ╲            ╱
+    │             Sim   ╲          ╱  Não
+    │              ↙     ╲────────╱     ↘
+    │             ↙                       ↘
+    │    /──────────/              /────────────/
+    │   /"Aprovado"/              / "Reprovado" /
+    │   /──────────/              /────────────/
+    │        │                         │
+    └────────┴─────────────────────────┘
+                        │
+                        ▼
+                 ╭─────────╮
+                 │   FIM   │
+                 ╰─────────╯`,
+        codeExplanation: 'Dois losangos encadeados. Em C, isso se torna if / else if / else.',
+      },
+      {
+        title: 'Código com else if',
+        body: `Veja como os dois losangos encadeados viram if/else if/else em C:`,
+        code: `#include <stdio.h>
+
+int main() {
+    float nota;
+    printf("Digite a nota: ");
+    scanf("%f", &nota);
+
+    // 1º losango: nota >= 9?
+    if (nota >= 9) {
+        printf("Excelente!\\n");          // Sim
+    }
+    // 2º losango: nota >= 7?
+    else if (nota >= 7) {
+        printf("Aprovado!\\n");           // Sim do 2º
+    }
+    // Não do 2º losango
+    else {
+        printf("Reprovado!\\n");
+    }
+
+    return 0;
+}`,
+        codeExplanation: 'Cada losango vira um if ou else if. Os caminhos "Sim" viram os blocos {}. O último "Não" vira o else final.',
+        tip: 'A ordem dos losangos/ifs importa! Testamos do mais restritivo (>= 9) para o menos restritivo (>= 7). Se invertêssemos, "Excelente" nunca seria exibido.',
+      },
+    ],
+    summary: [
+      'Losango representa decisão com dois caminhos: Sim e Não',
+      'A pergunta no losango deve ser verdadeiro/falso (comparação)',
+      'Losango com dois caminhos → if/else em C',
+      'Losangos encadeados (Não entra em outro losango) → if/else if/else em C',
+      'A ordem dos losangos define a prioridade das condições',
+      'Os dois caminhos do losango sempre se reencontram antes do FIM',
+    ],
+  },
+
+  'c-m0-loops': {
+    id: 'c-m0-loops', moduleId: 0,
+    objectives: [
+      'Representar repetição em fluxogramas com setas de retorno',
+      'Identificar a condição de parada no losango de loop',
+      'Distinguir loops "verificar antes" (while) de "verificar depois" (do-while)',
+      'Traduzir fluxogramas com repetição para for/while em C',
+    ],
+    sections: [
+      {
+        title: 'Repetição em Fluxogramas',
+        body: `Muitos algoritmos precisam repetir ações: somar vários números, percorrer uma lista, tentar até o usuário acertar.
+
+No fluxograma, REPETIÇÃO é representada por uma SETA QUE VOLTA para um ponto anterior — criando um "laço" no diagrama.
+
+Junto com essa seta de retorno, sempre há um losango (decisão) que controla quando o loop para:
+  • Se a condição for Verdadeira → continua repetindo
+  • Se a condição for Falsa → sai do loop`,
+        warning: 'Todo loop precisa de uma condição de saída! Um fluxograma onde a seta sempre volta (sem losango de controle) representa um loop infinito — um bug.',
+      },
+      {
+        title: 'Exemplo 1 — Somar Números até Digitar Zero',
+        body: `Problema: Ler números do usuário e somar. Parar quando digitar 0. Exibir a soma total.
+
+Este loop "enquanto número ≠ 0, continua somando":`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+      ┌────────────────────┐
+      │   soma ← 0         │   Inicialização
+      └────────────────────┘
+               │
+               ▼
+       /────────────────/
+      /   Ler: numero  /◄────────────────┐
+     /────────────────/                  │
+               │                         │
+               ▼                         │
+           ╱─────────╲                   │ Seta de
+          ╱  numero   ╲                  │ retorno
+         ╱    != 0?    ╲                 │ (loop)
+         ╲              ╱                │
+    Sim   ╲            ╱  Não            │
+     ↓     ╲──────────╱      ↓           │
+     ↓                        ↓          │
+ ┌──────────────┐        /──────────────/│
+ │soma=soma+num │        / Exibir: soma /│
+ └──────────────┘        /──────────────/│
+     │                        │          │
+     └────────────────────────┘          │
+               └────────────────────────►┘
+               (volta para "Ler numero")
+
+               (caminho Não leva ao FIM)
+                        ↓
+                 ╭─────────╮
+                 │   FIM   │
+                 ╰─────────╯`,
+        codeExplanation: 'O losango "numero != 0?" controla o loop. Enquanto Sim, soma e relê. Quando Não (digitou 0), sai e exibe a soma.',
+      },
+      {
+        title: 'Traduzindo para while em C',
+        body: `O fluxograma "verificar condição → executar → voltar" corresponde ao while em C:`,
+        code: `#include <stdio.h>
+
+int main() {
+    int numero, soma;
+    soma = 0;   // [soma ← 0]
+
+    // /Ler: numero/
+    printf("Digite um numero (0 para parar): ");
+    scanf("%d", &numero);
+
+    // Losango: numero != 0?
+    while (numero != 0) {
+        soma = soma + numero;   // [soma = soma + numero]
+
+        // /Ler: numero/ (volta para o topo do loop)
+        printf("Digite um numero (0 para parar): ");
+        scanf("%d", &numero);
+    }
+
+    // /Exibir: soma/ (depois que saiu do loop)
+    printf("Soma total: %d\\n", soma);
+
+    return 0;
+}`,
+        codeExplanation: 'while verifica a condição ANTES de entrar no loop — assim como o fluxograma que coloca o losango antes do bloco de processamento.',
+        tryItCode: `#include <stdio.h>
+
+int main() {
+    int contador = 1;
+
+    // Loop: enquanto contador <= 5, imprima e incremente
+    while (contador <= 5) {
+        printf("Contagem: %d\\n", contador);
+        contador = contador + 1;
+    }
+
+    printf("Loop encerrado!\\n");
+    return 0;
+}`,
+        tryItPrompt: 'Execute e observe o loop contando de 1 a 5. Tente mudar a condição para contador <= 10. O que acontece se esquecer o "contador = contador + 1"?',
+      },
+      {
+        title: 'Exemplo 2 — Loop com Contador (for)',
+        body: `Quando sabemos exatamente quantas vezes repetir, o fluxograma tem três partes explícitas: inicialização, condição e incremento. Isso mapeia diretamente para o for em C.
+
+Problema: Imprimir os números de 1 a N.`,
+        code: `        ╭───────────╮
+        │   INÍCIO  │
+        ╰───────────╯
+               │
+               ▼
+       /────────────────/
+      /   Ler: N       /
+     /────────────────/
+               │
+               ▼
+      ┌──────────────────┐
+      │   i ← 1          │   ← Inicialização
+      └──────────────────┘
+               │
+               ▼◄─────────────────────────┐
+           ╱────────╲                      │
+          ╱   i <=   ╲                     │
+         ╱     N?     ╲                    │
+         ╲             ╱                   │ Loop
+    Sim   ╲           ╱  Não              │ (seta
+     ↓     ╲─────────╱      ↓             │ volta)
+     ↓                       ↓             │
+ /──────────/          ╭─────────╮         │
+/ Exibir: i/           │   FIM   │         │
+/──────────/           ╰─────────╯         │
+     │                                     │
+     ▼                                     │
+ ┌─────────┐                               │
+ │  i ← i+1│  ← Incremento                │
+ └─────────┘                               │
+     │                                     │
+     └─────────────────────────────────────┘`,
+        codeExplanation: 'Inicialização (i←1) + condição (i<=N) + incremento (i←i+1) → for em C. A seta de retorno mostra exatamente onde o for "volta" a cada iteração.',
+      },
+      {
+        title: 'Traduzindo para for em C',
+        body: `O padrão inicialização + condição + incremento vira o for — mais compacto que o while para situações com contador:`,
+        code: `#include <stdio.h>
+
+int main() {
+    int N, i;
+
+    // /Ler: N/
+    printf("Imprimir de 1 ate qual numero? ");
+    scanf("%d", &N);
+
+    // [i ← 1]  losango [i <= N]  [i ← i+1]
+    //      ↓           ↓               ↓
+    for (i = 1; i <= N; i++) {
+        printf("%d\\n", i);   // /Exibir: i/
+    }
+
+    return 0;
+}`,
+        codeExplanation: 'O for condensa os três elementos do loop com contador: for(inicialização; condição; incremento). Muito mais compacto que o while equivalente!',
+        tip: 'Regra prática: use for quando sabe quantas vezes vai repetir. Use while quando a condição de parada depende de algo que o usuário faz ou de um evento externo.',
+      },
+      {
+        title: 'Comparando While e For — Mesmo Fluxograma, Dois Códigos',
+        body: `O mesmo fluxograma de "contar de 1 a 5" pode ser escrito como while ou for. O resultado é idêntico:`,
+        code: `/* Usando WHILE */          /* Usando FOR */
+int i = 1;                  for (int i = 1;
+                                 i <= 5;
+while (i <= 5) {                 i++) {
+    printf("%d ", i);           printf("%d ", i);
+    i++;                    }
+}
+
+/* Ambos imprimem: 1 2 3 4 5 */`,
+        codeExplanation: 'O for é apenas uma versão compacta do while para loops com contador. No fluxograma, o diagrama é o mesmo — a escolha entre for e while é de estilo e legibilidade.',
+      },
+    ],
+    summary: [
+      'Repetição no fluxograma = seta que volta para um ponto anterior',
+      'O losango de controle define a condição de parada do loop',
+      'Losango antes do bloco → while (verifica antes de executar)',
+      'Losando depois do bloco → do-while (executa pelo menos uma vez)',
+      'Loop com contador (inicialização + condição + incremento) → for em C',
+      'Todo loop precisa de condição de saída para não ser infinito',
+    ],
+  },
 };
