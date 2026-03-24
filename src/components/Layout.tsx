@@ -30,6 +30,11 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ];
 
+const langItems = [
+  { to: '/python', label: 'Python', color: 'text-blue-400', activeBg: 'bg-blue-400/10', hoverBg: 'hover:bg-blue-400/10 hover:text-blue-400' },
+  { to: '/c', label: 'Lang C', color: 'text-cyan-400', activeBg: 'bg-cyan-400/10', hoverBg: 'hover:bg-cyan-400/10 hover:text-cyan-400' },
+];
+
 const LOGOUT_DELAY_MS = 2000;
 
 function useThemeToggle() {
@@ -92,6 +97,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+            <div className="w-px h-5 bg-border mx-1" />
+            {langItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  location.pathname.startsWith(item.to)
+                    ? `${item.activeBg} ${item.color}`
+                    : `text-muted-foreground ${item.hoverBg}`
+                }`}
+              >
+                <Code2 className="h-3.5 w-3.5" />
                 {item.label}
               </Link>
             ))}
@@ -166,6 +186,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 }`}
               >
                 <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            ))}
+            <div className="pt-1 pb-1"><div className="border-t border-border" /></div>
+            {langItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
+                  location.pathname.startsWith(item.to)
+                    ? `${item.activeBg} ${item.color}`
+                    : `text-muted-foreground ${item.hoverBg}`
+                }`}
+              >
+                <Code2 className="h-5 w-5" />
                 {item.label}
               </Link>
             ))}

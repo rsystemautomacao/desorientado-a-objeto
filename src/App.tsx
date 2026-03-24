@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Loader2 } from "lucide-react";
@@ -13,6 +14,11 @@ import { Loader2 } from "lucide-react";
 // Eager: landing page loads fast
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+
+// Language pages (C + Python) — lazy loaded
+const LanguageLanding = lazy(() => import("./pages/LanguageLanding"));
+const LanguageExercises = lazy(() => import("./pages/LanguageExercises"));
+const LanguageExerciseDetail = lazy(() => import("./pages/LanguageExerciseDetail"));
 
 // Lazy: heavy pages loaded on demand
 const Trail = lazy(() => import("./pages/Trail"));
@@ -56,6 +62,17 @@ const App = () => (
               <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/prova" element={<Exam />} />
               <Route path="/admin" element={<Admin />} />
+
+              {/* ── Python routes ── */}
+              <Route path="/python" element={<LanguageProvider lang="python"><LanguageLanding /></LanguageProvider>} />
+              <Route path="/python/exercicios" element={<ProtectedRoute><LanguageProvider lang="python"><LanguageExercises /></LanguageProvider></ProtectedRoute>} />
+              <Route path="/python/exercicio/:id" element={<ProtectedRoute><LanguageProvider lang="python"><LanguageExerciseDetail /></LanguageProvider></ProtectedRoute>} />
+
+              {/* ── C routes ── */}
+              <Route path="/c" element={<LanguageProvider lang="c"><LanguageLanding /></LanguageProvider>} />
+              <Route path="/c/exercicios" element={<ProtectedRoute><LanguageProvider lang="c"><LanguageExercises /></LanguageProvider></ProtectedRoute>} />
+              <Route path="/c/exercicio/:id" element={<ProtectedRoute><LanguageProvider lang="c"><LanguageExerciseDetail /></LanguageProvider></ProtectedRoute>} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
