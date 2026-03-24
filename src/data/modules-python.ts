@@ -38,6 +38,21 @@ export const pythonModules: Module[] = [
       { id: 'py-m3-dicts',     title: 'Dicionários e Conjuntos',             duration: '25 min' },
     ],
   },
+  {
+    id: 4,
+    title: 'Python para BI e Data Science',
+    description: 'NumPy, Pandas, Matplotlib, limpeza de dados e análise exploratória com Python.',
+    level: 'avancado',
+    icon: '📊',
+    lessons: [
+      { id: 'py-m4-numpy',      title: 'NumPy — Arrays e Operações Numéricas',         duration: '30 min' },
+      { id: 'py-m4-pandas',     title: 'Pandas — Introdução aos DataFrames',           duration: '30 min' },
+      { id: 'py-m4-filter',     title: 'Pandas — Filtros, Agrupamentos e Ordenação',   duration: '30 min' },
+      { id: 'py-m4-matplotlib', title: 'Matplotlib — Visualizando Dados com Gráficos', duration: '25 min' },
+      { id: 'py-m4-cleaning',   title: 'Limpeza e Tratamento de Dados',                duration: '25 min' },
+      { id: 'py-m4-eda',        title: 'Análise Exploratória de Dados (EDA)',           duration: '35 min' },
+    ],
+  },
 ];
 
 export function getPythonAdjacentLessons(lessonId: string) {
