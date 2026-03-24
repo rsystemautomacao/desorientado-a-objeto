@@ -15,6 +15,8 @@ import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
+const JavaLanding = lazy(() => import("./pages/JavaLanding"));
+
 // Language pages (C + Python) — lazy loaded
 const LanguageLanding = lazy(() => import("./pages/LanguageLanding"));
 const LanguageTrail = lazy(() => import("./pages/LanguageTrail"));
@@ -55,6 +57,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/java" element={<JavaLanding />} />
               <Route path="/trilha" element={<ProtectedRoute><Trail /></ProtectedRoute>} />
               <Route path="/aula/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
               <Route path="/exercicios" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
