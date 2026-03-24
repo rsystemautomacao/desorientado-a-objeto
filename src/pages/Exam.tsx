@@ -460,8 +460,8 @@ function ExamExerciseEditor({
       <div className="px-5 py-4 border-b border-border bg-muted/30">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h3 className="font-semibold text-lg">{exercise.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{exercise.description}</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">{exercise.title}</p>
+            <p className="text-base text-foreground leading-relaxed">{exercise.description}</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-xs px-2 py-1 rounded-full ${canSubmit ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
@@ -686,8 +686,8 @@ function ExamObjectiveQuestion({
       <div className="px-5 py-4 border-b border-border bg-muted/30">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-lg">{exercise.title}</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs text-muted-foreground font-medium">{exercise.title}</p>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                 qType === 'multiple-choice' ? 'bg-purple-500/20 text-purple-400' :
                 qType === 'true-false' ? 'bg-green-500/20 text-green-400' :
@@ -697,7 +697,7 @@ function ExamObjectiveQuestion({
               </span>
             </div>
             <div
-              className="text-sm text-muted-foreground rich-content"
+              className="text-base text-foreground leading-relaxed rich-content"
               dangerouslySetInnerHTML={{ __html: exercise.description }}
             />
             {exercise.imageUrl && (
