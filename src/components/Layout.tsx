@@ -27,10 +27,9 @@ const HOME_NAV = [
 ];
 
 const JAVA_NAV = [
-  { to: '/java', label: 'Java', icon: BookOpen },
+  { to: '/', label: 'Home', icon: BookOpen },
   { to: '/trilha', label: 'Trilha', icon: Map },
   { to: '/exercicios', label: 'Exercícios', icon: Code2 },
-  { to: '/entrevistas', label: 'Entrevistas', icon: BriefcaseBusiness },
 ];
 
 const PYTHON_NAV = [
