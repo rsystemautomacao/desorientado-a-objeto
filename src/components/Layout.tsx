@@ -43,11 +43,17 @@ const C_NAV = [
 ];
 
 const langItems = [
+  { to: '/', label: 'Java', color: 'text-orange-400', activeBg: 'bg-orange-400/10', hoverBg: 'hover:bg-orange-400/10 hover:text-orange-400' },
   { to: '/python', label: 'Python', color: 'text-blue-400', activeBg: 'bg-blue-400/10', hoverBg: 'hover:bg-blue-400/10 hover:text-blue-400' },
   { to: '/c', label: 'Lang C', color: 'text-cyan-400', activeBg: 'bg-cyan-400/10', hoverBg: 'hover:bg-cyan-400/10 hover:text-cyan-400' },
 ];
 
 const LOGOUT_DELAY_MS = 2000;
+
+function isLangActive(to: string, pathname: string): boolean {
+  if (to === '/') return !pathname.startsWith('/python') && !pathname.startsWith('/c');
+  return pathname.startsWith(to);
+}
 
 function useThemeToggle() {
   const [isLight, setIsLight] = useState(() => {
@@ -124,7 +130,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  location.pathname.startsWith(item.to)
+                  isLangActive(item.to, location.pathname)
                     ? `${item.activeBg} ${item.color}`
                     : `text-muted-foreground ${item.hoverBg}`
                 }`}
@@ -214,7 +220,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 to={item.to}
                 onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
-                  location.pathname.startsWith(item.to)
+                  isLangActive(item.to, location.pathname)
                     ? `${item.activeBg} ${item.color}`
                     : `text-muted-foreground ${item.hoverBg}`
                 }`}
