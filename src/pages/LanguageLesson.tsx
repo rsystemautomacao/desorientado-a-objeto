@@ -5,16 +5,20 @@ import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
 import LangTryItBox from '@/components/LangTryItBox';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useProgress } from '@/hooks/useProgress';
 import { pythonModules, getPythonAdjacentLessons, getAllPythonLessons } from '@/data/modules-python';
 import { cModules, getCAdjacentLessons, getAllCLessons } from '@/data/modules-c';
 import { pythonLessonContents } from '@/data/lessonContents-python';
 import { cLessonContents } from '@/data/lessonContents-c';
-import { ArrowLeft, ArrowRight, CheckCircle2, Target, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Target, Clock, PartyPopper } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function LanguageLesson() {
   const { id } = useParams<{ id: string }>();
   const { lang, label, judge0Id, color, routePrefix } = useLanguage();
+  const { isCompleted, completeLesson } = useProgress();
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +30,9 @@ export default function LanguageLesson() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Reset "just completed" banner when lesson changes
+  useEffect(() => { setJustCompleted(false); }, [id]);
+
   if (!id) return null;
 
   const isPython = lang === 'python';
@@ -36,6 +43,14 @@ export default function LanguageLesson() {
   const modules = isPython ? pythonModules : cModules;
   const mod = modules.find((m) => m.id === lessonMeta?.moduleId);
   const codeTitle = isPython ? 'Python' : 'C';
+
+  const done = id ? isCompleted(id) : false;
+
+  function handleComplete() {
+    if (!id || done) return;
+    completeLesson(id);
+    setJustCompleted(true);
+  }
 
   if (!lessonMeta || !content) {
     return (
@@ -70,7 +85,14 @@ export default function LanguageLesson() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <h1 className="text-3xl font-bold mb-3">{lessonMeta.title}</h1>
+            {done && (
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-600 text-sm font-semibold border border-green-500/30 shrink-0">
+                <CheckCircle2 className="h-4 w-4" /> Concluída
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" /> {lessonMeta.duration}
@@ -85,6 +107,17 @@ export default function LanguageLesson() {
             <span className={`font-medium ${color}`}>{label}</span>
           </div>
         </div>
+
+        {/* "Just completed" banner */}
+        {justCompleted && (
+          <div className="mb-8 flex items-center gap-3 p-4 rounded-xl border border-green-500/30 bg-green-500/10">
+            <PartyPopper className="h-6 w-6 text-green-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-700">Aula concluída!</p>
+              <p className="text-sm text-green-600">Seu progresso foi salvo. Continue para a próxima aula.</p>
+            </div>
+          </div>
+        )}
 
         {/* Objectives */}
         {content.objectives && (
@@ -130,7 +163,7 @@ export default function LanguageLesson() {
 
         {/* Summary */}
         {content.summary && (
-          <div className="mb-10 p-5 rounded-xl border border-border bg-card">
+          <div className="mb-8 p-5 rounded-xl border border-border bg-card">
             <h2 className="font-bold flex items-center gap-2 mb-3">
               <CheckCircle2 className="h-5 w-5 text-primary" /> Resumo da Aula
             </h2>
@@ -143,6 +176,20 @@ export default function LanguageLesson() {
             </ul>
           </div>
         )}
+
+        {/* Complete lesson button */}
+        <div className="mb-8 flex justify-center">
+          {done ? (
+            <div className="flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-600 font-semibold">
+              <CheckCircle2 className="h-5 w-5" /> Aula concluída
+            </div>
+          ) : (
+            <Button size="lg" onClick={handleComplete} className="gap-2 px-8">
+              <CheckCircle2 className="h-5 w-5" />
+              Marcar aula como concluída
+            </Button>
+          )}
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
@@ -176,7 +223,7 @@ export default function LanguageLesson() {
               <p className="text-sm text-muted-foreground mb-2">Você concluiu a trilha de {label}!</p>
               <Link
                 to={`${routePrefix}/exercicios`}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
               >
                 Praticar com exercícios →
               </Link>
