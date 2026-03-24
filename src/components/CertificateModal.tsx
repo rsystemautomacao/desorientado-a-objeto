@@ -16,6 +16,7 @@ interface CertificateModalProps {
   moduleIcon: string;
   moduleLevel: string;
   lessonCount: number;
+  languageLabel?: string; // e.g. 'Java / POO', 'Python', 'Linguagem C'
 }
 
 // Inline styles for both preview and print
@@ -99,6 +100,7 @@ export default function CertificateModal({
   moduleIcon,
   moduleLevel,
   lessonCount,
+  languageLabel = 'Java & POO',
 }: CertificateModalProps) {
   const certRef = useRef<HTMLDivElement>(null);
 
@@ -161,7 +163,7 @@ export default function CertificateModal({
           <div style={s.line} />
           <p style={s.date}>{today}</p>
           <p style={s.platform}>Desorientado a Objetos</p>
-          <p style={s.subtitle}>Plataforma de Ensino de Java & POO</p>
+          <p style={s.subtitle}>Plataforma de Programação — {languageLabel}</p>
         </div>
       </div>
     </div>

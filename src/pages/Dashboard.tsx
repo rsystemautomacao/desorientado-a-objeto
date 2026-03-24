@@ -5,6 +5,8 @@ import { modules, getAllLessons } from '@/data/modules';
 import { exercises } from '@/data/exercises';
 import { pythonExercises } from '@/data/exercises-python';
 import { cExercises } from '@/data/exercises-c';
+import { pythonModules, getAllPythonLessons } from '@/data/modules-python';
+import { cModules, getAllCLessons } from '@/data/modules-c';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { getProfileFromApi } from '@/lib/profileStore';
@@ -23,7 +25,9 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [studentName, setStudentName] = useState('');
   const [activeTab, setActiveTab] = useState<LangTab>('java');
-  const [certModule, setCertModule] = useState<typeof modules[number] | null>(null);
+  const [certModule,    setCertModule]    = useState<typeof modules[number] | null>(null);
+  const [certPyModule, setCertPyModule] = useState<typeof pythonModules[number] | null>(null);
+  const [certCModule,  setCertCModule]  = useState<typeof cModules[number] | null>(null);
   const [announcements, setAnnouncements] = useState<{ id: string; message: string; type: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ rank: number; name: string; xp: number; lessonsCount: number; quizCount: number }[]>([]);
   const [myRank, setMyRank] = useState<{ rank: number; name: string; xp: number; lessonsCount: number; quizCount: number } | null>(null);
@@ -109,10 +113,16 @@ export default function Dashboard() {
     { id: 'c',      label: '⚙️ Lang C', color: 'text-cyan-400',   active: 'bg-cyan-400/10 border-cyan-400/40 text-cyan-400' },
   ];
 
-  // Python/C exercise completions (based on exercise IDs in progress)
+  // Python/C exercise completions
   const exData = getExerciseData();
   const pyCompleted = pythonExercises.filter((e) => exData[e.id]?.passed).length;
   const cCompleted  = cExercises.filter((e) => exData[e.id]?.passed).length;
+
+  // Python/C lesson completions
+  const allPyLessons = getAllPythonLessons();
+  const allCLessons  = getAllCLessons();
+  const pyLessonsCompleted = allPyLessons.filter((l) => isCompleted(l.id)).length;
+  const cLessonsCompleted  = allCLessons.filter((l) => isCompleted(l.id)).length;
 
   return (
     <Layout>
@@ -138,7 +148,13 @@ export default function Dashboard() {
         {/* ── Python tab ── */}
         {activeTab === 'python' && (
           <div className="space-y-6">
+            {/* Stats */}
             <div className="grid sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <BookOpen className="h-8 w-8 text-blue-400 mb-3" />
+                <p className="text-3xl font-bold">{pyLessonsCompleted}<span className="text-lg text-muted-foreground">/{allPyLessons.length}</span></p>
+                <p className="text-sm text-muted-foreground">Aulas concluídas</p>
+              </div>
               <div className="rounded-xl border border-border bg-card p-6">
                 <Code2 className="h-8 w-8 text-blue-400 mb-3" />
                 <p className="text-3xl font-bold">{pyCompleted}<span className="text-lg text-muted-foreground">/{pythonExercises.length}</span></p>
@@ -146,15 +162,38 @@ export default function Dashboard() {
               </div>
               <div className="rounded-xl border border-border bg-card p-6">
                 <Trophy className="h-8 w-8 text-blue-400 mb-3" />
-                <p className="text-3xl font-bold">{pythonExercises.length > 0 ? Math.round((pyCompleted / pythonExercises.length) * 100) : 0}%</p>
-                <p className="text-sm text-muted-foreground">Progresso em exercícios</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-6">
-                <BookOpen className="h-8 w-8 text-blue-400 mb-3" />
-                <p className="text-3xl font-bold">10</p>
-                <p className="text-sm text-muted-foreground">Aulas na trilha</p>
+                <p className="text-3xl font-bold">{allPyLessons.length > 0 ? Math.round((pyLessonsCompleted / allPyLessons.length) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">Progresso na trilha</p>
               </div>
             </div>
+            {/* Module progress */}
+            <h2 className="text-lg font-bold">Progresso por Módulo</h2>
+            <div className="space-y-3">
+              {pythonModules.map((m) => {
+                const done = m.lessons.filter((l) => isCompleted(l.id)).length;
+                const pct  = Math.round((done / m.lessons.length) * 100);
+                const complete = done === m.lessons.length;
+                return (
+                  <div key={m.id} className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-sm">{m.icon} Módulo {m.id} — {m.title}</h3>
+                      <div className="flex items-center gap-3">
+                        {complete && (
+                          <button onClick={() => setCertPyModule(m)} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                            <Award className="h-4 w-4" /> Certificado
+                          </button>
+                        )}
+                        <span className="text-sm text-muted-foreground">{done}/{m.lessons.length}</span>
+                      </div>
+                    </div>
+                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${complete ? 'bg-green-500' : 'bg-blue-400'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Exercises list */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h3 className="font-semibold mb-4">Exercícios</h3>
               <div className="space-y-2">
@@ -178,7 +217,13 @@ export default function Dashboard() {
         {/* ── C tab ── */}
         {activeTab === 'c' && (
           <div className="space-y-6">
+            {/* Stats */}
             <div className="grid sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <BookOpen className="h-8 w-8 text-cyan-400 mb-3" />
+                <p className="text-3xl font-bold">{cLessonsCompleted}<span className="text-lg text-muted-foreground">/{allCLessons.length}</span></p>
+                <p className="text-sm text-muted-foreground">Aulas concluídas</p>
+              </div>
               <div className="rounded-xl border border-border bg-card p-6">
                 <Code2 className="h-8 w-8 text-cyan-400 mb-3" />
                 <p className="text-3xl font-bold">{cCompleted}<span className="text-lg text-muted-foreground">/{cExercises.length}</span></p>
@@ -186,15 +231,38 @@ export default function Dashboard() {
               </div>
               <div className="rounded-xl border border-border bg-card p-6">
                 <Trophy className="h-8 w-8 text-cyan-400 mb-3" />
-                <p className="text-3xl font-bold">{cExercises.length > 0 ? Math.round((cCompleted / cExercises.length) * 100) : 0}%</p>
-                <p className="text-sm text-muted-foreground">Progresso em exercícios</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-6">
-                <BookOpen className="h-8 w-8 text-cyan-400 mb-3" />
-                <p className="text-3xl font-bold">10</p>
-                <p className="text-sm text-muted-foreground">Aulas na trilha</p>
+                <p className="text-3xl font-bold">{allCLessons.length > 0 ? Math.round((cLessonsCompleted / allCLessons.length) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">Progresso na trilha</p>
               </div>
             </div>
+            {/* Module progress */}
+            <h2 className="text-lg font-bold">Progresso por Módulo</h2>
+            <div className="space-y-3">
+              {cModules.map((m) => {
+                const done = m.lessons.filter((l) => isCompleted(l.id)).length;
+                const pct  = Math.round((done / m.lessons.length) * 100);
+                const complete = done === m.lessons.length;
+                return (
+                  <div key={m.id} className="rounded-xl border border-border bg-card p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-sm">{m.icon} Módulo {m.id} — {m.title}</h3>
+                      <div className="flex items-center gap-3">
+                        {complete && (
+                          <button onClick={() => setCertCModule(m)} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                            <Award className="h-4 w-4" /> Certificado
+                          </button>
+                        )}
+                        <span className="text-sm text-muted-foreground">{done}/{m.lessons.length}</span>
+                      </div>
+                    </div>
+                    <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${complete ? 'bg-green-500' : 'bg-cyan-400'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Exercises list */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h3 className="font-semibold mb-4">Exercícios</h3>
               <div className="space-y-2">
@@ -596,9 +664,38 @@ export default function Dashboard() {
             moduleIcon={certModule.icon}
             moduleLevel={certModule.level}
             lessonCount={certModule.lessons.length}
+            languageLabel="Java / POO"
           />
         )}
         </>}
+
+        {/* Python certificate modal */}
+        {certPyModule && (
+          <CertificateModal
+            open={!!certPyModule}
+            onOpenChange={(open) => { if (!open) setCertPyModule(null); }}
+            studentName={studentName}
+            moduleTitle={`Módulo ${certPyModule.id} — ${certPyModule.title}`}
+            moduleIcon={certPyModule.icon}
+            moduleLevel={certPyModule.level}
+            lessonCount={certPyModule.lessons.length}
+            languageLabel="Python"
+          />
+        )}
+
+        {/* C certificate modal */}
+        {certCModule && (
+          <CertificateModal
+            open={!!certCModule}
+            onOpenChange={(open) => { if (!open) setCertCModule(null); }}
+            studentName={studentName}
+            moduleTitle={`Módulo ${certCModule.id} — ${certCModule.title}`}
+            moduleIcon={certCModule.icon}
+            moduleLevel={certCModule.level}
+            lessonCount={certCModule.lessons.length}
+            languageLabel="Linguagem C"
+          />
+        )}
       </div>
     </Layout>
   );
