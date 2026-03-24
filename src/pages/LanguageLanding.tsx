@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Code2, BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
+import { Code2, BookOpen, GraduationCap, ArrowRight, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { pythonExercises } from '@/data/exercises-python';
 import { cExercises } from '@/data/exercises-c';
+import { pythonModules } from '@/data/modules-python';
+import { cModules } from '@/data/modules-c';
 
 export default function LanguageLanding() {
   const { lang, label, routePrefix } = useLanguage();
 
   const totalExercises = lang === 'python' ? pythonExercises.length : cExercises.length;
+  const mods = lang === 'python' ? pythonModules : cModules;
+  const totalLessons = mods.reduce((acc, m) => acc + m.lessons.length, 0);
 
   const info = {
     python: {
@@ -42,10 +46,16 @@ export default function LanguageLanding() {
           <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">{info.desc}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button asChild size="lg" className="gap-2">
+              <Link to={`${routePrefix}/trilha`}>
+                <Map className="h-5 w-5" />
+                Começar Trilha ({totalLessons} aulas)
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2">
               <Link to={`${routePrefix}/exercicios`}>
                 <Code2 className="h-5 w-5" />
-                Ver Exercícios ({totalExercises} disponíveis)
-                <ArrowRight className="h-4 w-4" />
+                Ver Exercícios ({totalExercises})
               </Link>
             </Button>
           </div>
@@ -69,11 +79,17 @@ export default function LanguageLanding() {
           ))}
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <Button asChild size="lg" className="gap-2">
+            <Link to={`${routePrefix}/trilha`}>
+              <Map className="h-5 w-5" />
+              Começar Trilha de Aulas
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="lg" className="gap-2">
             <Link to={`${routePrefix}/exercicios`}>
               <Code2 className="h-5 w-5" />
-              Começar agora
+              Ir para Exercícios
             </Link>
           </Button>
         </div>
