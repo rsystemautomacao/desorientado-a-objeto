@@ -22,6 +22,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+const HOME_NAV = [
+  { to: '/', label: 'Home', icon: BookOpen },
+];
+
 const JAVA_NAV = [
   { to: '/', label: 'Home', icon: BookOpen },
   { to: '/trilha', label: 'Trilha', icon: Map },
@@ -86,8 +90,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = location.pathname.startsWith('/python')
     ? PYTHON_NAV
-    : location.pathname.startsWith('/c/')  || location.pathname === '/c'
+    : location.pathname.startsWith('/c/') || location.pathname === '/c'
     ? C_NAV
+    : location.pathname === '/'
+    ? HOME_NAV
     : JAVA_NAV;
 
   const handleConfirmLogout = useCallback(() => {

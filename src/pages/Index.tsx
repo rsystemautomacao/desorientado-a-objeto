@@ -1,18 +1,67 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { modules } from '@/data/modules';
-import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowRight, BookOpen, BriefcaseBusiness, Trophy } from 'lucide-react';
+import { ArrowRight, BookOpen, BriefcaseBusiness, Code2, Trophy, Map, Zap, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const LANGUAGES = [
+  {
+    to: '/trilha',
+    homeTo: '/',
+    label: 'Java',
+    tag: 'POO & Backend',
+    description: 'Orientação a Objetos, SOLID, Design Patterns, Collections, Streams e perguntas de entrevista. O curso mais completo da plataforma.',
+    color: 'text-orange-400',
+    border: 'border-orange-400/30',
+    bg: 'bg-orange-400/5 hover:bg-orange-400/10',
+    badge: 'bg-orange-400/10 text-orange-400',
+    glyph: '☕',
+    highlights: ['Trilha completa do zero ao avançado', 'Exercícios com execução online', 'Quizzes por aula', 'Perguntas de entrevista'],
+    cta: 'Começar Java',
+  },
+  {
+    to: '/python/trilha',
+    homeTo: '/python',
+    label: 'Python',
+    tag: 'Lógica & Dados',
+    description: 'Do print("Hello") até listas, funções e dicionários. Base sólida para ciência de dados, automação e muito mais.',
+    color: 'text-blue-400',
+    border: 'border-blue-400/30',
+    bg: 'bg-blue-400/5 hover:bg-blue-400/10',
+    badge: 'bg-blue-400/10 text-blue-400',
+    glyph: '🐍',
+    highlights: ['Trilha do zero ao avançado', 'Exercícios práticos', 'Sintaxe limpa e intuitiva', 'Execução de código online'],
+    cta: 'Começar Python',
+  },
+  {
+    to: '/c/trilha',
+    homeTo: '/c',
+    label: 'Linguagem C',
+    tag: 'Fundamentos & Sistemas',
+    description: 'Ponteiros, memória, arrays e funções. A linguagem que está por baixo de tudo — aprenda C e entenda como os computadores realmente funcionam.',
+    color: 'text-cyan-400',
+    border: 'border-cyan-400/30',
+    bg: 'bg-cyan-400/5 hover:bg-cyan-400/10',
+    badge: 'bg-cyan-400/10 text-cyan-400',
+    glyph: '⚙️',
+    highlights: ['Trilha do zero ao avançado', 'Ponteiros sem mistério', 'Exercícios com compilação online', 'Base para sistemas embarcados'],
+    cta: 'Começar C',
+  },
+];
+
+const FEATURES = [
+  { icon: Map, label: 'Trilhas estruturadas', desc: 'Aulas em ordem lógica, do básico ao avançado' },
+  { icon: Code2, label: 'Exercícios práticos', desc: 'Execute código diretamente no navegador' },
+  { icon: Target, label: 'Quizzes por aula', desc: 'Fixe o conteúdo com perguntas interativas' },
+  { icon: BriefcaseBusiness, label: 'Prep. para entrevistas', desc: 'Perguntas reais de processos seletivos (Java)' },
+  { icon: Zap, label: 'Progresso salvo', desc: 'Continue de onde parou em qualquer dispositivo' },
+  { icon: BookOpen, label: 'Conteúdo gratuito', desc: 'Tudo acessível com login pelo Google' },
+];
 
 export default function Index() {
   const [searchParams] = useSearchParams();
   const needsLogin = searchParams.get('login') === '1';
-  const { progress } = useProgress();
   const { user, signInWithGoogle } = useAuth();
-  const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
-  const completed = progress.completedLessons.length;
 
   return (
     <Layout>
@@ -21,7 +70,7 @@ export default function Index() {
           <div className="container pt-6">
             <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-foreground">
-                <strong>Faça login com Google</strong> para acessar a trilha, salvar seu progresso e continuar de onde parou em qualquer dispositivo.
+                <strong>Faça login com Google</strong> para acessar as trilhas, salvar seu progresso e continuar de onde parou em qualquer dispositivo.
               </p>
               <Button onClick={() => signInWithGoogle()} className="gap-2 shrink-0">
                 Entrar com Google
@@ -29,79 +78,73 @@ export default function Index() {
             </div>
           </div>
         )}
-        {/* Hero */}
+
+        {/* ── Hero ── */}
         <section className="container py-16 md:py-24 text-center">
           <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            Do Zero ao Avançado em POO
+            Plataforma de aprendizado de programação
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-            Domine <span className="text-gradient-primary">Java</span> com{' '}
-            <span className="text-gradient-accent">clareza</span>
+            Aprenda a programar{' '}
+            <span className="text-gradient-accent">com clareza</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Trilha completa: fundamentos, lógica, POO, SOLID, exercícios práticos, quizzes e perguntas de entrevista. Tudo explicado de verdade.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+            Trilhas completas do zero ao avançado em <span className="text-orange-400 font-semibold">Java</span>,{' '}
+            <span className="text-blue-400 font-semibold">Python</span> e{' '}
+            <span className="text-cyan-400 font-semibold">C</span>. Com exercícios práticos, quizzes e execução de código online.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/trilha" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all glow-primary">
-              Começar Agora <ArrowRight className="h-5 w-5" />
-            </Link>
-            <Link to="/dashboard" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-border font-semibold hover:bg-secondary transition-colors">
-              Meu Progresso
-            </Link>
-          </div>
-          {completed > 0 && (
-            <div className="mt-8 inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <Trophy className="h-4 w-4 text-accent" />
-              {completed}/{totalLessons} aulas concluídas
-            </div>
-          )}
+          <a href="#linguagens" className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all glow-primary">
+            Escolher linguagem <ArrowRight className="h-5 w-5" />
+          </a>
         </section>
 
-        {/* Modules */}
-        <section className="container pb-16">
-          <h2 className="text-2xl font-bold mb-8 text-center">Módulos do Curso</h2>
+        {/* ── Language Cards ── */}
+        <section id="linguagens" className="container pb-16">
+          <h2 className="text-2xl font-bold mb-2 text-center">Escolha sua linguagem</h2>
+          <p className="text-muted-foreground text-center mb-10 text-sm">Cada trilha é independente — você pode aprender uma ou todas.</p>
           <div className="grid md:grid-cols-3 gap-6">
-            {modules.map((m) => {
-              const done = m.lessons.filter((l) => progress.completedLessons.includes(l.id)).length;
-              const pct = Math.round((done / m.lessons.length) * 100);
-              return (
-                <div key={m.id} className="rounded-xl border border-border bg-card p-6 card-hover">
-                  <div className="text-3xl mb-3">{m.icon}</div>
-                  <h3 className="text-lg font-bold mb-1">Módulo {m.id} — {m.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{m.description}</p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                    <span>{m.lessons.length} aulas</span>
-                    <span>{pct}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
-                  </div>
-                  <Link to={`/aula/${m.lessons[0].id}`} className="mt-4 inline-flex items-center text-sm text-primary hover:underline gap-1">
-                    {done > 0 ? 'Continuar' : 'Começar'} <ArrowRight className="h-3 w-3" />
-                  </Link>
+            {LANGUAGES.map((lang) => (
+              <div key={lang.label} className={`rounded-xl border ${lang.border} ${lang.bg} p-6 flex flex-col transition-colors`}>
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-4xl">{lang.glyph}</span>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${lang.badge}`}>{lang.tag}</span>
                 </div>
-              );
-            })}
+                <h3 className={`text-xl font-bold mb-2 ${lang.color}`}>{lang.label}</h3>
+                <p className="text-sm text-muted-foreground mb-5 leading-relaxed flex-1">{lang.description}</p>
+                <ul className="space-y-1.5 mb-6">
+                  {lang.highlights.map((h) => (
+                    <li key={h} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Trophy className={`h-3.5 w-3.5 shrink-0 ${lang.color}`} />
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to={lang.to}
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border ${lang.border} ${lang.color} hover:opacity-80 transition-opacity`}
+                >
+                  {lang.cta} <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Quick links */}
-        <section className="container pb-16">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Link to="/entrevistas" className="flex items-center gap-4 p-6 rounded-xl border border-border bg-card card-hover">
-              <BriefcaseBusiness className="h-8 w-8 text-accent" />
-              <div>
-                <h3 className="font-bold">Perguntas de Entrevista</h3>
-                <p className="text-sm text-muted-foreground">Prepare-se para processos seletivos</p>
+        {/* ── Features ── */}
+        <section className="container pb-20">
+          <h2 className="text-2xl font-bold mb-8 text-center">O que você encontra aqui</h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {FEATURES.map((f) => (
+              <div key={f.label} className="flex items-start gap-4 p-5 rounded-xl border border-border bg-card">
+                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{f.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+                </div>
               </div>
-            </Link>
-            <Link to="/trilha" className="flex items-center gap-4 p-6 rounded-xl border border-border bg-card card-hover">
-              <BookOpen className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-bold">Trilha Completa</h3>
-                <p className="text-sm text-muted-foreground">Veja todas as aulas organizadas</p>
-              </div>
-            </Link>
+            ))}
           </div>
         </section>
       </div>
