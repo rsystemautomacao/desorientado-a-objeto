@@ -780,11 +780,11 @@ function ExamForm({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1">{qType === 'code' ? 'Enunciado' : 'Pergunta'}</label>
-                  <textarea
+                  <RichTextEditor
                     value={ex.description}
-                    onChange={(e) => updateExercise(exIdx, 'description', e.target.value)}
-                    className="w-full px-3 py-1.5 rounded border border-border bg-background text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    onChange={(html) => updateExercise(exIdx, 'description', html)}
                     placeholder={qType === 'code' ? 'Descreva o que o aluno deve fazer...' : 'Digite a pergunta...'}
+                    minHeight="80px"
                   />
                 </div>
 
@@ -1259,7 +1259,7 @@ function QuestionBank({ getToken }: { getToken: () => Promise<string> }) {
                     {(q.type || 'code') === 'code' ? 'Codigo' : q.type === 'multiple-choice' ? 'Alternativas' : q.type === 'true-false' ? 'V/F' : 'Preencher'}
                   </span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{q.description || 'Sem descricao'}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{q.description ? q.description.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim() || 'Sem descricao' : 'Sem descricao'}</div>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {q.difficulty && (
                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
