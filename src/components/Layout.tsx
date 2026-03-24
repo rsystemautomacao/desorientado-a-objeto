@@ -22,12 +22,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const navItems = [
+const JAVA_NAV = [
   { to: '/', label: 'Home', icon: BookOpen },
   { to: '/trilha', label: 'Trilha', icon: Map },
   { to: '/exercicios', label: 'Exercícios', icon: Code2 },
   { to: '/entrevistas', label: 'Entrevistas', icon: BriefcaseBusiness },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+];
+
+const PYTHON_NAV = [
+  { to: '/python', label: 'Home', icon: BookOpen },
+  { to: '/python/trilha', label: 'Trilha', icon: Map },
+  { to: '/python/exercicios', label: 'Exercícios', icon: Code2 },
+];
+
+const C_NAV = [
+  { to: '/c', label: 'Home', icon: BookOpen },
+  { to: '/c/trilha', label: 'Trilha', icon: Map },
+  { to: '/c/exercicios', label: 'Exercícios', icon: Code2 },
 ];
 
 const langItems = [
@@ -65,6 +77,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, loading, signInWithGoogle, signOut } = useAuth();
   const { isLight, toggle: toggleTheme } = useThemeToggle();
+
+  const navItems = location.pathname.startsWith('/python')
+    ? PYTHON_NAV
+    : location.pathname.startsWith('/c/')  || location.pathname === '/c'
+    ? C_NAV
+    : JAVA_NAV;
 
   const handleConfirmLogout = useCallback(() => {
     setLogoutConfirmOpen(false);

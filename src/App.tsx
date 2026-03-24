@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 
 // Language pages (C + Python) — lazy loaded
 const LanguageLanding = lazy(() => import("./pages/LanguageLanding"));
+const LanguageTrail = lazy(() => import("./pages/LanguageTrail"));
 const LanguageExercises = lazy(() => import("./pages/LanguageExercises"));
 const LanguageExerciseDetail = lazy(() => import("./pages/LanguageExerciseDetail"));
 
@@ -65,11 +66,13 @@ const App = () => (
 
               {/* ── Python routes ── */}
               <Route path="/python" element={<LanguageProvider lang="python"><LanguageLanding /></LanguageProvider>} />
+              <Route path="/python/trilha" element={<ProtectedRoute><LanguageProvider lang="python"><LanguageTrail /></LanguageProvider></ProtectedRoute>} />
               <Route path="/python/exercicios" element={<ProtectedRoute><LanguageProvider lang="python"><LanguageExercises /></LanguageProvider></ProtectedRoute>} />
               <Route path="/python/exercicio/:id" element={<ProtectedRoute><LanguageProvider lang="python"><LanguageExerciseDetail /></LanguageProvider></ProtectedRoute>} />
 
               {/* ── C routes ── */}
               <Route path="/c" element={<LanguageProvider lang="c"><LanguageLanding /></LanguageProvider>} />
+              <Route path="/c/trilha" element={<ProtectedRoute><LanguageProvider lang="c"><LanguageTrail /></LanguageProvider></ProtectedRoute>} />
               <Route path="/c/exercicios" element={<ProtectedRoute><LanguageProvider lang="c"><LanguageExercises /></LanguageProvider></ProtectedRoute>} />
               <Route path="/c/exercicio/:id" element={<ProtectedRoute><LanguageProvider lang="c"><LanguageExerciseDetail /></LanguageProvider></ProtectedRoute>} />
 
