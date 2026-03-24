@@ -22,38 +22,34 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const HOME_NAV = [
-  { to: '/', label: 'Home', icon: BookOpen },
-];
+const HOME_NAV: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [];
 
 const JAVA_NAV = [
-  { to: '/', label: 'Home', icon: BookOpen },
   { to: '/trilha', label: 'Trilha', icon: Map },
   { to: '/exercicios', label: 'Exercícios', icon: Code2 },
 ];
 
 const PYTHON_NAV = [
-  { to: '/python', label: 'Home', icon: BookOpen },
   { to: '/python/trilha', label: 'Trilha', icon: Map },
   { to: '/python/exercicios', label: 'Exercícios', icon: Code2 },
 ];
 
 const C_NAV = [
-  { to: '/c', label: 'Home', icon: BookOpen },
   { to: '/c/trilha', label: 'Trilha', icon: Map },
   { to: '/c/exercicios', label: 'Exercícios', icon: Code2 },
 ];
 
-const langItems = [
-  { to: '/java', label: 'Java', color: 'text-orange-400', activeBg: 'bg-orange-400/10', hoverBg: 'hover:bg-orange-400/10 hover:text-orange-400' },
-  { to: '/python', label: 'Python', color: 'text-blue-400', activeBg: 'bg-blue-400/10', hoverBg: 'hover:bg-blue-400/10 hover:text-blue-400' },
-  { to: '/c', label: 'Lang C', color: 'text-cyan-400', activeBg: 'bg-cyan-400/10', hoverBg: 'hover:bg-cyan-400/10 hover:text-cyan-400' },
+const ALL_LANG_ITEMS = [
+  { to: '/java',   label: 'Java',   color: 'text-orange-400', activeBg: 'bg-orange-400/10', hoverBg: 'hover:bg-orange-400/10 hover:text-orange-400' },
+  { to: '/python', label: 'Python', color: 'text-blue-400',   activeBg: 'bg-blue-400/10',   hoverBg: 'hover:bg-blue-400/10 hover:text-blue-400' },
+  { to: '/c',      label: 'Lang C', color: 'text-cyan-400',   activeBg: 'bg-cyan-400/10',   hoverBg: 'hover:bg-cyan-400/10 hover:text-cyan-400' },
 ];
 
 const LOGOUT_DELAY_MS = 2000;
 
+// Since current language is filtered out of langItems, this only runs for OTHER languages
 function isLangActive(to: string, pathname: string): boolean {
-  if (to === '/java') return pathname !== '/' && !pathname.startsWith('/python') && !pathname.startsWith('/c');
+  if (to === '/java') return !pathname.startsWith('/python') && !pathname.startsWith('/c') && pathname !== '/';
   return pathname.startsWith(to);
 }
 
@@ -86,13 +82,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
   const { isLight, toggle: toggleTheme } = useThemeToggle();
 
-  const navItems = location.pathname.startsWith('/python')
-    ? PYTHON_NAV
-    : location.pathname.startsWith('/c/') || location.pathname === '/c'
-    ? C_NAV
-    : location.pathname === '/'
-    ? HOME_NAV
-    : JAVA_NAV; // /java, /trilha, /exercicios, /entrevistas, /aula/:id, /dashboard etc.
+  const isOnPython = location.pathname.startsWith('/python');
+  const isOnC      = location.pathname.startsWith('/c/') || location.pathname === '/c';
+  const isOnHome   = location.pathname === '/';
+  const isOnJava   = !isOnPython && !isOnC && !isOnHome;
+
+  const navItems = isOnPython ? PYTHON_NAV
+    : isOnC    ? C_NAV
+    : isOnHome ? HOME_NAV
+    : JAVA_NAV;
+
+  // Hide the current language from the switcher so it doesn't show a link to where you already are
+  const langItems = ALL_LANG_ITEMS.filter((item) => {
+    if (isOnJava   && item.to === '/java')   return false;
+    if (isOnPython && item.to === '/python') return false;
+    if (isOnC      && item.to === '/c')      return false;
+    return true;
+  });
 
   const handleConfirmLogout = useCallback(() => {
     setLogoutConfirmOpen(false);
