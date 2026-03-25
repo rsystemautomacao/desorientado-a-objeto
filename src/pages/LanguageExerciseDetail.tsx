@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getPythonExerciseById } from '@/data/exercises-python';
 import { getCExerciseById } from '@/data/exercises-c';
+import { useProgress } from '@/hooks/useProgress';
 import {
   Play, Loader2, CheckCircle2, AlertCircle, XCircle,
   ChevronLeft, Lightbulb, RotateCcw, Trophy,
@@ -133,6 +134,7 @@ interface TestResult { input: string; expected: string; actual: string; passed: 
 export default function LanguageExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { lang, label, judge0Id, routePrefix, color } = useLanguage();
+  const { completeExercise, getExerciseData } = useProgress();
 
   const exercise = useMemo(() => {
     if (!id) return undefined;
@@ -271,7 +273,10 @@ export default function LanguageExerciseDetail() {
       }
       setResults(testResults);
       const passedCount = testResults.filter((r) => r.passed).length;
-      if (passedCount === testResults.length) { clearDraft(exercise.id); setHasDraft(false); }
+      if (passedCount === testResults.length) {
+        clearDraft(exercise.id); setHasDraft(false);
+        completeExercise(exercise.id, exercise.xpReward);
+      }
     } catch {
       setCompileError('Erro de conexão. Verifique sua internet e tente novamente.');
     }
@@ -284,6 +289,7 @@ export default function LanguageExerciseDetail() {
 
   const passedCount = results?.filter((r) => r.passed).length ?? 0;
   const allPassed = results != null && passedCount === exercise.testCases.length;
+  const alreadySolved = useMemo(() => getExerciseData()[exercise.id]?.passed === true, [exercise.id, getExerciseData]);
 
   return (
     <Layout>
@@ -302,6 +308,13 @@ export default function LanguageExerciseDetail() {
           </div>
           <p className="text-sm text-muted-foreground">{exercise.topicLabel}</p>
         </div>
+
+        {alreadySolved && (
+          <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-sm">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span>Você já resolveu este exercício corretamente. Pode refazer quando quiser!</span>
+          </div>
+        )}
 
         <div className="grid gap-6">
           {/* Enunciado */}

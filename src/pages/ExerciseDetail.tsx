@@ -189,7 +189,8 @@ async function saveSubmissionToApi(
 export default function ExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { completeExercise, saveExerciseAttempt } = useProgress();
+  const { completeExercise, saveExerciseAttempt, getExerciseData } = useProgress();
+  const alreadySolved = useMemo(() => getExerciseData()[exercise?.id ?? '']?.passed === true, [exercise?.id, getExerciseData]);
   const exercise = useMemo(() => getExerciseById(id ?? ''), [id]);
 
   // Load saved draft (or starter code if no draft)
@@ -520,6 +521,13 @@ export default function ExerciseDetail() {
           </div>
           <p className="text-sm text-muted-foreground">{exercise.topicLabel}</p>
         </div>
+
+        {alreadySolved && (
+          <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-400 text-sm">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span>Você já resolveu este exercício corretamente. Pode refazer quando quiser!</span>
+          </div>
+        )}
 
         <div className="grid gap-6">
           {/* Left: Description */}

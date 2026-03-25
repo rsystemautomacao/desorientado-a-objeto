@@ -6,6 +6,7 @@ import { pythonExercises, getPythonTopicsByModule } from '@/data/exercises-pytho
 import { cExercises, getCTopicsByModule } from '@/data/exercises-c';
 import { Code2, Filter, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useProgress } from '@/hooks/useProgress';
 
 const DIFF_LABELS: Record<string, { label: string; color: string }> = {
   facil: { label: 'Fácil', color: 'text-green-400 bg-green-400/10 border-green-400/20' },
@@ -18,6 +19,12 @@ export default function LanguageExercises() {
   const [selectedModule, setSelectedModule] = useState<number>(0);
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [selectedDiff, setSelectedDiff] = useState<string>('');
+
+  const { getExerciseData } = useProgress();
+  const completed = useMemo(() => {
+    const data = getExerciseData();
+    return new Set(Object.entries(data).filter(([, v]) => v.passed).map(([k]) => k));
+  }, [getExerciseData]);
 
   const exercises = lang === 'python' ? pythonExercises : cExercises;
   const topicsByModule = useMemo(
@@ -100,18 +107,26 @@ export default function LanguageExercises() {
           <div className="space-y-3">
             {filtered.map((ex) => {
               const diff = DIFF_LABELS[ex.difficulty];
+              const isDone = completed.has(ex.id);
               return (
                 <Link
                   key={ex.id}
                   to={`${routePrefix}/exercicio/${ex.id}`}
-                  className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors group"
+                  className={`group flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                    isDone
+                      ? 'border-primary/30 bg-primary/5'
+                      : 'border-border bg-card hover:border-primary/30 hover:bg-primary/5'
+                  }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Code2 className={`h-5 w-5 shrink-0 ${color}`} />
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{ex.title}</p>
-                      <p className="text-xs text-muted-foreground">{ex.topicLabel} · Módulo {ex.moduleId}</p>
-                    </div>
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${isDone ? 'bg-primary/20' : 'bg-muted'}`}>
+                    {isDone
+                      ? <CheckCircle2 className="h-5 w-5 text-primary" />
+                      : <Code2 className={`h-5 w-5 ${color}`} />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{ex.title}</p>
+                    <p className="text-xs text-muted-foreground">{ex.topicLabel} · Módulo {ex.moduleId}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${diff.color}`}>{diff.label}</span>
