@@ -312,7 +312,7 @@ function exportStudentPdf(entry: StudyHistoryEntry) {
       <div class="stat"><div class="stat-val">${totalPct}%</div><div class="stat-lbl">Progresso total</div></div>
     </div>
 
-    <h2>Detalhamento por Modulo</h2>
+    <h2>Detalhamento por Módulo</h2>
     ${modulesHtml}
 
     ${entry.updatedAt ? `<p style="font-size:11px;color:#9ca3af;margin-top:24px">Perfil atualizado em ${new Date(entry.updatedAt).toLocaleDateString('pt-BR')}</p>` : ''}
@@ -495,12 +495,15 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
                       {mod?.icon} {mod?.title}
                     </h4>
                     <div className="overflow-x-auto rounded-lg border border-border">
-                      <table className="w-full text-xs">
+                      <table className="w-full min-w-[640px] text-xs">
                         <thead>
                           <tr className="border-b border-border bg-muted/30">
                             <th className="text-left px-3 py-2 font-medium">Exercício</th>
                             <th className="text-center px-3 py-2 font-medium">Dif.</th>
-                            <th className="text-center px-3 py-2 font-medium">Status</th>
+                            <th className="text-center px-3 py-2 font-medium">
+                              Status
+                              <span className="block text-[10px] font-normal text-muted-foreground">AC · Parcial · WA</span>
+                            </th>
                             <th className="text-center px-3 py-2 font-medium">Melhor</th>
                             <th className="text-center px-3 py-2 font-medium">Tentativas</th>
                             <th className="text-center px-3 py-2 font-medium">Última sub.</th>
@@ -528,7 +531,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
                                   {sub.passed ? (
                                     <span className="text-green-500 font-bold">AC</span>
                                   ) : sub.bestPassedTests > 0 ? (
-                                    <span className="text-yellow-500 font-bold">WA</span>
+                                    <span className="text-yellow-500 font-bold">Parcial</span>
                                   ) : (
                                     <span className="text-red-500 font-bold">WA</span>
                                   )}
@@ -656,7 +659,7 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
       .map(([lessonId, data]) => ({
         lessonId,
         name: getLessonTitle(lessonId),
-        shortName: getLessonTitle(lessonId).length > 25 ? getLessonTitle(lessonId).slice(0, 22) + '...' : getLessonTitle(lessonId),
+        shortName: getLessonTitle(lessonId).length > 30 ? getLessonTitle(lessonId).slice(0, 28) + '…' : getLessonTitle(lessonId),
         avgPct: Math.round(data.totalPct / data.count),
         students: data.count,
         moduleId: getModuleForLesson(lessonId),
@@ -679,7 +682,7 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
         {/* Highlights */}
         <div className="grid gap-3 sm:grid-cols-2 mb-6">
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-            <p className="text-xs font-medium text-red-600 mb-2">Mais dificeis (menor media)</p>
+            <p className="text-xs font-medium text-red-600 mb-2">Mais difíceis (menor média)</p>
             {hardest.map((h) => (
               <div key={h.lessonId} className="flex items-center justify-between text-xs py-0.5">
                 <span className="truncate mr-2" title={h.name}>{h.name}</span>
@@ -688,7 +691,7 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
             ))}
           </div>
           <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3">
-            <p className="text-xs font-medium text-green-600 mb-2">Mais faceis (maior media)</p>
+            <p className="text-xs font-medium text-green-600 mb-2">Mais fáceis (maior média)</p>
             {easiest.map((h) => (
               <div key={h.lessonId} className="flex items-center justify-between text-xs py-0.5">
                 <span className="truncate mr-2" title={h.name}>{h.name}</span>
@@ -699,36 +702,38 @@ function QuizAnalyticsSection({ entries }: { entries: StudyHistoryEntry[] }) {
         </div>
 
         {/* Chart */}
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={analytics} layout="vertical" margin={{ left: 160, right: 20, top: 5, bottom: 5 }}>
-              <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} fontSize={11} />
-              <YAxis
-                type="category"
-                dataKey="shortName"
-                width={155}
-                fontSize={10}
-                tick={{ fill: 'currentColor' }}
-              />
-              <Tooltip
-                formatter={(value: number) => [`${value}%`, 'Media']}
-                labelFormatter={(label) => {
-                  const item = analytics.find((a) => a.shortName === label);
-                  return item ? item.name : label;
-                }}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Bar dataKey="avgPct" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                {analytics.map((item) => (
-                  <Cell key={item.lessonId} fill={barColor(item.avgPct)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="w-full overflow-x-auto">
+          <div style={{ height: Math.max(300, analytics.length * 28) }} className="min-w-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics} layout="vertical" margin={{ left: 0, right: 20, top: 5, bottom: 5 }}>
+                <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} fontSize={11} />
+                <YAxis
+                  type="category"
+                  dataKey="shortName"
+                  width={180}
+                  fontSize={10}
+                  tick={{ fill: 'currentColor' }}
+                />
+                <Tooltip
+                  formatter={(value: number) => [`${value}%`, 'Média']}
+                  labelFormatter={(label) => {
+                    const item = analytics.find((a) => a.shortName === label);
+                    return item ? item.name : label;
+                  }}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="avgPct" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                  {analytics.map((item) => (
+                    <Cell key={item.lessonId} fill={barColor(item.avgPct)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <p className="text-[10px] text-muted-foreground mt-2 text-center">
-          Media de acertos dos quizzes por aula (apenas alunos que fizeram o quiz)
+          Média de acertos dos quizzes por aula (apenas alunos que fizeram o quiz)
         </p>
       </div>
     </div>
@@ -767,7 +772,7 @@ function ExerciseAnalyticsSection({ activities }: { activities: ActivityEntry[] 
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
         <Code2 className="h-4 w-4 text-purple-500" />
-        <h2 className="font-semibold">Exercicios — Visao Geral</h2>
+        <h2 className="font-semibold">Exercícios — Visão Geral</h2>
         <span className="ml-auto text-xs text-muted-foreground">{totalCompletions} resolucoes no total</span>
       </div>
       <div className="p-4">
@@ -775,7 +780,7 @@ function ExerciseAnalyticsSection({ activities }: { activities: ActivityEntry[] 
         <div className="grid gap-3 sm:grid-cols-3 mb-4">
           <div className="rounded-lg border border-border p-3 text-center">
             <p className="text-2xl font-bold">{exercisesAttempted}<span className="text-sm text-muted-foreground">/{totalExercises}</span></p>
-            <p className="text-xs text-muted-foreground">exercicios ja resolvidos</p>
+            <p className="text-xs text-muted-foreground">exercícios já resolvidos</p>
           </div>
           <div className="rounded-lg border border-border p-3 text-center">
             <p className="text-2xl font-bold">{totalCompletions}</p>
@@ -985,7 +990,7 @@ export default function Admin() {
       const url = `${base}/api/admin/study-history`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (res.status === 403) { setHistoryError('Acesso negado. Verifique se ADMIN_EMAIL esta correto na Vercel.'); return; }
-      if (res.status === 404) { setHistoryError('API do admin nao encontrada (404). Confira se o deploy inclui a pasta api/admin.'); return; }
+      if (res.status === 404) { setHistoryError('API do admin não encontrada (404). Confira se o deploy inclui a pasta api/admin.'); return; }
       if (!res.ok) {
         const text = await res.text();
         let detail = '';

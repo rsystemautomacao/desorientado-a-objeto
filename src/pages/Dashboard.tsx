@@ -127,7 +127,9 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="container py-10 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-2">Dashboard do Aluno</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Olá, {studentName || 'Aluno'} 👋
+        </h1>
         <p className="text-muted-foreground mb-6">Acompanhe seu progresso em cada linguagem.</p>
 
         {/* Language tabs */}
@@ -371,11 +373,11 @@ export default function Dashboard() {
           };
           return (
             <>
-              <div className="grid sm:grid-cols-5 gap-4 mb-10">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-10">
                 <div className="rounded-xl border border-border bg-card p-6">
                   <BookOpen className="h-8 w-8 text-primary mb-3" />
                   <p className="text-3xl font-bold">{completedCount}<span className="text-lg text-muted-foreground">/{totalLessons}</span></p>
-                  <p className="text-sm text-muted-foreground">Aulas concluidas</p>
+                  <p className="text-sm text-muted-foreground">Aulas concluídas</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-6">
                   <Target className="h-8 w-8 text-accent mb-3" />
@@ -485,7 +487,7 @@ export default function Dashboard() {
 
                     {/* Stats */}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1" title="Aulas concluidas">
+                      <span className="flex items-center gap-1" title="Aulas concluídas">
                         <BookOpen className="h-3.5 w-3.5" /> {entry.lessonsCount}
                       </span>
                       <span className="flex items-center gap-1" title="Quizzes feitos">
