@@ -20,7 +20,8 @@ const DH  = 36;    // decision diamond height (half)
 const RY  = 90;    // row Y-step
 const CX  = 240;   // center X of canvas
 const LEAN = 16;   // parallelogram lean amount
-const CUT  = 14;   // corner cut size for output shape
+const HCUT = 28;   // output shape: horizontal cut along top edge (from top-left corner)
+const VCUT = 18;   // output shape: vertical cut along left edge (from top-left corner)
 const FONT = 13;   // label font size
 
 type NodeType = 'start' | 'end' | 'process' | 'input' | 'output' | 'decision' | 'connector';
@@ -73,8 +74,8 @@ function NodeShape({ node, cx, cy }: { node: FNode; cx: number; cy: number }) {
     const d = `M ${cx - w + LEAN},${cy - h} L ${cx + w},${cy - h} L ${cx + w - LEAN},${cy + h} L ${cx - w},${cy + h} Z`;
     shape = <path d={d} fill={fill} stroke={stroke} strokeWidth={2} />;
   } else if (node.type === 'output') {
-    // Rectangle with top-left corner cut
-    const d = `M ${cx - w + CUT},${cy - h} L ${cx + w},${cy - h} L ${cx + w},${cy + h} L ${cx - w},${cy + h} L ${cx - w},${cy - h + CUT} Z`;
+    // Rectangle with top-left corner cut diagonally
+    const d = `M ${cx - w + HCUT},${cy - h} L ${cx + w},${cy - h} L ${cx + w},${cy + h} L ${cx - w},${cy + h} L ${cx - w},${cy - h + VCUT} Z`;
     shape = <path d={d} fill={fill} stroke={stroke} strokeWidth={2} />;
   } else if (node.type === 'decision') {
     const d = `M ${cx},${cy - DH} L ${cx + DW},${cy} L ${cx},${cy + DH} L ${cx - DW},${cy} Z`;
