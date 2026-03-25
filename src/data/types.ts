@@ -24,6 +24,8 @@ export interface Section {
   tryItCode?: string;
   /** Instrução curta para o exercício (ex: "Altere a mensagem e execute.") */
   tryItPrompt?: string;
+  /** Diagrama Mermaid (flowchart TD ...) para renderizar como fluxograma visual */
+  flowchart?: string;
 }
 
 /** Exercício "complete o código": aluno escolhe o trecho correto e recebe feedback */

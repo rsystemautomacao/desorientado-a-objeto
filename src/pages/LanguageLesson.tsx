@@ -5,6 +5,7 @@ import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
 import LangTryItBox from '@/components/LangTryItBox';
 import QuizComponent from '@/components/QuizComponent';
+import MermaidDiagram from '@/components/MermaidDiagram';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/contexts/AuthContext';
@@ -150,6 +151,7 @@ export default function LanguageLesson() {
           <section key={i} className="mb-10">
             <h2 className="text-xl font-bold mb-3">{s.title}</h2>
             <div className="text-foreground/85 leading-relaxed whitespace-pre-line text-sm mb-4">{s.body}</div>
+            {s.flowchart && <MermaidDiagram chart={s.flowchart} />}
             {s.code && <CodeBlock code={s.code} title={codeTitle} />}
             {s.codeExplanation && (
               <div className="mt-2 p-4 rounded-lg bg-secondary text-sm text-foreground/80">
