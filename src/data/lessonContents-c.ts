@@ -505,11 +505,7 @@ Veja os 6 símbolos que você usará durante todo o curso de C:`,
         body: `FORMA: Oval ou cápsula arredondada
 USO: Marca onde o algoritmo começa e onde termina.
 REGRA: Todo fluxograma deve ter exatamente um INÍCIO e pelo menos um FIM.`,
-        flowchart: `flowchart TD
-    A([INÍCIO])
-    B([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"}]}`,
         codeExplanation: 'O símbolo oval/cápsula representa Início e Fim. Use verde para INÍCIO e vermelho para FIM por convenção visual.',
         tip: 'Nunca use retângulos para início/fim — retângulos têm outro significado (processamento).',
       },
@@ -518,13 +514,7 @@ REGRA: Todo fluxograma deve ter exatamente um INÍCIO e pelo menos um FIM.`,
         body: `FORMA: Retângulo simples
 USO: Representa qualquer operação de cálculo ou atribuição de valor.
 EXEMPLOS: calcular soma, incrementar contador, atribuir resultado.`,
-        flowchart: `flowchart TD
-    A[soma ← a + b]
-    B[contador ← contador + 1]
-    C[media ← soma / n]
-    style A fill:#d6eaf8,stroke:#2980b9,color:#000
-    style B fill:#d6eaf8,stroke:#2980b9,color:#000
-    style C fill:#d6eaf8,stroke:#2980b9,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"process","label":"soma ← a + b"},{"id":"b","type":"process","label":"contador ← contador + 1"},{"id":"c","type":"process","label":"media ← soma / n"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"}]}`,
         codeExplanation: 'Em C, retângulos viram atribuições: soma = a + b; ou contador++;',
       },
       {
@@ -533,11 +523,7 @@ EXEMPLOS: calcular soma, incrementar contador, atribuir resultado.`,
 USO:
   • ENTRADA — ler dados do usuário (teclado, arquivo, sensor)
   • SAÍDA — exibir dados ao usuário (tela, impressora, arquivo)`,
-        flowchart: `flowchart TD
-    A[/Ler: nota do aluno/]
-    B[\Exibir: Aprovado!\]
-    style A fill:#fdebd0,stroke:#e67e22,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"input","label":"Ler: nota do aluno"},{"id":"b","type":"output","label":"Exibir: Aprovado!"}],"edges":[{"from":"a","to":"b"}]}`,
         codeExplanation: 'Em C: entrada → scanf("%f", &nota);  |  saída → printf("Aprovado!");',
         tip: 'O paralelogramo é sempre comunicação com o mundo externo — seja lendo ou escrevendo.',
       },
@@ -546,13 +532,7 @@ USO:
         body: `FORMA: Losango (diamante)
 USO: Representa uma condição cuja resposta é SIM ou NÃO.
 REGRA: Do losango saem DUAS setas — uma para "Sim" e outra para "Não".`,
-        flowchart: `flowchart TD
-    C{nota >= 7?}
-    C -->|Sim| D[\Exibir: Aprovado\]
-    C -->|Não| E[\Exibir: Reprovado\]
-    style C fill:#f9ebea,stroke:#c0392b,color:#000
-    style D fill:#fdebd0,stroke:#e67e22,color:#000
-    style E fill:#fdebd0,stroke:#e67e22,color:#000`,
+        flowchart: `{"nodes":[{"id":"c","type":"decision","label":"nota >= 7?"},{"id":"d","type":"output","label":"Exibir: Aprovado"},{"id":"e","type":"output","label":"Exibir: Reprovado"}],"edges":[{"from":"c","to":"d","label":"Sim"},{"from":"c","to":"e","label":"Não"}]}`,
         codeExplanation: 'Em C: if (nota >= 7) { printf("Aprovado"); } else { printf("Reprovado"); }',
         warning: 'O losango deve ter EXATAMENTE duas saídas: Sim e Não. Para mais condições, encadeie vários losangos.',
       },
@@ -563,14 +543,7 @@ USO: Indica a direção do fluxo de execução — de onde vem e para onde vai.
 REGRAS:
   • Setas geralmente fluem de cima para baixo
   • Em loops, uma seta pode voltar para cima (para repetir)`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B[/Ler valor/]
-    B --> C[total = total + valor]
-    C --> D([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#d6eaf8,stroke:#2980b9,color:#000
-    style D fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler valor"},{"id":"c","type":"process","label":"total = total + valor"},{"id":"d","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"}]}`,
         tip: 'Setas que voltam para um ponto anterior indicam REPETIÇÃO (loops: for, while, do-while).',
       },
       {
@@ -578,34 +551,13 @@ REGRAS:
         body: `FORMA: Círculo pequeno com uma letra ou número dentro
 USO: Conecta partes do fluxograma em páginas diferentes ou em regiões distantes.
 Quando o fluxograma é muito grande para caber em uma página, use círculos com a mesma letra nos dois pontos.`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B[/Ler dados/]
-    B --> C((A))
-    C2((A)) --> D[Processar]
-    D --> E([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style C fill:#e8daef,stroke:#8e44ad,color:#000
-    style C2 fill:#e8daef,stroke:#8e44ad,color:#000
-    style E fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler dados"},{"id":"c","type":"connector","label":"A"},{"id":"d","type":"process","label":"Processar"},{"id":"e","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"},{"from":"d","to":"e"}]}`,
         tip: 'Em fluxogramas pequenos, raramente precisamos do conector de página. Mas é importante conhecê-lo para leitura de diagramas profissionais.',
       },
       {
         title: 'Todos os Símbolos em um Fluxograma Completo',
         body: `Veja um fluxograma usando todos os símbolos juntos — ler uma nota, verificar aprovação e exibir o resultado:`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: nota/] --> C
-    C{nota >= 7?} -->|Sim| D
-    C -->|Não| E
-    D[\Exibir: Aprovado\] --> F
-    E[\Exibir: Reprovado\] --> F
-    F([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#f9ebea,stroke:#c0392b,color:#000
-    style D fill:#fdebd0,stroke:#e67e22,color:#000
-    style E fill:#fdebd0,stroke:#e67e22,color:#000
-    style F fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: nota"},{"id":"c","type":"decision","label":"nota >= 7?"},{"id":"d","type":"output","label":"Exibir: Aprovado"},{"id":"e","type":"output","label":"Exibir: Reprovado"},{"id":"f","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d","label":"Sim"},{"from":"c","to":"e","label":"Não"},{"from":"d","to":"f"},{"from":"e","to":"f"}]}`,
         codeExplanation: 'Verde = Início/Fim (oval), Azul = Processamento (retângulo), Laranja = Entrada/Saída (paralelogramo), Vermelho = Decisão (losango).',
       },
     ],
@@ -639,19 +591,7 @@ No fluxograma sequencial, não existe nenhum losango (decisão) — apenas ovals
       {
         title: 'Exemplo 1 — Calcular a Área de um Retângulo',
         body: `Problema: Dado a base e a altura, calcule e exiba a área de um retângulo.`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: base/] --> C
-    C[/Ler: altura/] --> D
-    D[area = base × altura] --> E
-    E[\Exibir: area\] --> F
-    F([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#fdebd0,stroke:#e67e22,color:#000
-    style D fill:#d6eaf8,stroke:#2980b9,color:#000
-    style E fill:#fdebd0,stroke:#e67e22,color:#000
-    style F fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: base"},{"id":"c","type":"input","label":"Ler: altura"},{"id":"d","type":"process","label":"area = base × altura"},{"id":"e","type":"output","label":"Exibir: area"},{"id":"f","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"},{"from":"d","to":"e"},{"from":"e","to":"f"}]}`,
         codeExplanation: 'Dois paralelogramos de entrada (laranja), um retângulo de processamento (azul), um paralelogramo de saída (laranja). Tudo conectado de cima para baixo.',
       },
       {
@@ -704,21 +644,7 @@ int main() {
       {
         title: 'Exemplo 2 — Calcular Média de Três Notas',
         body: `Problema: Ler três notas e calcular a média aritmética. Ainda é puramente sequencial — sem nenhum losango.`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: nota1/] --> C
-    C[/Ler: nota2/] --> D
-    D[/Ler: nota3/] --> E
-    E[media = nota1+nota2+nota3 / 3] --> F
-    F[\Exibir: media\] --> G
-    G([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#fdebd0,stroke:#e67e22,color:#000
-    style D fill:#fdebd0,stroke:#e67e22,color:#000
-    style E fill:#d6eaf8,stroke:#2980b9,color:#000
-    style F fill:#fdebd0,stroke:#e67e22,color:#000
-    style G fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: nota1"},{"id":"c","type":"input","label":"Ler: nota2"},{"id":"d","type":"input","label":"Ler: nota3"},{"id":"e","type":"process","label":"media = (nota1+nota2+nota3) / 3"},{"id":"f","type":"output","label":"Exibir: media"},{"id":"g","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"},{"from":"d","to":"e"},{"from":"e","to":"f"},{"from":"f","to":"g"}]}`,
         codeExplanation: 'Três entradas (paralelogramos laranja), um processamento (retângulo azul), uma saída (paralelogramo laranja).',
         tip: 'A ORDEM importa! Calcular a média antes de ler as notas geraria valores incorretos (lixo de memória em C).',
       },
@@ -756,20 +682,7 @@ O losango sempre contém uma condição de Sim ou Não e sempre tem duas saídas
       {
         title: 'Exemplo 1 — Aprovado ou Reprovado',
         body: `Problema: Ler a nota de um aluno e informar se foi aprovado (nota ≥ 7) ou reprovado.`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: nota/] --> C
-    C{nota >= 7?} -->|Sim| D
-    C -->|Não| E
-    D[\Exibir: Aprovado!\] --> F
-    E[\Exibir: Reprovado!\] --> F
-    F([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#f9ebea,stroke:#c0392b,color:#000
-    style D fill:#fdebd0,stroke:#e67e22,color:#000
-    style E fill:#fdebd0,stroke:#e67e22,color:#000
-    style F fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: nota"},{"id":"c","type":"decision","label":"nota >= 7?"},{"id":"d","type":"output","label":"Exibir: Aprovado!"},{"id":"e","type":"output","label":"Exibir: Reprovado!"},{"id":"f","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d","label":"Sim"},{"from":"c","to":"e","label":"Não"},{"from":"d","to":"f"},{"from":"e","to":"f"}]}`,
         codeExplanation: 'Os dois caminhos (Aprovado / Reprovado) se reúnem no FIM. Em C, isso é o if/else.',
       },
       {
@@ -812,25 +725,7 @@ int main() {
   • Nota ≥ 9 → "Excelente"
   • Nota ≥ 7 → "Aprovado"
   • Nota < 7  → "Reprovado"`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: nota/] --> C
-    C{nota >= 9?} -->|Sim| D
-    C -->|Não| E
-    E{nota >= 7?} -->|Sim| F
-    E -->|Não| G
-    D[\Exibir: Excelente!\] --> H
-    F[\Exibir: Aprovado!\] --> H
-    G[\Exibir: Reprovado!\] --> H
-    H([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#f9ebea,stroke:#c0392b,color:#000
-    style E fill:#f9ebea,stroke:#c0392b,color:#000
-    style D fill:#fdebd0,stroke:#e67e22,color:#000
-    style F fill:#fdebd0,stroke:#e67e22,color:#000
-    style G fill:#fdebd0,stroke:#e67e22,color:#000
-    style H fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: nota"},{"id":"c","type":"decision","label":"nota >= 9?"},{"id":"d","type":"output","label":"Exibir: Excelente!"},{"id":"e","type":"decision","label":"nota >= 7?"},{"id":"f","type":"output","label":"Exibir: Aprovado!"},{"id":"g","type":"output","label":"Exibir: Reprovado!"},{"id":"h","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d","label":"Sim"},{"from":"c","to":"e","label":"Não"},{"from":"d","to":"h"},{"from":"e","to":"f","label":"Sim"},{"from":"e","to":"g","label":"Não"},{"from":"f","to":"h"},{"from":"g","to":"h"}]}`,
         codeExplanation: 'Dois losangos encadeados → if / else if / else em C.',
       },
       {
@@ -892,22 +787,7 @@ Sempre há um losango (decisão) que controla quando o loop para:
         body: `Problema: Ler números e somar. Parar quando digitar 0.
 
 Observe a seta de E voltando para C — isso é o loop. O losango D controla a saída:`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[soma ← 0] --> C
-    C[/Ler: numero/] --> D
-    D{numero != 0?} -->|Sim| E
-    D -->|Não| F
-    E[soma = soma + numero] --> C
-    F[\Exibir: soma\] --> G
-    G([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#d6eaf8,stroke:#2980b9,color:#000
-    style C fill:#fdebd0,stroke:#e67e22,color:#000
-    style D fill:#f9ebea,stroke:#c0392b,color:#000
-    style E fill:#d6eaf8,stroke:#2980b9,color:#000
-    style F fill:#fdebd0,stroke:#e67e22,color:#000
-    style G fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"process","label":"soma ← 0"},{"id":"c","type":"input","label":"Ler: numero"},{"id":"d","type":"decision","label":"numero != 0?"},{"id":"e","type":"process","label":"soma = soma + numero"},{"id":"f","type":"output","label":"Exibir: soma"},{"id":"g","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"},{"from":"d","to":"e","label":"Sim"},{"from":"d","to":"f","label":"Não"},{"from":"e","to":"c","back":true},{"from":"f","to":"g"}]}`,
         codeExplanation: 'A seta de E volta para C — esse é o laço! Quando numero == 0, o losango D vai para F (Exibir soma) e encerra.',
       },
       {
@@ -951,22 +831,7 @@ int main() {
         body: `Quando sabemos exatamente quantas vezes repetir, o fluxograma tem três partes: inicialização, condição e incremento — que mapeiam diretamente para o for em C.
 
 Problema: Imprimir os números de 1 a N.`,
-        flowchart: `flowchart TD
-    A([INÍCIO]) --> B
-    B[/Ler: N/] --> C
-    C[i ← 1] --> D
-    D{i <= N?} -->|Sim| E
-    D -->|Não| G
-    E[\Exibir: i\] --> F
-    F[i ← i + 1] --> D
-    G([FIM])
-    style A fill:#c8f7c5,stroke:#27ae60,color:#000
-    style B fill:#fdebd0,stroke:#e67e22,color:#000
-    style C fill:#d6eaf8,stroke:#2980b9,color:#000
-    style D fill:#f9ebea,stroke:#c0392b,color:#000
-    style E fill:#fdebd0,stroke:#e67e22,color:#000
-    style F fill:#d6eaf8,stroke:#2980b9,color:#000
-    style G fill:#f7c5c5,stroke:#e74c3c,color:#000`,
+        flowchart: `{"nodes":[{"id":"a","type":"start","label":"INÍCIO"},{"id":"b","type":"input","label":"Ler: N"},{"id":"c","type":"process","label":"i ← 1"},{"id":"d","type":"decision","label":"i <= N?"},{"id":"e","type":"output","label":"Exibir: i"},{"id":"f","type":"process","label":"i ← i + 1"},{"id":"g","type":"end","label":"FIM"}],"edges":[{"from":"a","to":"b"},{"from":"b","to":"c"},{"from":"c","to":"d"},{"from":"d","to":"e","label":"Sim"},{"from":"d","to":"g","label":"Não"},{"from":"e","to":"f"},{"from":"f","to":"d","back":true}]}`,
         codeExplanation: 'C = inicialização, D = condição, F = incremento. A seta de F volta para D — esse ciclo é exatamente o for em C.',
       },
       {
