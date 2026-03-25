@@ -535,7 +535,7 @@ USO:
   • SAÍDA — exibir dados ao usuário (tela, impressora, arquivo)`,
         flowchart: `flowchart TD
     A[/Ler: nota do aluno/]
-    B[/Exibir: Aprovado!/]
+    B[\Exibir: Aprovado!\]
     style A fill:#fdebd0,stroke:#e67e22,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000`,
         codeExplanation: 'Em C: entrada → scanf("%f", &nota);  |  saída → printf("Aprovado!");',
@@ -548,8 +548,8 @@ USO: Representa uma condição cuja resposta é SIM ou NÃO.
 REGRA: Do losango saem DUAS setas — uma para "Sim" e outra para "Não".`,
         flowchart: `flowchart TD
     C{nota >= 7?}
-    C -->|Sim| D[/Exibir: Aprovado/]
-    C -->|Não| E[/Exibir: Reprovado/]
+    C -->|Sim| D[\Exibir: Aprovado\]
+    C -->|Não| E[\Exibir: Reprovado\]
     style C fill:#f9ebea,stroke:#c0392b,color:#000
     style D fill:#fdebd0,stroke:#e67e22,color:#000
     style E fill:#fdebd0,stroke:#e67e22,color:#000`,
@@ -597,8 +597,8 @@ Quando o fluxograma é muito grande para caber em uma página, use círculos com
     B[/Ler: nota/] --> C
     C{nota >= 7?} -->|Sim| D
     C -->|Não| E
-    D[/Exibir: Aprovado/] --> F
-    E[/Exibir: Reprovado/] --> F
+    D[\Exibir: Aprovado\] --> F
+    E[\Exibir: Reprovado\] --> F
     F([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000
@@ -644,7 +644,7 @@ No fluxograma sequencial, não existe nenhum losango (decisão) — apenas ovals
     B[/Ler: base/] --> C
     C[/Ler: altura/] --> D
     D[area = base × altura] --> E
-    E[/Exibir: area/] --> F
+    E[\Exibir: area\] --> F
     F([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000
@@ -710,7 +710,7 @@ int main() {
     C[/Ler: nota2/] --> D
     D[/Ler: nota3/] --> E
     E[media = nota1+nota2+nota3 / 3] --> F
-    F[/Exibir: media/] --> G
+    F[\Exibir: media\] --> G
     G([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000
@@ -761,8 +761,8 @@ O losango sempre contém uma condição de Sim ou Não e sempre tem duas saídas
     B[/Ler: nota/] --> C
     C{nota >= 7?} -->|Sim| D
     C -->|Não| E
-    D[/Exibir: Aprovado!/] --> F
-    E[/Exibir: Reprovado!/] --> F
+    D[\Exibir: Aprovado!\] --> F
+    E[\Exibir: Reprovado!\] --> F
     F([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000
@@ -819,9 +819,9 @@ int main() {
     C -->|Não| E
     E{nota >= 7?} -->|Sim| F
     E -->|Não| G
-    D[/Exibir: Excelente!/] --> H
-    F[/Exibir: Aprovado!/] --> H
-    G[/Exibir: Reprovado!/] --> H
+    D[\Exibir: Excelente!\] --> H
+    F[\Exibir: Aprovado!\] --> H
+    G[\Exibir: Reprovado!\] --> H
     H([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#fdebd0,stroke:#e67e22,color:#000
@@ -899,7 +899,7 @@ Observe a seta de E voltando para C — isso é o loop. O losango D controla a s
     D{numero != 0?} -->|Sim| E
     D -->|Não| F
     E[soma = soma + numero] --> C
-    F[/Exibir: soma/] --> G
+    F[\Exibir: soma\] --> G
     G([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
     style B fill:#d6eaf8,stroke:#2980b9,color:#000
@@ -957,7 +957,7 @@ Problema: Imprimir os números de 1 a N.`,
     C[i ← 1] --> D
     D{i <= N?} -->|Sim| E
     D -->|Não| G
-    E[/Exibir: i/] --> F
+    E[\Exibir: i\] --> F
     F[i ← i + 1] --> D
     G([FIM])
     style A fill:#c8f7c5,stroke:#27ae60,color:#000
