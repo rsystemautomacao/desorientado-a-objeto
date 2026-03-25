@@ -198,22 +198,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return result;
       }
 
-      // Check if session already has a shuffle order (so reloads keep the same order)
+      // maxQuestions: how many questions each student sees (null = all)
+      const maxQ = typeof exam.maxQuestions === 'number' && exam.maxQuestions > 0 && exam.maxQuestions < rawExercises.length
+        ? exam.maxQuestions as number
+        : null;
+
+      // Check if session already has a shuffle/selection order (reloads keep the same questions)
       const sessionDoc = existingSession || await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
 
       if (sessionDoc?.questionOrder && Array.isArray(sessionDoc.questionOrder)) {
+        // Reuse stored order — already accounts for selection + shuffle
         questionOrder = sessionDoc.questionOrder as number[];
         optionOrders = (sessionDoc.optionOrders || {}) as Record<number, number[]>;
-      } else if (shouldShuffleQ || shouldShuffleOpts) {
-        // Generate shuffle orders
+      } else {
         const seed = `${examId}-${user.uid}`;
 
+        // Step 1: If maxQuestions is set, randomly SELECT which questions this student gets
+        //         Uses a dedicated seed so selection is independent from ordering
+        if (maxQ) {
+          const allIndices = Array.from({ length: rawExercises.length }, (_, i) => i);
+          const shuffledForSelection = seededShuffle(allIndices, seed + '-selection');
+          questionOrder = shuffledForSelection.slice(0, maxQ);
+        }
+
+        // Step 2: Shuffle the order of the selected (or all) questions
         if (shouldShuffleQ) {
           questionOrder = seededShuffle(questionOrder, seed + '-questions');
         }
 
+        // Step 3: Shuffle options for each selected question
         if (shouldShuffleOpts) {
-          for (let origIdx = 0; origIdx < rawExercises.length; origIdx++) {
+          for (const origIdx of questionOrder) {
             const ex = rawExercises[origIdx];
             const qType = ex.type || 'code';
             if ((qType === 'multiple-choice' || qType === 'fill-blank') && ex.options && ex.options.length > 1) {
@@ -227,10 +242,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // Store in session for consistency on reload
-        await db.collection('exam_sessions').updateOne(
-          { examId, userId: user.uid },
-          { $set: { questionOrder, optionOrders } },
-        );
+        if (maxQ || shouldShuffleQ || shouldShuffleOpts) {
+          await db.collection('exam_sessions').updateOne(
+            { examId, userId: user.uid },
+            { $set: { questionOrder, optionOrders } },
+          );
+        }
       }
 
       // Build exercises in shuffled order

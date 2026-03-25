@@ -104,6 +104,7 @@ export interface ExamDoc {
   exercises: ExamExercise[];
   accessCodes: string[];       // multiple codes, admin can regenerate
   maxSubmissions: number;      // max submissions per exercise per student
+  maxQuestions: number | null; // max questions shown per student (null = all); pool randomized per student
   active: boolean;
   gradesReleased: boolean;
   shuffleQuestions: boolean;
@@ -302,6 +303,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exercises: d.exercises,
         accessCodes: d.accessCodes,
         maxSubmissions: d.maxSubmissions,
+        maxQuestions: d.maxQuestions ?? null,
         active: d.active,
         gradesReleased: d.gradesReleased ?? false,
         shuffleQuestions: d.shuffleQuestions ?? false,
@@ -615,12 +617,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const validSubjectsCreate = ['poo', 'bi', 'logica'];
+      const rawMaxQ = body.maxQuestions;
+      const maxQuestions = typeof rawMaxQ === 'number' && rawMaxQ > 0 ? Math.floor(rawMaxQ) : null;
+
       const doc: ExamDoc = {
         title,
         description,
         exercises,
         accessCodes: [generateCode()],
         maxSubmissions,
+        maxQuestions,
         active: true,
         gradesReleased: false,
         shuffleQuestions: body.shuffleQuestions === true,
@@ -649,6 +655,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
       if (typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode)) updates.scoringMode = body.scoringMode;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
+      if ('maxQuestions' in body) updates.maxQuestions = typeof body.maxQuestions === 'number' && (body.maxQuestions as number) > 0 ? Math.floor(body.maxQuestions as number) : null;
       if (typeof body.subject === 'string' && ['poo', 'bi', 'logica'].includes(body.subject)) updates.subject = body.subject;
       if (Array.isArray(body.exercises)) {
         updates.exercises = (body.exercises as ExamExercise[]).map((ex) => {
