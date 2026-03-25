@@ -461,7 +461,7 @@ function ExamExerciseEditor({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <p className="text-xs text-muted-foreground font-medium mb-1">{exercise.title}</p>
-            <p className="text-base text-foreground leading-relaxed">{exercise.description}</p>
+            <div className="text-base text-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: exercise.description }} />
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-xs px-2 py-1 rounded-full ${canSubmit ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
