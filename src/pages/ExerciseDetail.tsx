@@ -185,8 +185,8 @@ export default function ExerciseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { completeExercise, saveExerciseAttempt, getExerciseData } = useProgress();
-  const alreadySolved = useMemo(() => getExerciseData()[exercise?.id ?? '']?.passed === true, [exercise?.id, getExerciseData]);
   const exercise = useMemo(() => getExerciseById(id ?? ''), [id]);
+  const alreadySolved = useMemo(() => getExerciseData()[exercise?.id ?? '']?.passed === true, [exercise?.id, getExerciseData]);
 
   // Load saved draft (or starter code if no draft)
   const [code, setCode] = useState(() => loadDraft(exercise?.id ?? '', exercise?.starterCode ?? ''));
