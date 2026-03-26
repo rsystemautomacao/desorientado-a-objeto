@@ -414,13 +414,16 @@ function ImportQuestionsModal({
 }
 
 // Helper: calculate point values based on scoring mode
-// Distribute 10 points across exercises, ensuring the sum is exactly 10.00
-function calcPointsPreview(exercises: ExamExercise[], mode: 'equal' | 'code-weighted' | 'manual'): number[] {
+// effectiveCount = maxQuestions when pool is active (each question worth 10/effectiveCount for equal mode)
+function calcPointsPreview(exercises: ExamExercise[], mode: 'equal' | 'code-weighted' | 'manual', effectiveCount?: number): number[] {
   const n = exercises.length;
   if (n === 0) return [];
   if (mode === 'manual') {
     return exercises.map((ex) => ex.points ?? 0);
   }
+
+  // For equal mode with an active pool: each question is worth 10/effectiveCount
+  const eff = (mode === 'equal' && effectiveCount && effectiveCount > 0 && effectiveCount < n) ? effectiveCount : n;
 
   // Calculate raw weights
   const weights = mode === 'equal'
@@ -428,11 +431,17 @@ function calcPointsPreview(exercises: ExamExercise[], mode: 'equal' | 'code-weig
     : exercises.map((ex) => (ex.type || 'code') === 'code' ? 2 : 1);
   const totalWeight = weights.reduce((s, w) => s + w, 0);
 
-  // Round each to 2 decimal places, then fix remainder on last item
-  const pts = weights.map((w) => Math.floor((w / totalWeight) * 10 * 100) / 100);
-  const sum = pts.reduce((s, p) => s + p, 0);
+  // For equal mode: each question = 10/eff (same for all, rounding adjusted on last)
+  // For code-weighted: proportional weights over all n questions (pool doesn't change individual weights)
+  const pts = mode === 'equal'
+    ? exercises.map(() => Math.floor((10 / eff) * 100) / 100)
+    : weights.map((w) => Math.floor((w / totalWeight) * 10 * 100) / 100);
+
+  // Fix rounding remainder on last item so student's subset sums exactly to 10
+  const effectivePts = pts.slice(0, eff);
+  const sum = effectivePts.reduce((s, p) => s + p, 0);
   const diff = Math.round((10 - sum) * 100) / 100;
-  pts[n - 1] = Math.round((pts[n - 1] + diff) * 100) / 100;
+  pts[eff - 1] = Math.round((pts[eff - 1] + diff) * 100) / 100;
   return pts;
 }
 
@@ -710,14 +719,20 @@ function ExamForm({
 
           {/* Show point summary */}
           {exercises.length > 0 && (() => {
-            const pts = calcPointsPreview(exercises, scoringMode);
-            const total = pts.reduce((s, p) => s + p, 0);
+            const poolActive = maxQuestions > 0 && maxQuestions < exercises.length;
+            const effectiveCount = poolActive ? maxQuestions : undefined;
+            const pts = calcPointsPreview(exercises, scoringMode, effectiveCount);
+            // For the total check: if pool active, sum over the effective subset (not all exercises)
+            const eff = effectiveCount ?? exercises.length;
+            const effectiveTotal = pts.slice(0, eff).reduce((s, p) => s + p, 0);
             return (
               <div className="rounded-lg border border-border bg-background/50 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold">Distribuicao de pontos</span>
-                  <span className={`text-xs font-bold ${Math.abs(total - 10) < 0.01 ? 'text-green-400' : 'text-red-400'}`}>
-                    Total: {total.toFixed(2)} / 10
+                  <span className="text-xs font-semibold">
+                    Distribuicao de pontos{poolActive ? ` (por aluno: ${eff} questoes)` : ''}
+                  </span>
+                  <span className={`text-xs font-bold ${Math.abs(effectiveTotal - 10) < 0.01 ? 'text-green-400' : 'text-red-400'}`}>
+                    Por aluno: {effectiveTotal.toFixed(2)} / 10
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -794,7 +809,7 @@ function ExamForm({
                     </div>
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                      {calcPointsPreview(exercises, scoringMode)[exIdx]?.toFixed(2)}pt
+                      {calcPointsPreview(exercises, scoringMode, maxQuestions > 0 && maxQuestions < exercises.length ? maxQuestions : undefined)[exIdx]?.toFixed(2)}pt
                     </span>
                   )}
                 </div>
@@ -1067,9 +1082,10 @@ function ExamForm({
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
         <Button onClick={() => {
-          const pts = calcPointsPreview(exercises, scoringMode);
+          const resolvedMaxQ = maxQuestions > 0 && maxQuestions < exercises.length ? maxQuestions : null;
+          const effectiveCount = resolvedMaxQ ?? undefined;
+          const pts = calcPointsPreview(exercises, scoringMode, effectiveCount);
           const finalExercises = exercises.map((ex, i) => ({ ...ex, points: scoringMode === 'manual' ? (ex.points ?? 0) : pts[i] }));
-          const resolvedMaxQ = maxQuestions > 0 && maxQuestions < finalExercises.length ? maxQuestions : null;
           onSave({ title, description, exercises: finalExercises, maxSubmissions, maxQuestions: resolvedMaxQ, shuffleQuestions, shuffleOptions, scoringMode, subject });
         }} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
