@@ -335,19 +335,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Calculate grade using points
       const exercises = exam.exercises as Array<{ points?: number }>;
-      const totalQuestions = exercises.length;
-      const submissions = await db.collection(SUBMISSIONS_COL)
-        .find({ examId, userId: user.uid })
-        .toArray();
+      const [submissions, gradeSession] = await Promise.all([
+        db.collection(SUBMISSIONS_COL).find({ examId, userId: user.uid }).toArray(),
+        db.collection('exam_sessions').findOne({ examId, userId: user.uid }),
+      ]);
+
+      // Use the student's actual question subset if pool was active
+      const questionOrder: number[] | null = Array.isArray(gradeSession?.questionOrder) ? (gradeSession.questionOrder as number[]) : null;
+      const indices = questionOrder ?? exercises.map((_, i) => i);
+      const n = indices.length;
 
       let earned = 0;
       let totalPoints = 0;
       let correct = 0;
-      for (let i = 0; i < totalQuestions; i++) {
-        const pts = exercises[i]?.points ?? (10 / Math.max(totalQuestions, 1));
+      for (const idx of indices) {
+        const pts = exercises[idx]?.points ?? (10 / Math.max(n, 1));
         totalPoints += pts;
         const best = submissions
-          .filter((s) => s.exerciseIndex === i)
+          .filter((s) => s.exerciseIndex === idx)
           .sort((a, b) => (b.passedTests as number) - (a.passedTests as number))[0];
         if (best?.allPassed) { correct++; earned += pts; }
       }
@@ -358,7 +363,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         earned: Math.round(earned * 100) / 100,
         totalPoints: Math.round(totalPoints * 100) / 100,
         correct,
-        total: totalQuestions,
+        total: n,
         examTitle: exam.title,
       });
     }

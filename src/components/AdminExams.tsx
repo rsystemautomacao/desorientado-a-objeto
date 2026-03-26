@@ -88,6 +88,7 @@ interface StudentResult {
   accessedAt?: string;
   finalizedAt?: string | null;
   finalized?: boolean;
+  questionOrder?: number[] | null;
   submissions: {
     exerciseIndex: number;
     code: string;
@@ -1773,21 +1774,22 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   };
 
   // Calculate grade for a student (0-10 scale)
+  // Uses questionOrder (the subset this student actually received) if available
   const calcGrade = (student: StudentResult): number => {
-    const totalQuestions = exam.exercises.length;
-    if (totalQuestions === 0) return 0;
+    const indices = student.questionOrder ?? exam.exercises.map((_, i) => i);
+    const n = indices.length;
+    if (n === 0) return 0;
     let earned = 0;
     let totalPoints = 0;
-    for (let i = 0; i < totalQuestions; i++) {
-      const pts = exam.exercises[i]?.points ?? (10 / totalQuestions);
+    for (const idx of indices) {
+      const pts = exam.exercises[idx]?.points ?? (10 / n);
       totalPoints += pts;
       const bestSub = student.submissions
-        .filter((s) => s.exerciseIndex === i)
+        .filter((s) => s.exerciseIndex === idx)
         .sort((a, b) => b.passedTests - a.passedTests)[0];
       if (bestSub?.allPassed) earned += pts;
     }
     if (totalPoints === 0) return 0;
-    // Normalize to 0-10 scale
     return Math.round((earned / totalPoints) * 10 * 100) / 100;
   };
 
@@ -1807,18 +1809,20 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   };
 
   const exportToExcel = () => {
-    const totalPts = exam.exercises.reduce((s, ex) => s + (ex.points ?? (10 / exam.exercises.length)), 0);
-
     // Build data rows
     const header = ['NOTAS', 'Nome Completo', 'Email', 'Pontos obtidos', 'Pontos total', 'Acertos', 'Total Questoes', 'Inicio', 'Fim', 'Duracao (min)', 'Saidas da aba', 'Tentativas de cola'];
     const dataRows = results.map((student) => {
       const grade = calcGrade(student);
+      const indices = student.questionOrder ?? exam.exercises.map((_, i) => i);
+      const n = indices.length;
       let correct = 0;
       let earned = 0;
-      for (let i = 0; i < exam.exercises.length; i++) {
-        const pts = exam.exercises[i]?.points ?? (10 / exam.exercises.length);
+      let totalPts = 0;
+      for (const idx of indices) {
+        const pts = exam.exercises[idx]?.points ?? (10 / n);
+        totalPts += pts;
         const bestSub = student.submissions
-          .filter((s) => s.exerciseIndex === i)
+          .filter((s) => s.exerciseIndex === idx)
           .sort((a, b) => b.passedTests - a.passedTests)[0];
         if (bestSub?.allPassed) { correct++; earned += pts; }
       }
@@ -1834,7 +1838,7 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
         parseFloat(earned.toFixed(2)),
         parseFloat(totalPts.toFixed(2)),
         correct,
-        exam.exercises.length,
+        n,
         startTime,
         endTime,
         duration,

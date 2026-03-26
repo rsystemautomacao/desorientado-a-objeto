@@ -184,13 +184,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .toArray(),
         ]);
 
-        // Build session lookup: userId → { accessedAt, finalizedAt, finalized }
-        const sessionMap: Record<string, { accessedAt: string; finalizedAt: string | null; finalized: boolean }> = {};
+        // Build session lookup: userId → { accessedAt, finalizedAt, finalized, questionOrder }
+        const sessionMap: Record<string, { accessedAt: string; finalizedAt: string | null; finalized: boolean; questionOrder: number[] | null }> = {};
         for (const s of sessions) {
           sessionMap[s.userId as string] = {
             accessedAt: (s.accessedAt as string) || '',
             finalizedAt: (s.finalizedAt as string) || null,
             finalized: s.finalized === true,
+            questionOrder: Array.isArray(s.questionOrder) ? (s.questionOrder as number[]) : null,
           };
         }
 
@@ -217,6 +218,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           tabSwitches: number; lastTabSwitch: string;
           cheatAttempts: number; cheatEvents: Array<{ type: string; timestamp: string }>;
           accessedAt: string; finalizedAt: string | null; finalized: boolean;
+          questionOrder: number[] | null;
           submissions: Array<{ exerciseIndex: number; code: string; passedTests: number; totalTests: number; allPassed: boolean; attemptNumber: number; submittedAt: string }>;
         }> = {};
 
@@ -231,6 +233,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
               cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
               accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
+              questionOrder: sess?.questionOrder ?? null,
               submissions: [],
             };
           }
@@ -256,6 +259,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               tabSwitches: (ts.totalSwitches as number) || 0, lastTabSwitch: (ts.lastSwitchAt as string) || '',
               cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
               accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
+              questionOrder: sess?.questionOrder ?? null,
               submissions: [],
             };
           }
@@ -270,6 +274,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
               cheatAttempts: (ca.totalAttempts as number) || 0, cheatEvents: (ca.events as Array<{ type: string; timestamp: string }>) || [],
               accessedAt: sess?.accessedAt ?? '', finalizedAt: sess?.finalizedAt ?? null, finalized: sess?.finalized ?? false,
+              questionOrder: sess?.questionOrder ?? null,
               submissions: [],
             };
           }
@@ -285,6 +290,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               tabSwitches: tsData?.total ?? 0, lastTabSwitch: tsData?.lastAt ?? '',
               cheatAttempts: caData?.total ?? 0, cheatEvents: caData?.events ?? [],
               accessedAt: (s.accessedAt as string) || '', finalizedAt: (s.finalizedAt as string) || null, finalized: s.finalized === true,
+              questionOrder: Array.isArray(s.questionOrder) ? (s.questionOrder as number[]) : null,
               submissions: [],
             };
           }
