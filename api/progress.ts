@@ -12,7 +12,7 @@ import {
   sanitiseLastStudied,
   sanitiseCompletedExercises,
   recalculateXp,
-} from './_validation';
+} from './_validation.js';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'progress';

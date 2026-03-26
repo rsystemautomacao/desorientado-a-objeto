@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import type { ServiceAccount } from 'firebase-admin/app';
-import { sanitiseActivity } from './_validation';
+import { sanitiseActivity } from './_validation.js';
 
 const DB_NAME = 'desorientado';
 const COLLECTION = 'activities';
