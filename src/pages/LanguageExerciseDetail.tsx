@@ -10,6 +10,7 @@ import {
   ChevronLeft, Lightbulb, RotateCcw, Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DIFF_LABELS } from '@/constants/difficulty';
 
 // ── Judge0 ──
 const JUDGE0_URL = 'https://ce.judge0.com';
@@ -122,8 +123,6 @@ function loadDraft(id: string, starter: string): string {
 }
 function saveDraft(id: string, code: string) { try { localStorage.setItem(getDraftKey(id), code); } catch { /**/ } }
 function clearDraft(id: string) { try { localStorage.removeItem(getDraftKey(id)); } catch { /**/ } }
-
-import { DIFF_LABELS } from '@/constants/difficulty';
 
 interface TestResult { input: string; expected: string; actual: string; passed: boolean; visible: boolean; error?: string; }
 

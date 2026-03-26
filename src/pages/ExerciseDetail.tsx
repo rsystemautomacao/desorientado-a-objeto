@@ -9,6 +9,7 @@ import {
   ChevronLeft, Lightbulb, RotateCcw, Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DIFF_LABELS } from '@/constants/difficulty';
 
 const JUDGE0_URL = 'https://ce.judge0.com';
 const JAVA_LANGUAGE_ID = 91;
@@ -129,8 +130,6 @@ interface TestResult {
 function normalizeOutput(s: string): string {
   return s.split('\n').map((l) => l.trimEnd()).join('\n').trim();
 }
-
-import { DIFF_LABELS } from '@/constants/difficulty';
 
 // ── Auto-save helpers ──
 function getDraftKey(exerciseId: string): string {
