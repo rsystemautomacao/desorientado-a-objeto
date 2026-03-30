@@ -3,7 +3,8 @@ import Layout from '@/components/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { pythonModules } from '@/data/modules-python';
 import { cModules } from '@/data/modules-c';
-import { BookOpen, Clock, ChevronRight, Code2 } from 'lucide-react';
+import { useProgress } from '@/hooks/useProgress';
+import { BookOpen, Clock, ChevronRight, Code2, CheckCircle2 } from 'lucide-react';
 
 const LEVEL_STYLES = {
   basico:       { label: 'Básico',       badge: 'border-green-500/30 bg-green-500/10 text-green-600',  dot: 'bg-green-500' },
@@ -14,6 +15,7 @@ const LEVEL_STYLES = {
 export default function LanguageTrail() {
   const { lang, label, routePrefix, color, accent } = useLanguage();
   const modules = lang === 'python' ? pythonModules : cModules;
+  const { isCompleted } = useProgress();
 
   return (
     <Layout>
@@ -48,26 +50,33 @@ export default function LanguageTrail() {
 
                 {/* Lessons */}
                 <div className="ml-3 pl-8 border-l-2 border-border space-y-2">
-                  {mod.lessons.map((lesson, lessonIdx) => (
-                    <Link
-                      key={lesson.id}
-                      to={`${routePrefix}/aula/${lesson.id}`}
-                      className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${accent} ${color}`}>
-                          {lessonIdx + 1}
+                  {mod.lessons.map((lesson, lessonIdx) => {
+                    const done = isCompleted(lesson.id);
+                    return (
+                      <Link
+                        key={lesson.id}
+                        to={`${routePrefix}/aula/${lesson.id}`}
+                        className={`flex items-center justify-between p-4 rounded-xl border bg-card hover:bg-secondary/50 transition-colors group ${done ? 'border-primary/40 bg-primary/5' : 'border-border'}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${done ? 'bg-primary text-primary-foreground' : `${accent} ${color}`}`}>
+                            {done ? <CheckCircle2 className="h-4 w-4" /> : lessonIdx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`font-medium text-sm truncate ${done ? 'text-primary' : ''}`}>{lesson.title}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Clock className="h-3 w-3" /> {lesson.duration}
+                              {done && <span className="ml-1 text-primary font-medium">· Concluída</span>}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">{lesson.title}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Clock className="h-3 w-3" /> {lesson.duration}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-2" />
-                    </Link>
-                  ))}
+                        {done
+                          ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0 ml-2" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 ml-2" />
+                        }
+                      </Link>
+                    );
+                  })}
                 </div>
 
                 {/* Connector */}
