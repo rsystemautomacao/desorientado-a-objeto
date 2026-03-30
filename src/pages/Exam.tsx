@@ -185,9 +185,15 @@ function ExamExerciseEditor({
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
   const [activeLine, setActiveLine] = useState(-1);
   const [pasteWarning, setPasteWarning] = useState(false);
+  const [pasteGlow, setPasteGlow] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const lastKeystrokeRef = useRef<number>(Date.now());
+  // Secret instructor bypass: Esc×3 quickly unlocks paste for 3 s
+  const pasteUnlocked = useRef(false);
+  const pasteUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const escCount = useRef(0);
+  const escTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Notify parent if already submitted on mount
   useEffect(() => {
@@ -214,6 +220,11 @@ function ExamExerciseEditor({
 
   // Block paste (Ctrl+V, right-click paste)
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    if (pasteUnlocked.current) {
+      // Instructor bypass active — update keystroke time so safeSetCode won't flag it
+      lastKeystrokeRef.current = Date.now();
+      return;
+    }
     e.preventDefault();
     setPasteWarning(true);
     setTimeout(() => setPasteWarning(false), 3000);
@@ -259,6 +270,27 @@ function ExamExerciseEditor({
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Secret instructor bypass: Esc×3 within 600 ms unlocks paste for 3 s
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      escCount.current += 1;
+      if (escTimer.current) clearTimeout(escTimer.current);
+      if (escCount.current >= 3) {
+        escCount.current = 0;
+        pasteUnlocked.current = true;
+        setPasteGlow(true);
+        if (pasteUnlockTimer.current) clearTimeout(pasteUnlockTimer.current);
+        pasteUnlockTimer.current = setTimeout(() => {
+          pasteUnlocked.current = false;
+          setPasteGlow(false);
+        }, 3000);
+      } else {
+        escTimer.current = setTimeout(() => { escCount.current = 0; }, 600);
+      }
+      return;
+    }
+
     const ta = e.currentTarget;
     const { selectionStart: start, selectionEnd: end, value } = ta;
 
@@ -504,7 +536,7 @@ function ExamExerciseEditor({
           </div>
         </div>
 
-        <div className="relative rounded-lg border border-border bg-background overflow-hidden">
+        <div className={`relative rounded-lg border bg-background overflow-hidden transition-colors duration-300 ${pasteGlow ? 'border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.25)]' : 'border-border'}`}>
           {activeLine > 0 && (
             <div
               className="absolute left-0 right-0 pointer-events-none z-[1]"
