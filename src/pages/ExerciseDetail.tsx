@@ -232,25 +232,10 @@ export default function ExerciseDetail() {
 
   const submitRef = useRef<() => void>();
 
-  // Secret instructor bypass: F3 unlocks paste for 3 seconds (subtle green glow as feedback)
+  // Secret instructor bypass: F8 inside the textarea unlocks paste for 3 seconds
   const pasteUnlocked = useRef(false);
   const pasteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pasteGlow, setPasteGlow] = useState(false);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'F8') return;
-      e.preventDefault();
-      pasteUnlocked.current = true;
-      setPasteGlow(true);
-      if (pasteTimer.current) clearTimeout(pasteTimer.current);
-      pasteTimer.current = setTimeout(() => {
-        pasteUnlocked.current = false;
-        setPasteGlow(false);
-      }, 3000);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 
   // Block paste, drag-drop, and context menu — students must type their code
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -270,6 +255,19 @@ export default function ExerciseDetail() {
   const AUTO_PAIRS: Record<string, string> = { '{': '}', '(': ')', '[': ']', '"': '"', "'": "'" };
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Secret instructor bypass: F8 unlocks paste for 3 s (green glow feedback)
+    if (e.key === 'F8') {
+      e.preventDefault();
+      pasteUnlocked.current = true;
+      setPasteGlow(true);
+      if (pasteTimer.current) clearTimeout(pasteTimer.current);
+      pasteTimer.current = setTimeout(() => {
+        pasteUnlocked.current = false;
+        setPasteGlow(false);
+      }, 3000);
+      return;
+    }
+
     // Ctrl+Enter or Cmd+Enter → submit code
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
