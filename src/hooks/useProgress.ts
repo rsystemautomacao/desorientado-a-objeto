@@ -233,7 +233,26 @@ export function useProgress() {
                 localStorage.setItem(exKey, JSON.stringify(merged));
               } catch { /* ignore */ }
             }
-            setProgress(fixProgressIfNeeded(p, uid));
+
+            // Mescla aulas py-*/c-* do local que o servidor pode ter descartado anteriormente
+            // (antes do fix de validação, esses IDs eram silenciosamente removidos no PUT)
+            const localLessons = effectiveLocal.completedLessons ?? [];
+            const serverLessons = new Set(p.completedLessons ?? []);
+            const missingLangLessons = localLessons.filter(
+              (id) => (id.startsWith('py-') || id.startsWith('c-')) && !serverLessons.has(id)
+            );
+            let merged = fixProgressIfNeeded(p, uid);
+            if (missingLangLessons.length > 0) {
+              merged = {
+                ...merged,
+                completedLessons: [...(merged.completedLessons ?? []), ...missingLangLessons],
+              };
+              // Sobe imediatamente pro servidor para não perder novamente
+              if (apiOkRef.current) {
+                user.getIdToken(true).then((t) => saveProgressToApi(t, merged, serverResetAtRef.current).catch(() => { apiOkRef.current = false; }));
+              }
+            }
+            setProgress(merged);
           }
           setProgressLoaded(true);
         })
