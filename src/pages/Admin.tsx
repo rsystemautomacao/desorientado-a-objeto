@@ -7,6 +7,10 @@ import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
 import { modules } from '@/data/modules';
 import { exercises as allExercisesData } from '@/data/exercises';
+import { pythonModules, getAllPythonLessons } from '@/data/modules-python';
+import { cModules, getAllCLessons } from '@/data/modules-c';
+import { pythonExercises } from '@/data/exercises-python';
+import { cExercises } from '@/data/exercises-c';
 import {
   BarChart,
   Bar,
@@ -333,7 +337,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
   const [gradeInputs, setGradeInputs] = useState<Record<string, string>>({});
   const [gradeNoteInputs, setGradeNoteInputs] = useState<Record<string, string>>({});
   const [savingGrade, setSavingGrade] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'aulas' | 'exercicios'>('aulas');
+  const [activeTab, setActiveTab] = useState<'aulas' | 'python' | 'c' | 'exercicios'>('aulas');
 
   useEffect(() => {
     let cancelled = false;
@@ -398,16 +402,10 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
       {/* Header: PDF + tabs */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1 text-xs font-medium border border-border rounded-lg overflow-hidden">
-          <button
-            onClick={() => setActiveTab('aulas')}
-            className={`px-3 py-1.5 transition-colors ${activeTab === 'aulas' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          >
-            Aulas & Quizzes
-          </button>
-          <button
-            onClick={() => setActiveTab('exercicios')}
-            className={`px-3 py-1.5 transition-colors ${activeTab === 'exercicios' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-          >
+          <button onClick={() => setActiveTab('aulas')} className={`px-3 py-1.5 transition-colors ${activeTab === 'aulas' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Java</button>
+          <button onClick={() => setActiveTab('python')} className={`px-3 py-1.5 transition-colors ${activeTab === 'python' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Python</button>
+          <button onClick={() => setActiveTab('c')} className={`px-3 py-1.5 transition-colors ${activeTab === 'c' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Lang C</button>
+          <button onClick={() => setActiveTab('exercicios')} className={`px-3 py-1.5 transition-colors ${activeTab === 'exercicios' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
             Exercícios {submissions.length > 0 && `(${submissions.length})`}
           </button>
         </div>
@@ -419,7 +417,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
         </button>
       </div>
 
-      {/* ── Tab: Aulas & Quizzes ── */}
+      {/* ── Tab: Java ── */}
       {activeTab === 'aulas' && (
         <>
           {modules.map((mod) => {
@@ -440,23 +438,10 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
                     const quiz = entry.quizResults[lesson.id];
                     const quizPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
                     return (
-                      <div
-                        key={lesson.id}
-                        className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}
-                      >
-                        {done ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                        ) : (
-                          <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
-                        )}
-                        <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>
-                          {lesson.title}
-                        </span>
-                        {quiz && (
-                          <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>
-                            {quiz.score}/{quiz.total}
-                          </span>
-                        )}
+                      <div key={lesson.id} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}>
+                        {done ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />}
+                        <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>{lesson.title}</span>
+                        {quiz && <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>{quiz.score}/{quiz.total}</span>}
                       </div>
                     );
                   })}
@@ -464,11 +449,73 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
               </div>
             );
           })}
-          {entry.updatedAt && (
-            <p className="text-xs text-muted-foreground">
-              Perfil atualizado em: {new Date(entry.updatedAt).toLocaleDateString('pt-BR')}
-            </p>
-          )}
+          {entry.updatedAt && <p className="text-xs text-muted-foreground">Perfil atualizado em: {new Date(entry.updatedAt).toLocaleDateString('pt-BR')}</p>}
+        </>
+      )}
+
+      {/* ── Tab: Python ── */}
+      {activeTab === 'python' && (
+        <>
+          {pythonModules.map((mod) => {
+            const lessonIds = mod.lessons.map((l) => l.id);
+            const completed = lessonIds.filter((id) => entry.completedLessons.includes(id)).length;
+            const pct = lessonIds.length > 0 ? Math.round((completed / lessonIds.length) * 100) : 0;
+            return (
+              <div key={mod.id} className="space-y-2">
+                <h4 className="text-sm font-medium">
+                  {mod.icon} {mod.title}
+                  <span className="text-muted-foreground font-normal ml-2">{completed}/{lessonIds.length} aulas ({pct}%)</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                  {mod.lessons.map((lesson) => {
+                    const done = entry.completedLessons.includes(lesson.id);
+                    const quiz = entry.quizResults[lesson.id];
+                    const quizPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
+                    return (
+                      <div key={lesson.id} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}>
+                        {done ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />}
+                        <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>{lesson.title}</span>
+                        {quiz && <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>{quiz.score}/{quiz.total}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {/* ── Tab: Lang C ── */}
+      {activeTab === 'c' && (
+        <>
+          {cModules.map((mod) => {
+            const lessonIds = mod.lessons.map((l) => l.id);
+            const completed = lessonIds.filter((id) => entry.completedLessons.includes(id)).length;
+            const pct = lessonIds.length > 0 ? Math.round((completed / lessonIds.length) * 100) : 0;
+            return (
+              <div key={mod.id} className="space-y-2">
+                <h4 className="text-sm font-medium">
+                  {mod.icon} {mod.title}
+                  <span className="text-muted-foreground font-normal ml-2">{completed}/{lessonIds.length} aulas ({pct}%)</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                  {mod.lessons.map((lesson) => {
+                    const done = entry.completedLessons.includes(lesson.id);
+                    const quiz = entry.quizResults[lesson.id];
+                    const quizPct = quiz && quiz.total > 0 ? Math.round((quiz.score / quiz.total) * 100) : -1;
+                    return (
+                      <div key={lesson.id} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-md border ${done ? 'border-green-500/30 bg-green-500/5' : 'border-border/50 bg-background/50'}`}>
+                        {done ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />}
+                        <span className={`truncate flex-1 ${done ? '' : 'text-muted-foreground'}`} title={lesson.title}>{lesson.title}</span>
+                        {quiz && <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${scoreBg(quizPct)}`}>{quiz.score}/{quiz.total}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </>
       )}
 
@@ -483,7 +530,7 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
             <p className="text-sm text-muted-foreground py-4">Nenhum exercício submetido ainda.</p>
           ) : (
             <>
-              {/* Group by module */}
+              {/* Group by module — Java */}
               {([1, 2, 3] as const).map((modId) => {
                 const modEx = allExercisesData.filter((e) => e.moduleId === modId);
                 const modSubs = submissions.filter((s) => modEx.some((e) => e.id === s.exerciseId));
@@ -586,6 +633,192 @@ function StudentDetail({ entry, getToken }: { entry: StudyHistoryEntry; getToken
                   </div>
                 );
               })}
+
+              {/* Group by language — Python */}
+              {(() => {
+                const pySubs = submissions.filter((s) => s.exerciseId.startsWith('py-'));
+                if (pySubs.length === 0) return null;
+                return (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🐍 Python</h4>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full min-w-[640px] text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/30">
+                            <th className="text-left px-3 py-2 font-medium">Exercício</th>
+                            <th className="text-center px-3 py-2 font-medium">Dif.</th>
+                            <th className="text-center px-3 py-2 font-medium">
+                              Status
+                              <span className="block text-[10px] font-normal text-muted-foreground">AC · Parcial · WA</span>
+                            </th>
+                            <th className="text-center px-3 py-2 font-medium">Melhor</th>
+                            <th className="text-center px-3 py-2 font-medium">Tentativas</th>
+                            <th className="text-center px-3 py-2 font-medium">Última sub.</th>
+                            <th className="text-center px-3 py-2 font-medium w-32">Nota (0–10)</th>
+                            <th className="text-center px-3 py-2 font-medium">Código</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pySubs.map((sub) => {
+                            const ex = pythonExercises.find((e) => e.id === sub.exerciseId);
+                            if (!ex) return null;
+                            const isSaving = savingGrade === sub.exerciseId;
+                            const gradeVal = gradeInputs[sub.exerciseId] ?? '';
+                            return (
+                              <tr key={sub.exerciseId} className="border-b border-border/50 hover:bg-muted/10">
+                                <td className="px-3 py-2 max-w-[180px]">
+                                  <span className="font-medium truncate block" title={ex.title}>{ex.title}</span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${diffColor(ex.difficulty)}`}>
+                                    {diffLabel(ex.difficulty)}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {sub.passed ? (
+                                    <span className="text-green-500 font-bold">AC</span>
+                                  ) : sub.bestPassedTests > 0 ? (
+                                    <span className="text-yellow-500 font-bold">Parcial</span>
+                                  ) : (
+                                    <span className="text-red-500 font-bold">WA</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center font-mono">{sub.bestPassedTests}/{sub.totalTests}</td>
+                                <td className="px-3 py-2 text-center">{sub.attempts}</td>
+                                <td className="px-3 py-2 text-center text-muted-foreground">
+                                  {new Date(sub.lastSubmittedAt).toLocaleDateString('pt-BR')}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1 justify-center">
+                                    <input
+                                      type="number" min="0" max="10" step="0.5"
+                                      value={gradeVal}
+                                      onChange={(e) => setGradeInputs((p) => ({ ...p, [sub.exerciseId]: e.target.value }))}
+                                      className="w-14 text-center border border-border rounded px-1 py-0.5 bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                      placeholder="—"
+                                    />
+                                    <button
+                                      onClick={() => handleSaveGrade(sub.exerciseId)}
+                                      disabled={isSaving}
+                                      className="px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/80 disabled:opacity-50 transition-colors"
+                                    >
+                                      {isSaving ? '...' : 'OK'}
+                                    </button>
+                                  </div>
+                                  {sub.grade !== undefined && (
+                                    <div className="text-center text-[10px] text-muted-foreground mt-0.5">Salvo: {sub.grade}</div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <button
+                                    onClick={() => setCodeModal({ title: ex.title, code: sub.lastCode, history: sub.history })}
+                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded border border-border hover:bg-muted transition-colors text-[10px] font-medium"
+                                  >
+                                    <Code2 className="h-3 w-3" /> Ver
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Group by language — C */}
+              {(() => {
+                const cSubs = submissions.filter((s) => s.exerciseId.startsWith('c-'));
+                if (cSubs.length === 0) return null;
+                return (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">⚙️ Linguagem C</h4>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full min-w-[640px] text-xs">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/30">
+                            <th className="text-left px-3 py-2 font-medium">Exercício</th>
+                            <th className="text-center px-3 py-2 font-medium">Dif.</th>
+                            <th className="text-center px-3 py-2 font-medium">
+                              Status
+                              <span className="block text-[10px] font-normal text-muted-foreground">AC · Parcial · WA</span>
+                            </th>
+                            <th className="text-center px-3 py-2 font-medium">Melhor</th>
+                            <th className="text-center px-3 py-2 font-medium">Tentativas</th>
+                            <th className="text-center px-3 py-2 font-medium">Última sub.</th>
+                            <th className="text-center px-3 py-2 font-medium w-32">Nota (0–10)</th>
+                            <th className="text-center px-3 py-2 font-medium">Código</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cSubs.map((sub) => {
+                            const ex = cExercises.find((e) => e.id === sub.exerciseId);
+                            if (!ex) return null;
+                            const isSaving = savingGrade === sub.exerciseId;
+                            const gradeVal = gradeInputs[sub.exerciseId] ?? '';
+                            return (
+                              <tr key={sub.exerciseId} className="border-b border-border/50 hover:bg-muted/10">
+                                <td className="px-3 py-2 max-w-[180px]">
+                                  <span className="font-medium truncate block" title={ex.title}>{ex.title}</span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${diffColor(ex.difficulty)}`}>
+                                    {diffLabel(ex.difficulty)}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {sub.passed ? (
+                                    <span className="text-green-500 font-bold">AC</span>
+                                  ) : sub.bestPassedTests > 0 ? (
+                                    <span className="text-yellow-500 font-bold">Parcial</span>
+                                  ) : (
+                                    <span className="text-red-500 font-bold">WA</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center font-mono">{sub.bestPassedTests}/{sub.totalTests}</td>
+                                <td className="px-3 py-2 text-center">{sub.attempts}</td>
+                                <td className="px-3 py-2 text-center text-muted-foreground">
+                                  {new Date(sub.lastSubmittedAt).toLocaleDateString('pt-BR')}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-1 justify-center">
+                                    <input
+                                      type="number" min="0" max="10" step="0.5"
+                                      value={gradeVal}
+                                      onChange={(e) => setGradeInputs((p) => ({ ...p, [sub.exerciseId]: e.target.value }))}
+                                      className="w-14 text-center border border-border rounded px-1 py-0.5 bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                                      placeholder="—"
+                                    />
+                                    <button
+                                      onClick={() => handleSaveGrade(sub.exerciseId)}
+                                      disabled={isSaving}
+                                      className="px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/80 disabled:opacity-50 transition-colors"
+                                    >
+                                      {isSaving ? '...' : 'OK'}
+                                    </button>
+                                  </div>
+                                  {sub.grade !== undefined && (
+                                    <div className="text-center text-[10px] text-muted-foreground mt-0.5">Salvo: {sub.grade}</div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <button
+                                    onClick={() => setCodeModal({ title: ex.title, code: sub.lastCode, history: sub.history })}
+                                    className="flex items-center gap-1 mx-auto px-2 py-1 rounded border border-border hover:bg-muted transition-colors text-[10px] font-medium"
+                                  >
+                                    <Code2 className="h-3 w-3" /> Ver
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
