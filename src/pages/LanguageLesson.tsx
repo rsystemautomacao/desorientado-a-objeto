@@ -222,18 +222,18 @@ export default function LanguageLesson() {
           </section>
         )}
 
-        {/* Complete lesson button */}
+        {/* Complete lesson button — show manual button only if no quiz exists */}
         <div className="mb-8 flex justify-center">
           {done ? (
             <div className="flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-600 font-semibold">
               <CheckCircle2 className="h-5 w-5" /> Aula concluída
             </div>
-          ) : (
+          ) : lessonQuiz.length === 0 ? (
             <Button size="lg" onClick={handleComplete} className="gap-2 px-8">
               <CheckCircle2 className="h-5 w-5" />
               Marcar aula como concluída
             </Button>
-          )}
+          ) : null}
         </div>
 
         {/* Navigation */}

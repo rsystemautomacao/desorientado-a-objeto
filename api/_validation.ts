@@ -5,18 +5,28 @@
  * never trusts client-supplied values blindly.
  */
 
-// ── Valid Lesson IDs (from src/data/modules.ts) ─────────────────────
+// ── Valid Lesson IDs (from src/data/modules.ts + modules-python.ts + modules-c.ts) ──
 export const VALID_LESSON_IDS = new Set([
-  // Module 1 — Fundamentos
+  // Java — Module 1 — Fundamentos
   'm1-intro', 'm1-variables', 'm1-operators', 'm1-ifelse', 'm1-switch',
   'm1-loops', 'm1-arrays', 'm1-matrices', 'm1-functions',
-  // Module 2 — Intermediário
+  // Java — Module 2 — Intermediário
   'm2-io', 'm2-strings', 'm2-debug', 'm2-collections', 'm2-packages',
-  // Module 3 — POO
+  // Java — Module 3 — POO
   'm3-whatispoo', 'm3-classes', 'm3-attributes', 'm3-constructors',
   'm3-encapsulation', 'm3-static', 'm3-this', 'm3-inheritance',
   'm3-polymorphism', 'm3-abstraction', 'm3-interfaces', 'm3-composition',
   'm3-overloading', 'm3-access', 'm3-exceptions', 'm3-solid', 'm3-project',
+  // Python lessons
+  'py-m1-intro', 'py-m1-variables', 'py-m1-operators', 'py-m1-io',
+  'py-m2-ifelse', 'py-m2-for', 'py-m2-while',
+  'py-m3-functions', 'py-m3-lists', 'py-m3-dicts',
+  'py-m4-numpy', 'py-m4-pandas', 'py-m4-matplotlib', 'py-m4-eda', 'py-m4-cleaning', 'py-m4-filter',
+  // C lessons
+  'c-m0-algo', 'c-m0-seq', 'c-m0-decision', 'c-m0-loops', 'c-m0-symbols',
+  'c-m1-intro', 'c-m1-variables', 'c-m1-operators', 'c-m1-io',
+  'c-m2-ifelse', 'c-m2-switch', 'c-m2-loops',
+  'c-m3-arrays', 'c-m3-functions', 'c-m3-pointers',
 ]);
 
 // ── Quiz questions per lesson (from src/data/quizData.ts) ───────────
@@ -26,8 +36,9 @@ const QUIZ_MAX_TOTAL = 5;
 // Lessons that actually have quizzes (all 31 lessons have quizzes)
 export const LESSONS_WITH_QUIZZES = new Set(VALID_LESSON_IDS);
 
-// ── Valid Exercise IDs (from src/data/exercises.ts) ─────────────────
+// ── Valid Exercise IDs (from src/data/exercises.ts + exercises-python.ts + exercises-c.ts) ──
 export const VALID_EXERCISE_IDS = new Set([
+  // Java exercises
   'ex-m1-var-01', 'ex-m1-var-02', 'ex-m1-var-03',
   'ex-m1-op-01', 'ex-m1-op-02',
   'ex-m1-if-01', 'ex-m1-if-02',
@@ -46,6 +57,16 @@ export const VALID_EXERCISE_IDS = new Set([
   'ex-m3-comp-01',
   'ex-m3-exc-01', 'ex-m3-exc-02',
   'ex-m3-solid-01',
+  // Python exercises
+  'py-01', 'py-02', 'py-03', 'py-04', 'py-05', 'py-06', 'py-07', 'py-08', 'py-09', 'py-10',
+  'py-11', 'py-12', 'py-13', 'py-14', 'py-15', 'py-16', 'py-17', 'py-18', 'py-19', 'py-20',
+  'py-21', 'py-22', 'py-23', 'py-24', 'py-25', 'py-26', 'py-27', 'py-28', 'py-29', 'py-30',
+  'py-31', 'py-32', 'py-33', 'py-34', 'py-35',
+  // C exercises
+  'c-01', 'c-02', 'c-03', 'c-04', 'c-05', 'c-06', 'c-07', 'c-08', 'c-09', 'c-10',
+  'c-11', 'c-12', 'c-13', 'c-14', 'c-15', 'c-16', 'c-17', 'c-18', 'c-19', 'c-20',
+  'c-21', 'c-22', 'c-23', 'c-24', 'c-25', 'c-26', 'c-27', 'c-28', 'c-29', 'c-30',
+  'c-31', 'c-32', 'c-33', 'c-34', 'c-35',
 ]);
 
 // ── Valid activity types ────────────────────────────────────────────
