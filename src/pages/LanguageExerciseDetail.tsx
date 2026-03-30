@@ -284,10 +284,12 @@ export default function LanguageExerciseDetail() {
     try {
       for (const tc of exercise.testCases) {
         try {
-          const result = await runCode(judge0Id, code, tc.input);
+          const stdinReal = tc.input.replace(/\\n/g, '\n');
+          const expectedReal = tc.expectedOutput.replace(/\\n/g, '\n');
+          const result = await runCode(judge0Id, code, stdinReal);
           if (result.status?.id === 6) { setCompileError(result.compile_output ?? 'Erro de compilação'); setRunning(false); return; }
           const actual = normalizeOutput(result.stdout ?? '');
-          const expected = normalizeOutput(tc.expectedOutput);
+          const expected = normalizeOutput(expectedReal);
           testResults.push({ input: tc.input, expected: tc.expectedOutput, actual: result.stdout?.trim() ?? '', passed: actual === expected, visible: tc.visible, error: result.stderr?.trim() || undefined });
         } catch {
           testResults.push({ input: tc.input, expected: tc.expectedOutput, actual: '', passed: false, visible: tc.visible, error: 'Erro na API. Tente novamente.' });

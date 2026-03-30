@@ -453,7 +453,10 @@ export default function ExerciseDetail() {
     try {
       for (const tc of exercise.testCases) {
         try {
-          const result = await runJava(code, tc.input);
+          // Convert literal \n stored in DB to real newlines for Judge0
+          const stdinReal = tc.input.replace(/\\n/g, '\n');
+          const expectedReal = tc.expectedOutput.replace(/\\n/g, '\n');
+          const result = await runJava(code, stdinReal);
 
           // Compilation error — same for all tests, abort early
           if (result.status?.id === 6) {
@@ -463,7 +466,7 @@ export default function ExerciseDetail() {
           }
 
           const actual = normalizeOutput(result.stdout ?? '');
-          const expected = normalizeOutput(tc.expectedOutput);
+          const expected = normalizeOutput(expectedReal);
           const passed = actual === expected;
           const error = result.stderr?.trim() || undefined;
 
