@@ -175,10 +175,12 @@ export default function LanguageExerciseDetail() {
     setActiveLine(ta.value.substring(0, ta.selectionStart).split('\n').length);
   }, []);
 
-  // Secret instructor bypass: F8 inside the textarea unlocks paste for 3 seconds
+  // Secret instructor bypass: Esc×3 quickly unlocks paste for 3 seconds
   const pasteUnlocked = useRef(false);
   const pasteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pasteGlow, setPasteGlow] = useState(false);
+  const escCount = useRef(0);
+  const escTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => { if (!pasteUnlocked.current) e.preventDefault(); }, []);
   const handleDrop = useCallback((e: React.DragEvent) => { if (!pasteUnlocked.current) e.preventDefault(); }, []);
@@ -187,16 +189,24 @@ export default function LanguageExerciseDetail() {
   const AUTO_PAIRS: Record<string, string> = { '{': '}', '(': ')', '[': ']', '"': '"', "'": "'" };
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Secret instructor bypass: F8 unlocks paste for 3 s (green glow feedback)
-    if (e.key === 'F8') {
+    // Secret instructor bypass: Esc×3 within 600 ms unlocks paste for 3 s
+    if (e.key === 'Escape') {
       e.preventDefault();
-      pasteUnlocked.current = true;
-      setPasteGlow(true);
-      if (pasteTimer.current) clearTimeout(pasteTimer.current);
-      pasteTimer.current = setTimeout(() => {
-        pasteUnlocked.current = false;
-        setPasteGlow(false);
-      }, 3000);
+      e.stopPropagation();
+      escCount.current += 1;
+      if (escTimer.current) clearTimeout(escTimer.current);
+      if (escCount.current >= 3) {
+        escCount.current = 0;
+        pasteUnlocked.current = true;
+        setPasteGlow(true);
+        if (pasteTimer.current) clearTimeout(pasteTimer.current);
+        pasteTimer.current = setTimeout(() => {
+          pasteUnlocked.current = false;
+          setPasteGlow(false);
+        }, 3000);
+      } else {
+        escTimer.current = setTimeout(() => { escCount.current = 0; }, 600);
+      }
       return;
     }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitRef.current?.(); return; }
