@@ -181,7 +181,7 @@ export default function LanguageExerciseDetail() {
   const [pasteGlow, setPasteGlow] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'F3') return;
+      if (e.key !== 'F8') return;
       e.preventDefault();
       pasteUnlocked.current = true;
       setPasteGlow(true);
