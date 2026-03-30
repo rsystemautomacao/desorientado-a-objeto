@@ -69,6 +69,8 @@ interface Exam {
   maxQuestions: number | null;
   active: boolean;
   gradesReleased: boolean;
+  answersReleased: boolean;
+  correctAnswersReleased: boolean;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   scoringMode: 'equal' | 'code-weighted' | 'manual';
@@ -1750,12 +1752,14 @@ function QuestionEditor({
 }
 
 // ── Exam Results Viewer ──────────────────────────────────────────────
-function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: string; exam: Exam; getToken: () => Promise<string>; onGradesToggle: () => void }) {
+function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: string; exam: Exam; getToken: () => Promise<string>; onGradesToggle: (patch?: Partial<Exam>) => void }) {
   const [results, setResults] = useState<StudentResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [releasingGrades, setReleasingGrades] = useState(false);
+  const [releasingAnswers, setReleasingAnswers] = useState(false);
+  const [releasingCorrect, setReleasingCorrect] = useState(false);
   const [resettingUser, setResettingUser] = useState<string | null>(null);
 
   const fetchResults = useCallback(async () => {
@@ -1814,14 +1818,47 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
     try {
       const token = await getToken();
       const base = getApiBase();
+      const next = !exam.gradesReleased;
       await fetch(`${base}/api/admin/exams`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: exam.id, gradesReleased: !exam.gradesReleased }),
+        body: JSON.stringify({ id: exam.id, gradesReleased: next }),
       });
-      onGradesToggle();
+      onGradesToggle({ gradesReleased: next });
     } catch { /* ignore */ }
     setReleasingGrades(false);
+  };
+
+  const handleToggleAnswers = async () => {
+    setReleasingAnswers(true);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      const next = !exam.answersReleased;
+      await fetch(`${base}/api/admin/exams`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: exam.id, answersReleased: next }),
+      });
+      onGradesToggle({ answersReleased: next });
+    } catch { /* ignore */ }
+    setReleasingAnswers(false);
+  };
+
+  const handleToggleCorrect = async () => {
+    setReleasingCorrect(true);
+    try {
+      const token = await getToken();
+      const base = getApiBase();
+      const next = !exam.correctAnswersReleased;
+      await fetch(`${base}/api/admin/exams`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: exam.id, correctAnswersReleased: next }),
+      });
+      onGradesToggle({ correctAnswersReleased: next });
+    } catch { /* ignore */ }
+    setReleasingCorrect(false);
   };
 
   const exportToExcel = () => {
@@ -1899,14 +1936,22 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
   return (
     <div className="space-y-4">
       {/* Actions bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/20">
-        <div className="flex items-center gap-2">
+      <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/20">
+        {/* Status badges */}
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${exam.gradesReleased ? 'bg-green-500/20 text-green-400' : 'bg-muted text-muted-foreground'}`}>
-            {exam.gradesReleased ? 'Notas liberadas' : 'Notas nao liberadas'}
+            {exam.gradesReleased ? '✓ Notas liberadas' : '— Notas ocultas'}
           </span>
-          <span className="text-xs text-muted-foreground">{results.length} aluno(s)</span>
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${exam.answersReleased ? 'bg-blue-500/20 text-blue-400' : 'bg-muted text-muted-foreground'}`}>
+            {exam.answersReleased ? '✓ Respostas liberadas' : '— Respostas ocultas'}
+          </span>
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${exam.correctAnswersReleased ? 'bg-purple-500/20 text-purple-400' : 'bg-muted text-muted-foreground'}`}>
+            {exam.correctAnswersReleased ? '✓ Gabarito liberado' : '— Gabarito oculto'}
+          </span>
+          <span className="text-xs text-muted-foreground ml-auto">{results.length} aluno(s)</span>
         </div>
-        <div className="flex gap-2">
+        {/* Action buttons */}
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -1917,7 +1962,27 @@ function ExamResults({ examId, exam, getToken, onGradesToggle }: { examId: strin
             {releasingGrades ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
             {exam.gradesReleased ? 'Ocultar notas' : 'Liberar notas'}
           </Button>
-          <Button variant="outline" size="sm" onClick={exportToExcel}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleAnswers}
+            disabled={releasingAnswers}
+            className={exam.answersReleased ? 'border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10' : 'border-blue-500/50 text-blue-500 hover:bg-blue-500/10'}
+          >
+            {releasingAnswers ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <FileText className="h-3.5 w-3.5 mr-1" />}
+            {exam.answersReleased ? 'Ocultar respostas' : 'Liberar respostas'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleToggleCorrect}
+            disabled={releasingCorrect}
+            className={exam.correctAnswersReleased ? 'border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10' : 'border-purple-500/50 text-purple-500 hover:bg-purple-500/10'}
+          >
+            {releasingCorrect ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <ThumbsUp className="h-3.5 w-3.5 mr-1" />}
+            {exam.correctAnswersReleased ? 'Ocultar gabarito' : 'Liberar gabarito'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToExcel} className="ml-auto">
             <Download className="h-3.5 w-3.5 mr-1" /> Exportar Excel
           </Button>
         </div>
@@ -2259,7 +2324,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
           <h2 className="text-xl font-bold">Resultados: {selectedExam.title}</h2>
           <Button variant="outline" size="sm" onClick={() => { setView('list'); setSelectedExam(null); }}>Voltar</Button>
         </div>
-        <ExamResults examId={selectedExam.id} exam={selectedExam} getToken={getToken} onGradesToggle={async () => { await fetchExams(); setSelectedExam((prev) => prev ? { ...prev, gradesReleased: !prev.gradesReleased } : null); }} />
+        <ExamResults examId={selectedExam.id} exam={selectedExam} getToken={getToken} onGradesToggle={async (patch) => { await fetchExams(); setSelectedExam((prev) => prev ? { ...prev, ...patch } : null); }} />
       </div>
     );
   }

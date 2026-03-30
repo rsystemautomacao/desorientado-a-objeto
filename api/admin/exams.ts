@@ -107,6 +107,8 @@ export interface ExamDoc {
   maxQuestions: number | null; // max questions shown per student (null = all); pool randomized per student
   active: boolean;
   gradesReleased: boolean;
+  answersReleased: boolean;        // students can see their own answers per question
+  correctAnswersReleased: boolean; // students can see the correct answer per question
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   scoringMode: string;         // 'equal' | 'code-weighted' | 'manual'
@@ -312,6 +314,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         maxQuestions: d.maxQuestions ?? null,
         active: d.active,
         gradesReleased: d.gradesReleased ?? false,
+        answersReleased: d.answersReleased ?? false,
+        correctAnswersReleased: d.correctAnswersReleased ?? false,
         shuffleQuestions: d.shuffleQuestions ?? false,
         shuffleOptions: d.shuffleOptions ?? false,
         scoringMode: d.scoringMode || 'equal',
@@ -635,6 +639,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         maxQuestions,
         active: true,
         gradesReleased: false,
+        answersReleased: false,
+        correctAnswersReleased: false,
         shuffleQuestions: body.shuffleQuestions === true,
         shuffleOptions: body.shuffleOptions === true,
         scoringMode: typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode) ? body.scoringMode : 'equal',
@@ -657,6 +663,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.description === 'string') updates.description = body.description.trim();
       if (typeof body.active === 'boolean') updates.active = body.active;
       if (typeof body.gradesReleased === 'boolean') updates.gradesReleased = body.gradesReleased;
+      if (typeof body.answersReleased === 'boolean') updates.answersReleased = body.answersReleased;
+      if (typeof body.correctAnswersReleased === 'boolean') updates.correctAnswersReleased = body.correctAnswersReleased;
       if (typeof body.shuffleQuestions === 'boolean') updates.shuffleQuestions = body.shuffleQuestions;
       if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
       if (typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode)) updates.scoringMode = body.scoringMode;

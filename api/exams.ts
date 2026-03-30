@@ -334,7 +334,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!exam.gradesReleased) return res.status(403).json({ error: 'Notas ainda nao foram liberadas pelo professor.' });
 
       // Calculate grade using points
-      const exercises = exam.exercises as Array<{ points?: number }>;
+      const exercises = exam.exercises as Array<{ title?: string; description?: string; type?: string; points?: number; options?: string[]; correctIndex?: number }>;
       const [submissions, gradeSession] = await Promise.all([
         db.collection(SUBMISSIONS_COL).find({ examId, userId: user.uid }).toArray(),
         db.collection('exam_sessions').findOne({ examId, userId: user.uid }),
@@ -342,6 +342,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Use the student's actual question subset if pool was active
       const questionOrder: number[] | null = Array.isArray(gradeSession?.questionOrder) ? (gradeSession.questionOrder as number[]) : null;
+      const optionOrders: Record<string, number[]> = (gradeSession?.optionOrders as Record<string, number[]>) ?? {};
       const indices = questionOrder ?? exercises.map((_, i) => i);
       const n = indices.length;
 
@@ -358,6 +359,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const grade = totalPoints > 0 ? Math.round((earned / totalPoints) * 10 * 100) / 100 : 0;
 
+      // Build per-question breakdown when answers or correct answers are released
+      const answersReleased = exam.answersReleased ?? false;
+      const correctAnswersReleased = exam.correctAnswersReleased ?? false;
+      let questions: Array<{
+        index: number;
+        title: string;
+        type: string;
+        correct: boolean;
+        studentAnswer?: string;
+        correctAnswer?: string;
+      }> | undefined;
+
+      if (answersReleased || correctAnswersReleased) {
+        questions = indices.map((idx) => {
+          const ex = exercises[idx];
+          const best = submissions
+            .filter((s) => s.exerciseIndex === idx)
+            .sort((a, b) => (b.passedTests as number) - (a.passedTests as number))[0];
+          const isCorrect = best?.allPassed ?? false;
+          const qType = ex?.type ?? 'code';
+          const qTitle = ex?.title || ex?.description || `Questão ${idx + 1}`;
+
+          let studentAnswer: string | undefined;
+          let correctAnswer: string | undefined;
+
+          if (answersReleased && best) {
+            const code: string = best.code ?? '';
+            if (qType !== 'code' && code.startsWith('[Resposta objetiva]')) {
+              // Extract the selected option text from the stored string
+              const match = code.match(/\((.+)\)$/);
+              studentAnswer = match ? match[1] : code;
+            } else if (qType === 'code') {
+              studentAnswer = code;
+            } else {
+              studentAnswer = code;
+            }
+          }
+
+          if (correctAnswersReleased && qType !== 'code') {
+            // For objective questions, determine the correct option text
+            const opts: string[] = ex?.options ?? [];
+            const origCorrect = ex?.correctIndex ?? 0;
+            // The correct option text (index in original array)
+            correctAnswer = opts[origCorrect] ?? `Opção ${origCorrect + 1}`;
+          } else if (correctAnswersReleased && qType === 'code') {
+            correctAnswer = 'Todos os testes devem passar';
+          }
+
+          return {
+            index: idx + 1,
+            title: qTitle,
+            type: qType,
+            correct: isCorrect,
+            ...(answersReleased ? { studentAnswer } : {}),
+            ...(correctAnswersReleased ? { correctAnswer } : {}),
+          };
+        });
+      }
+
       return res.status(200).json({
         grade,
         earned: Math.round(earned * 100) / 100,
@@ -365,6 +425,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         correct,
         total: n,
         examTitle: exam.title,
+        answersReleased,
+        correctAnswersReleased,
+        ...(questions ? { questions } : {}),
       });
     }
 

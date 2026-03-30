@@ -960,7 +960,24 @@ export default function Exam() {
   const [finalized, setFinalized] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
-  const [gradeData, setGradeData] = useState<{ grade: number; earned?: number; totalPoints?: number; correct: number; total: number; examTitle: string } | null>(null);
+  const [gradeData, setGradeData] = useState<{
+    grade: number;
+    earned?: number;
+    totalPoints?: number;
+    correct: number;
+    total: number;
+    examTitle: string;
+    answersReleased?: boolean;
+    correctAnswersReleased?: boolean;
+    questions?: Array<{
+      index: number;
+      title: string;
+      type: string;
+      correct: boolean;
+      studentAnswer?: string;
+      correctAnswer?: string;
+    }>;
+  } | null>(null);
   const [gradeError, setGradeError] = useState('');
   const [finalizedExamId, setFinalizedExamId] = useState('');
 
@@ -1201,21 +1218,70 @@ export default function Exam() {
 
           {/* Grade display */}
           {gradeData ? (
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground mb-2">Sua nota</p>
-              <div className={`text-5xl font-bold mb-2 ${
-                gradeData.grade >= 7 ? 'text-green-400' : gradeData.grade >= 5 ? 'text-yellow-400' : 'text-red-400'
-              }`}>
-                {gradeData.grade.toFixed(1)}
+            <div className="mt-6 space-y-4 text-left">
+              {/* Summary card */}
+              <div className="rounded-xl border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-2">Sua nota</p>
+                <div className={`text-5xl font-bold mb-2 ${
+                  gradeData.grade >= 7 ? 'text-green-400' : gradeData.grade >= 5 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {gradeData.grade.toFixed(1)}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {gradeData.correct}/{gradeData.total} questao(oes) corretas
+                  {gradeData.earned !== undefined && gradeData.totalPoints !== undefined && (
+                    <span className="block mt-1 text-xs">
+                      {gradeData.earned.toFixed(2)} / {gradeData.totalPoints.toFixed(2)} pontos
+                    </span>
+                  )}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {gradeData.correct}/{gradeData.total} questao(oes) corretas
-                {gradeData.earned !== undefined && gradeData.totalPoints !== undefined && (
-                  <span className="block mt-1 text-xs">
-                    {gradeData.earned.toFixed(2)} / {gradeData.totalPoints.toFixed(2)} pontos
-                  </span>
-                )}
-              </p>
+
+              {/* Per-question breakdown */}
+              {gradeData.questions && gradeData.questions.length > 0 && (
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <p className="text-sm font-semibold">Detalhes por questão</p>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {gradeData.questions.map((q) => (
+                      <div key={q.index} className={`px-4 py-3 ${q.correct ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                        <div className="flex items-start gap-3">
+                          <span className={`mt-0.5 shrink-0 text-base ${q.correct ? 'text-green-400' : 'text-red-400'}`}>
+                            {q.correct ? '✓' : '✗'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium leading-snug">
+                              <span className="text-muted-foreground text-xs mr-1">Q{q.index}</span>
+                              {q.title}
+                            </p>
+                            {gradeData.answersReleased && q.studentAnswer !== undefined && (
+                              <div className="mt-1.5">
+                                <span className="text-xs text-muted-foreground">Sua resposta: </span>
+                                {q.type === 'code' ? (
+                                  <pre className="mt-1 text-xs bg-muted/40 border border-border rounded p-2 whitespace-pre-wrap overflow-x-auto max-h-48 leading-relaxed">
+                                    {q.studentAnswer || '(sem resposta)'}
+                                  </pre>
+                                ) : (
+                                  <span className={`text-xs font-medium ${q.correct ? 'text-green-400' : 'text-red-400'}`}>
+                                    {q.studentAnswer || '(sem resposta)'}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {gradeData.correctAnswersReleased && q.correctAnswer !== undefined && (
+                              <div className="mt-1">
+                                <span className="text-xs text-muted-foreground">Resposta correta: </span>
+                                <span className="text-xs font-medium text-green-400">{q.correctAnswer}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : finalizedExamId ? (
             <div className="mt-6">
