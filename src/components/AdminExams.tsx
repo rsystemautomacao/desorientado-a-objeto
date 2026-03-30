@@ -6,7 +6,7 @@ import { exercises as platformExercises } from '@/data/exercises';
 import {
   Plus, Trash2, Eye, EyeOff, Copy, RefreshCw, Loader2, ChevronDown, ChevronUp, ChevronRight,
   FileText, CheckCircle2, XCircle, Code2, ClipboardList, Users, Lock, KeyRound,
-  Database, Download, Search, Check, BookOpen, Edit3, Shuffle, Clock, RotateCcw, AlertTriangle,
+  Database, Download, Search, Check, BookOpen, Edit3, Shuffle, Clock, RotateCcw, AlertTriangle, ThumbsUp,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────
