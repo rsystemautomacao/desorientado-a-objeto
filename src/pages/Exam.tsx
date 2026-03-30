@@ -506,12 +506,20 @@ function ExamExerciseEditor({
         </div>
         {/* Visible test cases */}
         {exercise.testCases.some((tc) => tc.visible) && (
-          <div className="mt-3 space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground">Casos de teste visiveis:</p>
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">Casos de teste visíveis:</p>
             {exercise.testCases.filter((tc) => tc.visible).map((tc, i) => (
-              <div key={i} className="text-xs font-mono bg-muted/50 rounded px-2 py-1 flex gap-4">
-                <span><strong>Entrada:</strong> {tc.input || '(vazio)'}</span>
-                <span><strong>Esperado:</strong> {tc.expectedOutput}</span>
+              <div key={i} className="rounded-lg border border-border overflow-hidden text-xs">
+                <div className="grid grid-cols-2 divide-x divide-border">
+                  <div className="p-2 bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Entrada</p>
+                    <pre className="font-mono whitespace-pre-wrap break-all leading-relaxed">{tc.input.replace(/\\n/g, '\n') || '(vazio)'}</pre>
+                  </div>
+                  <div className="p-2 bg-muted/10">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1">Saída esperada</p>
+                    <pre className="font-mono whitespace-pre-wrap break-all leading-relaxed">{tc.expectedOutput.replace(/\\n/g, '\n')}</pre>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
