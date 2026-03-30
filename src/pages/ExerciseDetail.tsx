@@ -232,14 +232,37 @@ export default function ExerciseDetail() {
 
   const submitRef = useRef<() => void>();
 
+  // Secret instructor bypass: F3 unlocks paste for 3 seconds (subtle green glow as feedback)
+  const pasteUnlocked = useRef(false);
+  const pasteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pasteGlow, setPasteGlow] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'F3') return;
+      e.preventDefault();
+      pasteUnlocked.current = true;
+      setPasteGlow(true);
+      if (pasteTimer.current) clearTimeout(pasteTimer.current);
+      pasteTimer.current = setTimeout(() => {
+        pasteUnlocked.current = false;
+        setPasteGlow(false);
+      }, 3000);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // Block paste, drag-drop, and context menu — students must type their code
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (pasteUnlocked.current) return;
     e.preventDefault();
   }, []);
   const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    if (pasteUnlocked.current) return;
     e.preventDefault();
   }, []);
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLTextAreaElement>) => {
+    if (pasteUnlocked.current) return;
     e.preventDefault();
   }, []);
 
@@ -610,7 +633,7 @@ export default function ExerciseDetail() {
                 </div>
               </div>
               <div className="p-2">
-                <div className="relative rounded-lg border border-border bg-background overflow-hidden">
+                <div className={`relative rounded-lg border bg-background overflow-hidden transition-colors duration-300 ${pasteGlow ? 'border-green-500 shadow-[0_0_0_2px_rgba(34,197,94,0.25)]' : 'border-border'}`}>
                   {/* Active line highlight */}
                   {activeLine > 0 && (
                     <div
