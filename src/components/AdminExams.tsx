@@ -66,7 +66,9 @@ interface Exam {
   exercises: ExamExercise[];
   accessCodes: string[];
   maxSubmissions: number;
-  maxQuestions: number | null;
+  maxQuestions: number | null;           // legacy / derived (sum)
+  maxCodeQuestions: number | null;       // explicit code-question limit per student
+  maxObjectiveQuestions: number | null;  // explicit objective-question limit per student
   active: boolean;
   gradesReleased: boolean;
   answersReleased: boolean;
@@ -457,7 +459,7 @@ function ExamForm({
   defaultSubject,
 }: {
   initial?: Exam;
-  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => void;
+  onSave: (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; maxCodeQuestions: number | null; maxObjectiveQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => void;
   onCancel: () => void;
   saving: boolean;
   bankQuestions: BankQuestion[];
@@ -466,7 +468,8 @@ function ExamForm({
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [maxSubmissions, setMaxSubmissions] = useState(initial?.maxSubmissions ?? 3);
-  const [maxQuestions, setMaxQuestions] = useState<number>(initial?.maxQuestions ?? 0);
+  const [maxCodeQuestions, setMaxCodeQuestions] = useState<number>(initial?.maxCodeQuestions ?? 0);
+  const [maxObjectiveQuestions, setMaxObjectiveQuestions] = useState<number>(initial?.maxObjectiveQuestions ?? 0);
   const [shuffleQuestions, setShuffleQuestions] = useState(initial?.shuffleQuestions ?? false);
   const [shuffleOptions, setShuffleOptions] = useState(initial?.shuffleOptions ?? false);
   const [scoringMode, setScoringMode] = useState<'equal' | 'code-weighted' | 'manual'>(initial?.scoringMode ?? 'equal');
@@ -638,38 +641,82 @@ function ExamForm({
           Embaralhamento e Pool de Questões
         </h4>
 
-        {/* maxQuestions */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-          <label className="block text-sm font-semibold mb-1">
-            Questões por aluno
-            <span className="ml-2 text-xs font-normal text-muted-foreground">(pool: {exercises.length} questões cadastradas)</span>
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="number"
-              value={maxQuestions}
-              onChange={(e) => {
-                const v = Math.max(0, parseInt(e.target.value) || 0);
-                setMaxQuestions(v);
-              }}
-              className="w-28 px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-              min={0}
-              max={exercises.length}
-              placeholder="0"
-            />
-            <span className="text-sm text-muted-foreground">
-              {maxQuestions === 0
-                ? 'Exibir todas as questões (sem sorteio)'
-                : maxQuestions >= exercises.length
-                  ? <span className="text-yellow-500">⚠ Igual ou maior que o total — exibirá todas</span>
-                  : <span className="text-green-500">Cada aluno verá {maxQuestions} questões sortea­das do pool de {exercises.length}</span>
-              }
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            0 = sem limite. Quando menor que o total, cada aluno recebe um subconjunto aleatório diferente.
-          </p>
-        </div>
+        {/* Per-type pool controls */}
+        {(() => {
+          const codeCount = exercises.filter((e) => e.type === 'code').length;
+          const objCount = exercises.filter((e) => e.type !== 'code').length;
+          const resolvedCode = maxCodeQuestions > 0 && maxCodeQuestions < codeCount ? maxCodeQuestions : null;
+          const resolvedObj  = maxObjectiveQuestions > 0 && maxObjectiveQuestions < objCount ? maxObjectiveQuestions : null;
+          const poolActive = resolvedCode !== null || resolvedObj !== null;
+          const totalPerStudent = (resolvedCode ?? codeCount) + (resolvedObj ?? objCount);
+          return (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">Questões por aluno</span>
+                {poolActive
+                  ? <span className="text-xs text-green-500 font-medium">Pool ativo — cada aluno vê {totalPerStudent}/{exercises.length} questões</span>
+                  : <span className="text-xs text-muted-foreground">Pool inativo — todos veem todas as {exercises.length} questões</span>
+                }
+              </div>
+
+              {/* Code questions */}
+              {codeCount > 0 && (
+                <div className="flex items-center gap-3">
+                  <Code2 className="h-4 w-4 text-blue-400 shrink-0" />
+                  <span className="text-sm w-40 shrink-0">
+                    Questões de código
+                    <span className="block text-xs text-muted-foreground">{codeCount} disponíveis no pool</span>
+                  </span>
+                  <input
+                    type="number"
+                    value={maxCodeQuestions}
+                    onChange={(e) => setMaxCodeQuestions(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-20 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    min={0}
+                    max={codeCount}
+                    placeholder="0"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {maxCodeQuestions === 0 || maxCodeQuestions >= codeCount
+                      ? `todas (${codeCount})`
+                      : <span className="text-green-500">{maxCodeQuestions} sorteadas</span>
+                    }
+                  </span>
+                </div>
+              )}
+
+              {/* Objective questions */}
+              {objCount > 0 && (
+                <div className="flex items-center gap-3">
+                  <ClipboardList className="h-4 w-4 text-purple-400 shrink-0" />
+                  <span className="text-sm w-40 shrink-0">
+                    Questões objetivas
+                    <span className="block text-xs text-muted-foreground">{objCount} disponíveis no pool</span>
+                  </span>
+                  <input
+                    type="number"
+                    value={maxObjectiveQuestions}
+                    onChange={(e) => setMaxObjectiveQuestions(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-20 px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    min={0}
+                    max={objCount}
+                    placeholder="0"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {maxObjectiveQuestions === 0 || maxObjectiveQuestions >= objCount
+                      ? `todas (${objCount})`
+                      : <span className="text-green-500">{maxObjectiveQuestions} sorteadas</span>
+                    }
+                  </span>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                0 = exibir todas daquele tipo. Cada aluno recebe um subconjunto diferente dentro do tipo.
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Shuffle checkboxes */}
         <div className="flex flex-col sm:flex-row gap-4">
@@ -721,8 +768,13 @@ function ExamForm({
 
           {/* Show point summary */}
           {exercises.length > 0 && (() => {
-            const poolActive = maxQuestions > 0 && maxQuestions < exercises.length;
-            const effectiveCount = poolActive ? maxQuestions : undefined;
+            const codeCount2 = exercises.filter((e) => e.type === 'code').length;
+            const objCount2  = exercises.filter((e) => e.type !== 'code').length;
+            const resolvedCode2 = maxCodeQuestions > 0 && maxCodeQuestions < codeCount2 ? maxCodeQuestions : codeCount2;
+            const resolvedObj2  = maxObjectiveQuestions > 0 && maxObjectiveQuestions < objCount2 ? maxObjectiveQuestions : objCount2;
+            const totalPerStudent2 = resolvedCode2 + resolvedObj2;
+            const poolActive = totalPerStudent2 < exercises.length;
+            const effectiveCount = poolActive ? totalPerStudent2 : undefined;
             const pts = calcPointsPreview(exercises, scoringMode, effectiveCount);
             // For the total check: if pool active, sum over the effective subset (not all exercises)
             const eff = effectiveCount ?? exercises.length;
@@ -811,7 +863,7 @@ function ExamForm({
                     </div>
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                      {calcPointsPreview(exercises, scoringMode, maxQuestions > 0 && maxQuestions < exercises.length ? maxQuestions : undefined)[exIdx]?.toFixed(2)}pt
+                      {calcPointsPreview(exercises, scoringMode, (() => { const cc = exercises.filter(e => e.type === 'code').length; const oc = exercises.filter(e => e.type !== 'code').length; const rc = maxCodeQuestions > 0 && maxCodeQuestions < cc ? maxCodeQuestions : cc; const ro = maxObjectiveQuestions > 0 && maxObjectiveQuestions < oc ? maxObjectiveQuestions : oc; const tot = rc + ro; return tot < exercises.length ? tot : undefined; })())[exIdx]?.toFixed(2)}pt
                     </span>
                   )}
                 </div>
@@ -1084,11 +1136,16 @@ function ExamForm({
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel}>Cancelar</Button>
         <Button onClick={() => {
-          const resolvedMaxQ = maxQuestions > 0 && maxQuestions < exercises.length ? maxQuestions : null;
-          const effectiveCount = resolvedMaxQ ?? undefined;
+          const codePoolSize = exercises.filter((e) => e.type === 'code').length;
+          const objPoolSize  = exercises.filter((e) => e.type !== 'code').length;
+          const resolvedCode = maxCodeQuestions > 0 && maxCodeQuestions < codePoolSize ? maxCodeQuestions : null;
+          const resolvedObj  = maxObjectiveQuestions > 0 && maxObjectiveQuestions < objPoolSize ? maxObjectiveQuestions : null;
+          const totalPerStudent = (resolvedCode ?? codePoolSize) + (resolvedObj ?? objPoolSize);
+          const effectiveCount = totalPerStudent < exercises.length ? totalPerStudent : undefined;
           const pts = calcPointsPreview(exercises, scoringMode, effectiveCount);
           const finalExercises = exercises.map((ex, i) => ({ ...ex, points: scoringMode === 'manual' ? (ex.points ?? 0) : pts[i] }));
-          onSave({ title, description, exercises: finalExercises, maxSubmissions, maxQuestions: resolvedMaxQ, shuffleQuestions, shuffleOptions, scoringMode, subject });
+          const maxQComputed = effectiveCount ?? null; // derived sum for legacy compat
+          onSave({ title, description, exercises: finalExercises, maxSubmissions, maxQuestions: maxQComputed, maxCodeQuestions: resolvedCode, maxObjectiveQuestions: resolvedObj, shuffleQuestions, shuffleOptions, scoringMode, subject });
         }} disabled={saving || !title.trim()}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           {initial ? 'Salvar alteracoes' : 'Criar prova'}
@@ -2181,7 +2238,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
 
   useEffect(() => { fetchExams(); }, [fetchExams]);
 
-  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
+  const handleCreate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; maxCodeQuestions: number | null; maxObjectiveQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
     setSaving(true);
     try {
       const token = await getToken();
@@ -2195,7 +2252,7 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
     setSaving(false);
   };
 
-  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
+  const handleUpdate = async (data: { title: string; description: string; exercises: ExamExercise[]; maxSubmissions: number; maxQuestions: number | null; maxCodeQuestions: number | null; maxObjectiveQuestions: number | null; shuffleQuestions: boolean; shuffleOptions: boolean; scoringMode: 'equal' | 'code-weighted' | 'manual'; subject: SubjectKey }) => {
     if (!selectedExam) return;
     setSaving(true);
     try {
@@ -2244,6 +2301,8 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
           exercises: exam.exercises,
           maxSubmissions: exam.maxSubmissions,
           maxQuestions: exam.maxQuestions ?? null,
+          maxCodeQuestions: exam.maxCodeQuestions ?? null,
+          maxObjectiveQuestions: exam.maxObjectiveQuestions ?? null,
           shuffleQuestions: exam.shuffleQuestions,
           shuffleOptions: exam.shuffleOptions,
           scoringMode: exam.scoringMode,
@@ -2407,10 +2466,18 @@ export default function AdminExams({ getToken }: { getToken: () => Promise<strin
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {exam.maxQuestions && exam.maxQuestions < exam.exercises.length
-                      ? <><span className="text-primary font-medium">{exam.maxQuestions}/{exam.exercises.length} questões por aluno</span> &bull; </>
-                      : <>{exam.exercises.length} questão(ões) &bull; </>
-                    }
+                    {(() => {
+                      const codePool = exam.exercises.filter(e => e.type === 'code').length;
+                      const objPool  = exam.exercises.filter(e => e.type !== 'code').length;
+                      const hasCodeLimit = exam.maxCodeQuestions && exam.maxCodeQuestions < codePool;
+                      const hasObjLimit  = exam.maxObjectiveQuestions && exam.maxObjectiveQuestions < objPool;
+                      if (hasCodeLimit || hasObjLimit) {
+                        const cPick = hasCodeLimit ? exam.maxCodeQuestions! : codePool;
+                        const oPick = hasObjLimit  ? exam.maxObjectiveQuestions! : objPool;
+                        return <><span className="text-primary font-medium">{cPick + oPick}/{exam.exercises.length} questões por aluno{codePool > 0 && objPool > 0 ? ` (${cPick} código + ${oPick} obj)` : ''}</span> &bull; </>;
+                      }
+                      return <>{exam.exercises.length} questão(ões) &bull; </>;
+                    })()}
                     Max {exam.maxSubmissions} submissões &bull; Criada em {new Date(exam.createdAt).toLocaleDateString('pt-BR')}
                   </p>
                 </div>

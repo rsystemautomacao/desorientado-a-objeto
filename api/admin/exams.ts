@@ -104,7 +104,9 @@ export interface ExamDoc {
   exercises: ExamExercise[];
   accessCodes: string[];       // multiple codes, admin can regenerate
   maxSubmissions: number;      // max submissions per exercise per student
-  maxQuestions: number | null; // max questions shown per student (null = all); pool randomized per student
+  maxQuestions: number | null;       // legacy/derived sum — kept for backward compat
+  maxCodeQuestions: number | null;   // explicit code-question limit per student
+  maxObjectiveQuestions: number | null; // explicit objective-question limit per student
   active: boolean;
   gradesReleased: boolean;
   answersReleased: boolean;        // students can see their own answers per question
@@ -312,6 +314,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         accessCodes: d.accessCodes,
         maxSubmissions: d.maxSubmissions,
         maxQuestions: d.maxQuestions ?? null,
+        maxCodeQuestions: d.maxCodeQuestions ?? null,
+        maxObjectiveQuestions: d.maxObjectiveQuestions ?? null,
         active: d.active,
         gradesReleased: d.gradesReleased ?? false,
         answersReleased: d.answersReleased ?? false,
@@ -627,8 +631,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const validSubjectsCreate = ['poo', 'bi', 'logica'];
+      // Explicit per-type pool limits (new system)
+      const rawCodeQ = body.maxCodeQuestions;
+      const rawObjQ  = body.maxObjectiveQuestions;
+      const maxCodeQuestions      = typeof rawCodeQ === 'number' && rawCodeQ > 0 ? Math.floor(rawCodeQ) : null;
+      const maxObjectiveQuestions = typeof rawObjQ  === 'number' && rawObjQ  > 0 ? Math.floor(rawObjQ)  : null;
+      // Legacy derived sum kept for backward compat
       const rawMaxQ = body.maxQuestions;
-      const maxQuestions = typeof rawMaxQ === 'number' && rawMaxQ > 0 ? Math.floor(rawMaxQ) : null;
+      const maxQuestions = maxCodeQuestions !== null || maxObjectiveQuestions !== null
+        ? (maxCodeQuestions ?? 0) + (maxObjectiveQuestions ?? 0) || null
+        : (typeof rawMaxQ === 'number' && rawMaxQ > 0 ? Math.floor(rawMaxQ) : null);
 
       const doc: ExamDoc = {
         title,
@@ -637,6 +649,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         accessCodes: [generateCode()],
         maxSubmissions,
         maxQuestions,
+        maxCodeQuestions,
+        maxObjectiveQuestions,
         active: true,
         gradesReleased: false,
         answersReleased: false,
@@ -669,6 +683,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body.shuffleOptions === 'boolean') updates.shuffleOptions = body.shuffleOptions;
       if (typeof body.scoringMode === 'string' && ['equal', 'code-weighted', 'manual'].includes(body.scoringMode)) updates.scoringMode = body.scoringMode;
       if (typeof body.maxSubmissions === 'number') updates.maxSubmissions = Math.max(1, Math.floor(body.maxSubmissions));
+      // Explicit per-type limits (new system)
+      if ('maxCodeQuestions' in body) updates.maxCodeQuestions = typeof body.maxCodeQuestions === 'number' && (body.maxCodeQuestions as number) > 0 ? Math.floor(body.maxCodeQuestions as number) : null;
+      if ('maxObjectiveQuestions' in body) updates.maxObjectiveQuestions = typeof body.maxObjectiveQuestions === 'number' && (body.maxObjectiveQuestions as number) > 0 ? Math.floor(body.maxObjectiveQuestions as number) : null;
+      // Legacy derived sum
       if ('maxQuestions' in body) updates.maxQuestions = typeof body.maxQuestions === 'number' && (body.maxQuestions as number) > 0 ? Math.floor(body.maxQuestions as number) : null;
       if (typeof body.subject === 'string' && ['poo', 'bi', 'logica'].includes(body.subject)) updates.subject = body.subject;
       if (Array.isArray(body.exercises)) {

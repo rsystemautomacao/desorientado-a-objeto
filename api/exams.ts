@@ -198,10 +198,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return result;
       }
 
-      // maxQuestions: how many questions each student sees (null = all)
-      const maxQ = typeof exam.maxQuestions === 'number' && exam.maxQuestions > 0 && exam.maxQuestions < rawExercises.length
-        ? exam.maxQuestions as number
-        : null;
+      // Per-type explicit limits (new system)
+      const maxCodeQ = typeof exam.maxCodeQuestions === 'number' && exam.maxCodeQuestions > 0 ? exam.maxCodeQuestions as number : null;
+      const maxObjQ  = typeof exam.maxObjectiveQuestions === 'number' && exam.maxObjectiveQuestions > 0 ? exam.maxObjectiveQuestions as number : null;
+      const hasNewPool = maxCodeQ !== null || maxObjQ !== null;
+      // Legacy fallback: old exams stored a single maxQuestions total
+      const legacyMaxQ = !hasNewPool && typeof exam.maxQuestions === 'number' && exam.maxQuestions > 0 && exam.maxQuestions < rawExercises.length
+        ? exam.maxQuestions as number : null;
+      const maxQ = hasNewPool || legacyMaxQ !== null; // boolean: is any pool active?
 
       // Check if session already has a shuffle/selection order (reloads keep the same questions)
       const sessionDoc = existingSession || await db.collection('exam_sessions').findOne({ examId, userId: user.uid });
@@ -213,43 +217,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         const seed = `${examId}-${user.uid}`;
 
-        // Step 1: If maxQuestions is set, randomly SELECT which questions this student gets.
-        //         When the exam has mixed types (code + objective), selection is proportional
-        //         so every student always receives the same ratio of each type.
+        // Step 1: If any pool limit is set, SELECT which questions this student gets.
         if (maxQ) {
           const allIndices = Array.from({ length: rawExercises.length }, (_, i) => i);
 
-          // Group indices by question type
-          const byType: Record<string, number[]> = {};
-          for (const i of allIndices) {
-            const t = (rawExercises[i].type as string | undefined) || 'code';
-            if (!byType[t]) byType[t] = [];
-            byType[t].push(i);
-          }
+          if (hasNewPool) {
+            // New explicit per-type selection: professor chose exactly how many of each type
+            const codeIndices = allIndices.filter((i) => ((rawExercises[i].type as string | undefined) || 'code') === 'code');
+            const objIndices  = allIndices.filter((i) => ((rawExercises[i].type as string | undefined) || 'code') !== 'code');
 
-          const types = Object.keys(byType);
+            const selectedCode = maxCodeQ !== null && maxCodeQ < codeIndices.length
+              ? seededShuffle(codeIndices, seed + '-code').slice(0, maxCodeQ)
+              : codeIndices;
+            const selectedObj  = maxObjQ !== null && maxObjQ < objIndices.length
+              ? seededShuffle(objIndices,  seed + '-obj').slice(0, maxObjQ)
+              : objIndices;
 
-          if (types.length <= 1) {
-            // Single type — original behaviour: shuffle all, take first maxQ
-            questionOrder = seededShuffle(allIndices, seed + '-selection').slice(0, maxQ);
+            // Combine; shuffleQ step below will reorder them
+            questionOrder = [...selectedCode, ...selectedObj];
           } else {
-            // Multiple types: proportional selection (floor + largest-remainder distribution)
-            const total = rawExercises.length;
-            const slots = types.map((t) => {
-              const exact = (byType[t].length / total) * maxQ;
-              return { t, pick: Math.floor(exact), frac: exact - Math.floor(exact) };
-            });
-            // Distribute any remaining slots to types with the largest fractional part
-            let rem = maxQ - slots.reduce((s, e) => s + e.pick, 0);
-            slots.sort((a, b) => b.frac - a.frac);
-            for (let i = 0; i < rem; i++) slots[i % slots.length].pick++;
-
-            let selected: number[] = [];
-            for (const { t, pick } of slots) {
-              const shuffled = seededShuffle(byType[t], seed + '-selection-' + t);
-              selected = selected.concat(shuffled.slice(0, Math.min(pick, byType[t].length)));
-            }
-            questionOrder = selected;
+            // Legacy single-number pool: just shuffle all and take first N
+            questionOrder = seededShuffle(allIndices, seed + '-selection').slice(0, legacyMaxQ!);
           }
         }
 
