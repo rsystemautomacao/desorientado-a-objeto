@@ -213,12 +213,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         const seed = `${examId}-${user.uid}`;
 
-        // Step 1: If maxQuestions is set, randomly SELECT which questions this student gets
-        //         Uses a dedicated seed so selection is independent from ordering
+        // Step 1: If maxQuestions is set, randomly SELECT which questions this student gets.
+        //         When the exam has mixed types (code + objective), selection is proportional
+        //         so every student always receives the same ratio of each type.
         if (maxQ) {
           const allIndices = Array.from({ length: rawExercises.length }, (_, i) => i);
-          const shuffledForSelection = seededShuffle(allIndices, seed + '-selection');
-          questionOrder = shuffledForSelection.slice(0, maxQ);
+
+          // Group indices by question type
+          const byType: Record<string, number[]> = {};
+          for (const i of allIndices) {
+            const t = (rawExercises[i].type as string | undefined) || 'code';
+            if (!byType[t]) byType[t] = [];
+            byType[t].push(i);
+          }
+
+          const types = Object.keys(byType);
+
+          if (types.length <= 1) {
+            // Single type — original behaviour: shuffle all, take first maxQ
+            questionOrder = seededShuffle(allIndices, seed + '-selection').slice(0, maxQ);
+          } else {
+            // Multiple types: proportional selection (floor + largest-remainder distribution)
+            const total = rawExercises.length;
+            const slots = types.map((t) => {
+              const exact = (byType[t].length / total) * maxQ;
+              return { t, pick: Math.floor(exact), frac: exact - Math.floor(exact) };
+            });
+            // Distribute any remaining slots to types with the largest fractional part
+            let rem = maxQ - slots.reduce((s, e) => s + e.pick, 0);
+            slots.sort((a, b) => b.frac - a.frac);
+            for (let i = 0; i < rem; i++) slots[i % slots.length].pick++;
+
+            let selected: number[] = [];
+            for (const { t, pick } of slots) {
+              const shuffled = seededShuffle(byType[t], seed + '-selection-' + t);
+              selected = selected.concat(shuffled.slice(0, Math.min(pick, byType[t].length)));
+            }
+            questionOrder = selected;
+          }
         }
 
         // Step 2: Shuffle the order of the selected (or all) questions
