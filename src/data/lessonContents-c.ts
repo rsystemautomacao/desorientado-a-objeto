@@ -19,7 +19,7 @@ export const cLessonContents: Record<string, LessonContent> = {
         title: 'Estrutura de um Programa C',
         body: 'Todo programa C tem uma estrutura padrão. Veja o exemplo mais simples:',
         code: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-        codeExplanation: '#include <stdio.h> importa a biblioteca padrão de entrada/saída. int main() é a função principal — todo programa começa por aqui. printf() imprime texto. return 0 indica que o programa terminou com sucesso.',
+        codeExplanation: '#include <stdio.h> importa a biblioteca padrão de entrada/saída. int main() é a função principal — todo programa começa por aqui. printf() imprime texto na tela. return 0 indica que o programa terminou com sucesso. Toda instrução em C termina com ponto e vírgula (;) — esquecer o ; é um dos erros mais comuns em C!',
         tryItCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    printf("Meu primeiro programa em C!\\n");\n    return 0;\n}',
         tryItPrompt: 'Execute o código e depois mude as mensagens.',
       },
@@ -41,6 +41,7 @@ export const cLessonContents: Record<string, LessonContent> = {
       '#include importa bibliotecas externas',
       'int main() é o ponto de entrada de todo programa C',
       'printf() imprime texto — use \\n para quebrar linha',
+      'Toda instrução termina com ponto e vírgula (;)',
       'return 0 no final do main indica sucesso',
     ],
   },
@@ -193,6 +194,13 @@ export const cLessonContents: Record<string, LessonContent> = {
         code: '#include <stdio.h>\n\nint main() {\n    int a = 10, b = 20;\n\n    // Forma longa:\n    int maior;\n    if (a > b) {\n        maior = a;\n    } else {\n        maior = b;\n    }\n\n    // Forma com ternário:\n    int maiorT = (a > b) ? a : b;\n\n    printf("Maior: %d\\n", maiorT);\n    return 0;\n}',
         codeExplanation: 'condição ? valor_se_verdadeiro : valor_se_falso. Ideal para expressões simples. Evite para lógicas complexas.',
       },
+      {
+        title: 'Tipo bool com <stdbool.h>',
+        body: 'Em C padrão (sem bibliotecas extras), não existe tipo booleano nativo — usa-se 0 para falso e qualquer outro valor para verdadeiro. A partir do C99, a biblioteca <stdbool.h> introduz o tipo bool e as constantes true e false, tornando o código mais legível:',
+        code: '#include <stdio.h>\n#include <stdbool.h>\n\nint main() {\n    bool aprovado = true;\n    bool reprovado = false;\n\n    if (aprovado) {\n        printf("Aprovado!\\n");\n    }\n\n    float nota = 8.5;\n    bool passou = (nota >= 6.0);  // retorna true (1) ou false (0)\n\n    printf("Passou: %d\\n", passou); // 1\n    printf("Reprovado: %d\\n", reprovado); // 0\n\n    return 0;\n}',
+        codeExplanation: 'bool, true e false são definidos em <stdbool.h>. true equivale a 1, false equivale a 0. O comportamento é o mesmo que usar 1 e 0 — a diferença é apenas na legibilidade do código.',
+        tip: 'Em C moderno (C99+), prefira bool com <stdbool.h> para variáveis que representam verdadeiro/falso. O código fica mais expressivo e fácil de entender.',
+      },
     ],
     summary: [
       'if testa uma condição; else executa quando a condição é falsa',
@@ -200,6 +208,7 @@ export const cLessonContents: Record<string, LessonContent> = {
       'Em C, 0 = falso, qualquer outro valor = verdadeiro',
       'Operador ternário: cond ? a : b — substitui if/else simples',
       'Sempre use {} para delimitar blocos, mesmo que tenham 1 linha',
+      '<stdbool.h> define bool, true e false para booleanos explícitos (C99+)',
     ],
   },
 
@@ -466,7 +475,7 @@ FIM`,
 
 Programadores experientes seguem o ciclo:
 
-   PROBLEMA → ANÁLISE → ALGORITMO → CÓDIGO → TESTE
+   PROBLEMA → ALGORITMO → CÓDIGO → TESTE
 
 Investir 10 minutos desenhando o algoritmo (no papel, em pseudocódigo ou em fluxograma) pode economizar 2 horas de depuração depois.
 
