@@ -411,6 +411,7 @@ export const cLessonContents: Record<string, LessonContent> = {
       'Entender o conceito de algoritmo',
       'Reconhecer algoritmos no cotidiano',
       'Distinguir as características de um bom algoritmo',
+      'Escrever algoritmos em pseudocódigo (descrição narrativa)',
       'Compreender por que pensar antes de codificar economiza tempo',
     ],
     sections: [
@@ -470,6 +471,39 @@ FIM`,
         warning: 'Um algoritmo que nunca termina (loop infinito não controlado) não é considerado correto — mesmo que pareça produzir resultados durante a execução.',
       },
       {
+        title: 'Pseudocódigo — A Descrição Narrativa',
+        body: `Pseudocódigo (também chamado de descrição narrativa) é uma forma de escrever um algoritmo usando uma mistura de português estruturado com palavras-chave de programação.
+
+Não é uma linguagem de programação real — o computador não consegue executá-lo. Ele existe para o programador: serve para organizar o raciocínio antes de escrever código de verdade.
+
+Por que usar pseudocódigo?
+  • É mais fácil de escrever e ler do que código C
+  • Qualquer pessoa entende, mesmo sem saber programar
+  • Permite detectar erros de lógica ANTES de escrever código
+  • Pode ser traduzido para qualquer linguagem (C, Python, Java...)
+
+Palavras-chave típicas do pseudocódigo:
+  INÍCIO / FIM     — marcam o começo e o fim
+  LEIA / ESCREVA   — entrada e saída de dados
+  SE / SENÃO       — decisão (if/else)
+  ENQUANTO / FAÇA  — repetição (while/for)
+  ←  ou  =        — atribuição de valor`,
+        code: `ALGORITMO: Calcular média e verificar aprovação
+
+INÍCIO
+   LEIA nota1, nota2, nota3
+   media ← (nota1 + nota2 + nota3) / 3
+
+   SE media >= 6 ENTÃO
+      ESCREVA "Aprovado! Média: ", media
+   SENÃO
+      ESCREVA "Reprovado. Média: ", media
+   FIM SE
+FIM`,
+        codeExplanation: 'Cada linha do pseudocódigo mapeia diretamente para código C: LEIA → scanf(), ESCREVA → printf(), ← → =, SE/SENÃO → if/else. A estrutura é quase idêntica — só a sintaxe muda.',
+        tip: 'Pseudocódigo não tem regras rígidas de sintaxe — o importante é ser claro e consistente. Use o idioma que for mais natural para você, desde que outro programador consiga entender sem ambiguidade.',
+      },
+      {
         title: 'Por que Pensar Antes de Codificar?',
         body: `Programadores iniciantes costumam abrir o editor e começar a digitar código imediatamente. Resultado: código desorganizado, cheio de bugs e difícil de consertar.
 
@@ -487,8 +521,9 @@ Nas próximas aulas você aprenderá a usar FLUXOGRAMAS — a ferramenta visual 
       'Algoritmo é uma sequência finita, ordenada e precisa de passos para resolver um problema',
       'Algoritmos existem no cotidiano: receitas, instruções, procedimentos',
       'Um bom algoritmo é finito, definido, tem entradas e saídas, e é efetivo',
+      'Pseudocódigo (descrição narrativa) é linguagem intermediária entre português e código — humanos entendem, computadores não executam',
+      'Pseudocódigo usa palavras como LEIA, ESCREVA, SE/SENÃO, ENQUANTO — e pode ser traduzido para qualquer linguagem',
       'Pensar no algoritmo antes de codificar evita bugs e retrabalho',
-      'Pseudocódigo e fluxogramas são formas de representar algoritmos antes do código',
     ],
   },
 
