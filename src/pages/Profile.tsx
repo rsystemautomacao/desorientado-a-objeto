@@ -83,7 +83,7 @@ export default function Profile() {
         setSaving(false);
         refreshProfileStatus(profile);
         if (isMandatoryFill) {
-          navigate('/trilha');
+          navigate('/');
         }
       })
       .catch(async (err: Error & { status?: number; code?: string; detail?: string }) => {
