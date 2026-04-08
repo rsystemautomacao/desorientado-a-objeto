@@ -174,9 +174,23 @@ export default function CertificateModal({
           <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; font-family: Arial, sans-serif; }
+            body {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              background: #f5f5f5;
+              font-family: Arial, sans-serif;
+            }
+            /* Force browsers to print background colors and gradients */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
             @media print {
-              body { background: white; }
+              @page { margin: 0.5cm; size: A4 landscape; }
+              body { background: white; margin: 0; }
             }
           </style>
         </head>
