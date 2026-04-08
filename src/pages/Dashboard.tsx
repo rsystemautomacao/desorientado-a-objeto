@@ -107,6 +107,35 @@ export default function Dashboard() {
 
   const resumeLesson = lastStudiedLesson ?? nextIncompleteLesson;
 
+  // Helpers to compute certificate data for any module
+  function getModuleCompletionDate(lessons: { id: string }[]): string | undefined {
+    const ids = lessons.map((l) => l.id);
+    const dates = ids
+      .filter((id) => progress.completedLessons.includes(id) && progress.lastStudied[id])
+      .map((id) => progress.lastStudied[id]);
+    if (dates.length === 0) return undefined;
+    const maxDate = dates.sort((a, b) => b.localeCompare(a))[0];
+    // Format: "dd de MMMM de yyyy"
+    const [year, month, day] = maxDate.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  function getModuleTotalHours(lessons: { duration: string }[]): string {
+    const totalMin = lessons.reduce((sum, l) => {
+      const match = l.duration.match(/(\d+)/);
+      return sum + (match ? parseInt(match[1], 10) : 0);
+    }, 0);
+    const hours = Math.floor(totalMin / 60);
+    const mins = totalMin % 60;
+    if (hours > 0 && mins > 0) return `${hours} hora${hours > 1 ? 's' : ''} e ${mins} minuto${mins > 1 ? 's' : ''}`;
+    if (hours > 0) return `${hours} hora${hours > 1 ? 's' : ''}`;
+    return `${mins} minuto${mins > 1 ? 's' : ''}`;
+  }
+
   const LANG_TABS: { id: LangTab; label: string; color: string; active: string }[] = [
     { id: 'java',   label: '☕ Java',   color: 'text-orange-400', active: 'bg-orange-400/10 border-orange-400/40 text-orange-400' },
     { id: 'python', label: '🐍 Python', color: 'text-blue-400',   active: 'bg-blue-400/10 border-blue-400/40 text-blue-400' },
@@ -667,6 +696,8 @@ export default function Dashboard() {
             moduleLevel={certModule.level}
             lessonCount={certModule.lessons.length}
             languageLabel="Java / POO"
+            completionDate={getModuleCompletionDate(certModule.lessons)}
+            totalHours={getModuleTotalHours(certModule.lessons)}
           />
         )}
         </>}
@@ -682,6 +713,8 @@ export default function Dashboard() {
             moduleLevel={certPyModule.level}
             lessonCount={certPyModule.lessons.length}
             languageLabel="Python"
+            completionDate={getModuleCompletionDate(certPyModule.lessons)}
+            totalHours={getModuleTotalHours(certPyModule.lessons)}
           />
         )}
 
@@ -696,6 +729,8 @@ export default function Dashboard() {
             moduleLevel={certCModule.level}
             lessonCount={certCModule.lessons.length}
             languageLabel="Linguagem C"
+            completionDate={getModuleCompletionDate(certCModule.lessons)}
+            totalHours={getModuleTotalHours(certCModule.lessons)}
           />
         )}
       </div>
