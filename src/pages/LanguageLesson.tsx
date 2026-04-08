@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import CodeBlock from '@/components/CodeBlock';
 import InfoBox from '@/components/InfoBox';
+import { ExplanationText } from '@/components/ExplanationText';
 import LangTryItBox from '@/components/LangTryItBox';
 import QuizComponent from '@/components/QuizComponent';
 import MermaidDiagram from '@/components/MermaidDiagram';
@@ -160,7 +161,8 @@ export default function LanguageLesson() {
             {s.code && <CodeBlock code={s.code} title={codeTitle} />}
             {s.codeExplanation && (
               <div className="mt-2 p-4 rounded-lg bg-secondary text-sm text-foreground/80">
-                <span className="font-semibold text-primary">Explicação: </span>{s.codeExplanation}
+                <span className="font-semibold text-primary">Explicação: </span>
+                <ExplanationText text={s.codeExplanation} />
               </div>
             )}
             {s.tip && <InfoBox type="tip">{s.tip}</InfoBox>}
